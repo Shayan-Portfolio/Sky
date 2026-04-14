@@ -17,6 +17,7 @@ public abstract class GfxPlatform {
 
     public abstract void drawArc(float x, float y, float w, float h, float start, float end, Color color);
     public abstract void drawRectLines(float x, float y, float w, float h, int thickness, Color color);
+    public abstract void drawLine(float x1, float y1, float x2, float y2, Color color);
     public abstract void drawTexture(float x,
                              float y,
                              float w,

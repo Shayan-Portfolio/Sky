@@ -8,7 +8,7 @@ import engine.logging.Logger;
 import engine.mio.SceneBytecode;
 import engine.mio.Instruction;
 import engine.physics.Collider;
-import engine.physics.Interface;
+import engine.physics.BodyParams;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -119,6 +119,7 @@ public class Scene extends Disposable {
                             Instruction params = iterator.next();
                             Instruction mass = iterator.next();
                             Instruction interfaceFriction = iterator.next();
+                            Instruction interfaceRestitution = iterator.next();
                             Instruction canRotate = iterator.next();
 
 
@@ -129,15 +130,24 @@ public class Scene extends Disposable {
                                     float height = (float) params.operands()[2];
                                     float depth = (float) params.operands()[3];
                                     collider = Collider.newBoxCollider(width, height, depth);
+                                    break;
+                                }
+                                case "cylinder": {
+                                    float radius = (float) params.operands()[1];
+                                    float height = (float) params.operands()[2];
+
+                                    collider = Collider.newCylinderCollider(radius, height);
+                                    break;
                                 }
                             }
 
                             float colliderMass = (float) mass.operands()[1];
                             float colliderInterfaceFriction = (float) interfaceFriction.operands()[1];
+                            float colliderInterfaceRestitution = (float) interfaceRestitution.operands()[1];
                             boolean colliderCanRotate = (boolean) canRotate.operands()[1];
 
 
-                            actor.add(new RigidBodyComponent(collider, colliderMass, new Interface(colliderInterfaceFriction), colliderCanRotate));
+                            actor.add(new RigidBodyComponent(collider, colliderMass, new BodyParams(colliderInterfaceFriction, colliderInterfaceRestitution), colliderCanRotate));
                         }
                         case "ShaderComponent" -> {
 
@@ -179,7 +189,18 @@ public class Scene extends Disposable {
                                     float height = (float) params.operands()[2];
                                     float depth = (float) params.operands()[3];
 
-                                    meshComponent.setMeshData(MeshGenerator.newBox(width, height, depth));
+                                    MeshData meshData = MeshGenerator.newBox(width, height, depth);
+                                    meshComponent.setMeshData(meshData);
+                                    System.out.println("Foo");
+                                    break;
+                                }
+                                case "cylinder": {
+                                    float radius = (float) params.operands()[1];
+                                    float height = (float) params.operands()[2];
+                                    int segments = (int) (float) params.operands()[3];
+
+                                    meshComponent.setMeshData(MeshGenerator.newCylinder(radius, height, segments));
+                                    break;
                                 }
                             }
 

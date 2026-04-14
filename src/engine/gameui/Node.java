@@ -1,18 +1,20 @@
 package engine.gameui;
 
+import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
 
 import static engine.gameui.TextValue.text;
 
 public class Node extends ContainerWidget {
-    private boolean expanded = true;
+    private boolean expanded;
     private Button button;
     private TextValue value;
     private int indent = 20;
+    private Color color;
     public Node(TextValue value, MsdfFont msdfFont) {
         this.value = value;
         setLayoutEngine(new LineLayoutEngine(LineLayoutEngine.Line.Vertical));
-        addWidget(button = new Button(value, msdfFont));
+        button = new Button(value, msdfFont);
         setIgnore(true);
 
         button.addEventHandler(new EventHandler() {
@@ -21,6 +23,7 @@ public class Node extends ContainerWidget {
                 expanded = !expanded;
             }
         });
+        color = new Color((float) Math.random(), (float) Math.random(), (float) Math.random(), 1);
 
     }
 
@@ -46,21 +49,22 @@ public class Node extends ContainerWidget {
 
     @Override
     public int getRequiredWidth() {
-        if(expanded) return super.getRequiredWidth() + (indent * 2);
-        else return button.getRequiredWidth() + (indent * 2);
+        if(expanded) return super.getRequiredWidth() + (indent);
+        else return button.getRequiredWidth();
     }
 
     @Override
     public int getRequiredHeight() {
-        if(expanded) return super.getRequiredHeight();
-        else return button.getRequiredHeight();
+        int h = button.getRequiredHeight();
+        if(expanded) return super.getRequiredHeight() + h;
+        return h;
     }
 
     @Override
     public void update(GfxPlatform platform, int x, int y, int w, int h) {
-        if(expanded)
-            super.update(platform, x + indent, y, w, h);
-        else
-            button.update(platform, x + indent, y, w, h);
+        int bx = button.getRequiredWidth(), by = button.getRequiredHeight();
+        button.update(platform, x, y, bx, by);
+        if(expanded) super.update(platform, x + indent, y + by, w, h);
+
     }
 }

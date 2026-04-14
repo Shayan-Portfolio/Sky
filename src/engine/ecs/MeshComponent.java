@@ -16,6 +16,8 @@ public class MeshComponent {
     public Buffer vertexBuffer;
     public Buffer indexBuffer;
     public boolean finalized;
+    public boolean visible = true;
+    private MeshData meshData;
 
     public MeshComponent(Disposable parent, Renderer renderer, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
         this.maxVertexCount = maxVertexCount;
@@ -60,8 +62,16 @@ public class MeshComponent {
     }
 
 
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
 
     public void setMeshData(MeshData meshData) {
+        this.meshData = meshData;
         ByteBuffer vertexBufferData = vertexBuffer.get();
         vertexBufferData.clear();
 
@@ -70,10 +80,13 @@ public class MeshComponent {
 
         new MeshDataWriter(0).upload(meshData, shaderProgram, vertexBufferData, indexBufferData, 0);
 
+
         this.vertexCount = meshData.getVertexCount();
         this.indexCount = meshData.getIndexCount();
         finalized = true;
     }
 
-
+    public MeshData getMeshData() {
+        return meshData;
+    }
 }

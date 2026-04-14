@@ -56,7 +56,7 @@ public class GLFWSurface extends Surface {
 
     public GLFWSurface(Disposable parent, String title, int width, int height, boolean resizable) {
         super(parent, title, width, height, resizable);
-        System.out.println("GLFW parent " + parent.getClass().getSimpleName());
+
 
 
         if (!glfwInit()) {

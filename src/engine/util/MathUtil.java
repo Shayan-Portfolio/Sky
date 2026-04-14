@@ -3,6 +3,7 @@ package engine.util;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import javax.vecmath.Quat4f;
 
@@ -38,6 +39,30 @@ public class MathUtil {
     public static javax.vecmath.Vector3f vec3(Vector3f src) {
         return new javax.vecmath.Vector3f(src.x, src.y, src.z);
     }
+
+    public static Vector3f vec3(javax.vecmath.Vector3f src) {
+        return new Vector3f(src.x, src.y, src.z);
+    }
+
+    public static Vector4f vec4(javax.vecmath.Vector3f src) {
+        return new Vector4f(src.x, src.y, src.z, 1);
+    }
+
+
+    public static void scaleMax(javax.vecmath.Vector3f v, float scale) {
+        int axis = 0;
+
+        if(v.y > v.x) axis++;
+        if(v.z > v.y) axis++;
+
+        switch (axis) {
+            case 0 -> v.x *= scale;
+            case 1 -> v.y *= scale;
+            case 2 -> v.z *= scale;
+        }
+    }
+
+
 
 
     public static Quat4f quat4(Quaternionf src) {

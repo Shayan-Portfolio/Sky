@@ -1,7 +1,9 @@
 package engine.gameui;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public abstract class Widget {
     private List<Widget> widgets = new LinkedList<>();
@@ -11,6 +13,7 @@ public abstract class Widget {
     protected int padding = 4;
     protected boolean focused;
     protected Widget parent;
+    protected Map<String, Object> properties = new HashMap<>();
     protected LayoutEngine layoutEngine = new LayoutEngine() {
         @Override
         public int getComputedWidth() {
@@ -54,6 +57,15 @@ public abstract class Widget {
     public String getName() {
         return name;
     }
+
+    public void setProperty(String name, Object value) {
+        properties.put(name, value);
+    }
+
+    public <T> T getProperty(String name) {
+        return (T) properties.get(name);
+    }
+
 
     public <T> T getWidgetByPath(String... names) {
 

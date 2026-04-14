@@ -10,6 +10,7 @@ import engine.graphics.pipelines.ScreenSpaceFeatures;
 import engine.graphics.text.*;
 import org.joml.*;
 
+import java.lang.Math;
 import java.nio.ByteBuffer;
 
 public class UISystem extends ActorSystem {
@@ -26,6 +27,7 @@ public class UISystem extends ActorSystem {
     private GfxPlatform gfxPlatform;
     private Theme theme;
     private TextureBindings textureBindings;
+    private Matrix4f lineRotation = new Matrix4f();
 
 
 
@@ -116,27 +118,46 @@ public class UISystem extends ActorSystem {
                     drawRect(x - ((float) thickness / 2) + w, y, thickness, h, color);
                 }
 
+                @Override
+                public void drawLine(float x1, float y1, float x2, float y2, Color color) {
+                    float dx = x2 - x1;
+                    float dy = y2 - y1;
+
+                    float angle = (float) Math.atan2(dy, dx);
+
+                    setOrigin(x1, y1);
+                    setTransform(transform.rotateZ(angle));
+
+                    float hypotenuse = (float) Math.sqrt((dx * dx) + (dy * dy));
+
+                    drawRect(x1, y1 - 2, hypotenuse, 4, color);
+
+                    setTransform(transform.rotateZ(-angle));
+
+                    setOrigin(0, 0);
+                }
+
 
                 public void drawTexture(float x,
-                                      float y,
-                                      float w,
-                                      float h,
+                                        float y,
+                                        float w,
+                                        float h,
 
-                                      float uvtlx,
-                                      float uvtly,
+                                        float uvtlx,
+                                        float uvtly,
 
-                                      float uvblx,
-                                      float uvbly,
+                                        float uvblx,
+                                        float uvbly,
 
-                                      float uvtrx,
-                                      float uvtry,
+                                        float uvtrx,
+                                        float uvtry,
 
-                                      float uvbrx,
-                                      float uvbry,
-                                      float op1,
-                                      Color color,
-                                      Texture texture,
-                                      Sampler sampler, boolean msdf) {
+                                        float uvbrx,
+                                        float uvbry,
+                                        float op1,
+                                        Color color,
+                                        Texture texture,
+                                        Sampler sampler, boolean msdf) {
 
                     int index = textureBindings.getTextureBinding(texture);
 
@@ -309,7 +330,7 @@ public class UISystem extends ActorSystem {
                 0,
                 0,
                 -1,
-                Color.WHITE
+                new Color(3, 3, 3, 1)
         );
 
         if(SystemState.running) {

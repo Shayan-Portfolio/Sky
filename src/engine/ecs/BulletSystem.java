@@ -86,8 +86,9 @@ public class BulletSystem extends ActorSystem {
                                     rigidBodyComponent.collider.getCollisionShape(),
                                     inertia
                             );
+                            rigidBodyComponent.constructionInfo.friction = rigidBodyComponent.mat.friction();
+                            rigidBodyComponent.constructionInfo.restitution = rigidBodyComponent.mat.restitution();
 
-                            rigidBodyComponent.constructionInfo.friction = rigidBodyComponent.mat.friction;
 
 
                             rigidBodyComponent.rigidBody = new RigidBody(rigidBodyComponent.constructionInfo);
@@ -130,7 +131,7 @@ public class BulletSystem extends ActorSystem {
 
 
 
-                dynamicsWorld.stepSimulation(timestep, 4, timestep);
+                dynamicsWorld.stepSimulation(timestep, 20, timestep);
                 accumulator -= timestep;
             }
         }

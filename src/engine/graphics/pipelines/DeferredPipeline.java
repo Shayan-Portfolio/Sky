@@ -506,10 +506,12 @@ public class DeferredPipeline extends RenderPipeline {
 
                         if(actor.has(MeshComponent.class)) {
                             MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
-                            ByteBuffer transformsData = meshComponent.transformsBuffers[renderer.getFrameIndex()].get();
-                            transformComponent.transform().get(0, transformsData);
-                            ByteBuffer sceneDescData = meshComponent.sceneDescBuffers[renderer.getFrameIndex()].get();
-                            updateSceneDesc(sceneDescData, sceneCamera, scene);
+                            if(meshComponent.isVisible()) {
+                                ByteBuffer transformsData = meshComponent.transformsBuffers[renderer.getFrameIndex()].get();
+                                transformComponent.transform().get(0, transformsData);
+                                ByteBuffer sceneDescData = meshComponent.sceneDescBuffers[renderer.getFrameIndex()].get();
+                                updateSceneDesc(sceneDescData, sceneCamera, scene);
+                            }
                         }
 
 
@@ -562,20 +564,23 @@ public class DeferredPipeline extends RenderPipeline {
 
                                     if (e.has(MeshComponent.class)) {
                                         MeshComponent meshComponent = e.getComponent(MeshComponent.class);
-                                        shadowMapGenPass.setDrawBuffers(
-                                                meshComponent.vertexBuffer,
-                                                meshComponent.indexBuffer
-                                        );
-                                        shadowMapGenPass.setShaderProgram(
-                                                meshComponent.shaderProgram
-                                        );
-                                        try (MemoryStack stack = stackPush()) {
-                                            ByteBuffer pPushConstants = stack.calloc(2 * Integer.BYTES);
-                                            pPushConstants.putInt(mode);
-                                            pPushConstants.putInt(shadowMapGenPassLightIndex);
-                                            shadowMapGenPass.setPushConstants(pPushConstants);
+                                        if(meshComponent.isVisible()) {
+                                            shadowMapGenPass.setDrawBuffers(
+                                                    meshComponent.vertexBuffer,
+                                                    meshComponent.indexBuffer
+                                            );
+
+                                            shadowMapGenPass.setShaderProgram(
+                                                    meshComponent.shaderProgram
+                                            );
+                                            try (MemoryStack stack = stackPush()) {
+                                                ByteBuffer pPushConstants = stack.calloc(2 * Integer.BYTES);
+                                                pPushConstants.putInt(mode);
+                                                pPushConstants.putInt(shadowMapGenPassLightIndex);
+                                                shadowMapGenPass.setPushConstants(pPushConstants);
+                                            }
+                                            shadowMapGenPass.drawIndexed(meshComponent.indexCount);
                                         }
-                                        shadowMapGenPass.drawIndexed(meshComponent.indexCount);
                                     }
                                 });
 
@@ -611,20 +616,22 @@ public class DeferredPipeline extends RenderPipeline {
                         scene.getRootActor().previsitAllActors(actor -> {
                             if(actor.has(MeshComponent.class)) {
                                 MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
-                                scenePass.setDrawBuffers(
-                                        meshComponent.vertexBuffer,
-                                        meshComponent.indexBuffer
-                                );
-                                scenePass.setShaderProgram(
-                                        meshComponent.shaderProgram
-                                );
-                                try(MemoryStack stack = stackPush()) {
-                                    ByteBuffer pPushConstants = stack.calloc(2 * Integer.BYTES);
-                                    pPushConstants.putInt(mode);
-                                    pPushConstants.putInt(-1);
-                                    scenePass.setPushConstants(pPushConstants);
+                                if(meshComponent.isVisible()) {
+                                    scenePass.setDrawBuffers(
+                                            meshComponent.vertexBuffer,
+                                            meshComponent.indexBuffer
+                                    );
+                                    scenePass.setShaderProgram(
+                                            meshComponent.shaderProgram
+                                    );
+                                    try (MemoryStack stack = stackPush()) {
+                                        ByteBuffer pPushConstants = stack.calloc(2 * Integer.BYTES);
+                                        pPushConstants.putInt(mode);
+                                        pPushConstants.putInt(-1);
+                                        scenePass.setPushConstants(pPushConstants);
+                                    }
+                                    scenePass.drawIndexed(meshComponent.indexCount);
                                 }
-                                scenePass.drawIndexed(meshComponent.indexCount);
                             }
 
                         });

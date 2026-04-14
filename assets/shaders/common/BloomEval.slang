@@ -13,7 +13,7 @@ struct BloomEval {
             int2 ixy = xy * float2(w, h);
 
             float luminance = dot(output_color, float3(0.2126, 0.7152, 0.0722));
-            if(luminance >= 1.3) output_bloom_texture[ixy] = float4(output_color, 1.0);
+            if(luminance >= 2.0) output_bloom_texture[ixy] = float4(output_color, 1.0);
             else output_bloom_texture[ixy] = float4(0.0, 0.0, 0.0, 0.0);
 
         }

@@ -16,6 +16,10 @@ public class Collider {
         this.collisionShape = collisionShape;
     }
 
+    public static Collider newCylinderCollider(float radius, float height) {
+        return new Collider(new CylinderShape(new Vector3f(radius, height / 2, radius)));
+    }
+
     public CollisionShape getCollisionShape() {
         return collisionShape;
     }
