@@ -1,5 +1,8 @@
 package engine.graphics;
 
+import engine.logging.SkyRuntimeException;
+
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -81,8 +84,13 @@ public class MeshDataWriter {
 
         }
 
-        for(int index : meshData.getIndices()) {
-            indexBufferData.putInt(vertexOffset + index);
+        try {
+            for (int index : meshData.getIndices()) {
+                indexBufferData.putInt(vertexOffset + index);
+            }
+        }
+        catch (BufferOverflowException e) {
+            throw new SkyRuntimeException("Index buffer overflow at index " + indexBufferData.position());
         }
     }
 

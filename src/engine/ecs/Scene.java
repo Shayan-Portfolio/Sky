@@ -207,7 +207,7 @@ public class Scene extends Disposable {
                                 case "gltf": {
 
                                     Asset<String> gltf = AssetRegistry.getAsset((String) params.operands()[1]);
-                                    Asset[] glbs = new Asset[params.operands().length - 2];
+                                    Asset<byte[]>[] glbs = new Asset[params.operands().length - 2];
 
                                     for(int i = 2; i < params.operands().length; i++) {
                                         glbs[i - 2] = AssetRegistry.getAsset((String) params.operands()[i]);
