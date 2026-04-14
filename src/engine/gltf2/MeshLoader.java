@@ -3,6 +3,8 @@ package engine.gltf2;
 import engine.asset.Asset;
 import engine.gltf2.schemas.*;
 import engine.graphics.MeshData;
+import engine.logging.Logger;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.nio.ByteBuffer;
@@ -20,7 +22,7 @@ public class MeshLoader {
             default -> 0;
         };
     }
-    private static void loadVectorAccessor(Gltf g, int accessorIndex, List<Float> list, Map<String, ByteBuffer> readers) {
+    private static void loadVectorAccessor(int allowedSize, Gltf g, int accessorIndex, List<Float> list, Map<String, ByteBuffer> readers) {
         Accessor accessor = g.accessors[accessorIndex];
         BufferView bufferView = g.bufferViews[accessor.bufferView];
         Buffer buffer = g.buffers[bufferView.buffer];
@@ -31,6 +33,10 @@ public class MeshLoader {
         data.position(offset);
 
         int size = getSize(accessor.type);
+        if(size != allowedSize) {
+            Logger.error(MeshLoader.class, "Accessor type " + accessor.type + " is not allowed for this type of data");
+            size = allowedSize;
+        }
 
         for(int i = 0; i < count; i++) {
             for(int j = 0; j < size; j++) {
@@ -70,23 +76,19 @@ public class MeshLoader {
         for(Primitives primitives : mesh.primitives) {
 
             //Indices
-            {
-                loadScalarAccessor(g, primitives.indices, indicesList, readers, verticesList.size() / 3);
-            }
+            loadScalarAccessor(g, primitives.indices, indicesList, readers, verticesList.size() / 3);
 
             //Everything else
             {
                 int positionAccessorIndex = primitives.attributes.get("POSITION");
-                {
-                    loadVectorAccessor(g, positionAccessorIndex, verticesList, readers);
-                }
+                loadVectorAccessor(3, g, positionAccessorIndex, verticesList, readers);
+
                 int normalAccessorIndex = primitives.attributes.get("NORMAL");
-                {
-                    loadVectorAccessor(g, normalAccessorIndex, normalsList, readers);
-                }
+                loadVectorAccessor(3, g, normalAccessorIndex, normalsList, readers);
 
                 if(primitives.attributes.get("COLOR") == null) {
                     for (int i = 0; i < verticesList.size() / 3; i++) {
+                        colorsList.add(1f);
                         colorsList.add(1f);
                         colorsList.add(1f);
                         colorsList.add(1f);
@@ -95,6 +97,7 @@ public class MeshLoader {
                         textureUVsList.add(0f);
                     }
                 }
+
                 //These calculations are wrong
                 if(primitives.attributes.get("TANGENT") == null) {
                     for (int i = 0; i < verticesList.size() / 3; i++) {
@@ -108,6 +111,11 @@ public class MeshLoader {
                         tangentsList.add(tangent.z);
                     }
                 }
+                else {
+                    int tangentAccessorIndex = primitives.attributes.get("TANGENT");
+                    loadVectorAccessor(3, g, tangentAccessorIndex, tangentsList, readers);
+                }
+
 
 
             }
