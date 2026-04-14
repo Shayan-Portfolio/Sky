@@ -105,6 +105,13 @@ public class AssetPackage {
                                             FileSystem.readBytes(assetPath)
                                     );
                                 }
+                                else if (assetFilePath.endsWith("bin")) {
+                                    asset = new Asset<byte[]>(
+                                            assetPackage,
+                                            identifier,
+                                            FileSystem.readBytes(assetPath)
+                                    );
+                                }
                                 else if (assetFilePath.endsWith("json")) {
                                     asset = new Asset<String>(
                                             assetPackage,

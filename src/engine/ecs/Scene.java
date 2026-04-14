@@ -1,8 +1,10 @@
 package engine.ecs;
 
 
+import engine.asset.Asset;
 import engine.asset.AssetRegistry;
 import engine.bridge.ProjectLoader;
+import engine.gltf2.MeshLoader;
 import engine.graphics.*;
 import engine.logging.Logger;
 import engine.mio.SceneBytecode;
@@ -200,6 +202,24 @@ public class Scene extends Disposable {
                                     int segments = (int) (float) params.operands()[3];
 
                                     meshComponent.setMeshData(MeshGenerator.newCylinder(radius, height, segments));
+                                    break;
+                                }
+                                case "gltf": {
+
+                                    Asset<String> gltf = AssetRegistry.getAsset((String) params.operands()[1]);
+                                    Asset[] glbs = new Asset[params.operands().length - 2];
+
+                                    for(int i = 2; i < params.operands().length; i++) {
+                                        glbs[i - 2] = AssetRegistry.getAsset((String) params.operands()[i]);
+                                    }
+
+                                    System.out.println(Arrays.toString(glbs));
+
+                                    meshComponent.setMeshData(MeshLoader.loadGLTF2(
+                                            gltf,
+                                            glbs
+                                    ));
+
                                     break;
                                 }
                             }
