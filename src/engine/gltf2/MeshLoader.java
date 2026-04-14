@@ -11,10 +11,49 @@ import java.util.*;
 
 public class MeshLoader {
     private MeshLoader(){}
-    private int getSize(String s) {
-        if(s.equals("SCALAR")) return 1;
-        return Integer.parseInt(s.substring(s.length() - 1));
+    private static int getSize(String s) {
+        return switch (s) {
+            case "SCALAR" -> 1;
+            case "VEC2" -> 2;
+            case "VEC3" -> 3;
+            case "VEC4" -> 4;
+            default -> 0;
+        };
     }
+    private static void loadVectorAccessor(Gltf g, int accessorIndex, List<Float> list, Map<String, ByteBuffer> readers) {
+        Accessor accessor = g.accessors[accessorIndex];
+        BufferView bufferView = g.bufferViews[accessor.bufferView];
+        Buffer buffer = g.buffers[bufferView.buffer];
+        int offset = accessor.byteOffset + bufferView.byteOffset;
+        int count = accessor.count;
+
+        ByteBuffer data = readers.get(buffer.uri);
+        data.position(offset);
+
+        int size = getSize(accessor.type);
+
+        for(int i = 0; i < count; i++) {
+            for(int j = 0; j < size; j++) {
+                list.add(data.getFloat());
+            }
+
+        }
+    }
+    private static void loadScalarAccessor(Gltf g, int accessorIndex, List<Integer> list, Map<String, ByteBuffer> readers, int vertexCount) {
+        Accessor accessor = g.accessors[accessorIndex];
+        BufferView bufferView = g.bufferViews[accessor.bufferView];
+        Buffer buffer = g.buffers[bufferView.buffer];
+
+        int offset = accessor.byteOffset + bufferView.byteOffset;
+        int count = accessor.count;
+
+        ByteBuffer data = readers.get(buffer.uri);
+        data.position(offset);
+        for(int i = 0; i < count; i++) {
+            list.add(vertexCount + (data.getShort() & 0xFFFF));
+        }
+    }
+
     private static void openNode(Map<String, ByteBuffer> readers,
                                  Gltf g,
                                  Node node,
@@ -32,56 +71,18 @@ public class MeshLoader {
 
             //Indices
             {
-                Accessor accessor = g.accessors[primitives.indices];
-                BufferView bufferView = g.bufferViews[accessor.bufferView];
-                Buffer buffer = g.buffers[bufferView.buffer];
-
-                int offset = accessor.byteOffset + bufferView.byteOffset;
-                int count = accessor.count;
-
-                ByteBuffer data = readers.get(buffer.uri);
-                data.position(offset);
-                for(int i = 0; i < count; i++) {
-                    int vertexCount = verticesList.size() / 3;
-                    indicesList.add(vertexCount + (data.getShort() & 0xFFFF));
-                }
+                loadScalarAccessor(g, primitives.indices, indicesList, readers, verticesList.size() / 3);
             }
 
             //Everything else
             {
                 int positionAccessorIndex = primitives.attributes.get("POSITION");
                 {
-                    Accessor accessor = g.accessors[positionAccessorIndex];
-                    BufferView bufferView = g.bufferViews[accessor.bufferView];
-                    Buffer buffer = g.buffers[bufferView.buffer];
-                    int offset = accessor.byteOffset + bufferView.byteOffset;
-                    int count = accessor.count;
-
-                    ByteBuffer data = readers.get(buffer.uri);
-                    data.position(offset);
-
-
-                    for(int i = 0; i < count; i++) {
-                        verticesList.add(data.getFloat());
-                        verticesList.add(data.getFloat());
-                        verticesList.add(data.getFloat());
-                    }
+                    loadVectorAccessor(g, positionAccessorIndex, verticesList, readers);
                 }
                 int normalAccessorIndex = primitives.attributes.get("NORMAL");
                 {
-                    Accessor accessor = g.accessors[normalAccessorIndex];
-                    BufferView bufferView = g.bufferViews[accessor.bufferView];
-                    Buffer buffer = g.buffers[bufferView.buffer];
-                    int offset = accessor.byteOffset + bufferView.byteOffset;
-                    int count = accessor.count;
-
-                    ByteBuffer data = readers.get(buffer.uri);
-                    data.position(offset);
-                    for(int i = 0; i < count; i++) {
-                        normalsList.add(data.getFloat());
-                        normalsList.add(data.getFloat());
-                        normalsList.add(data.getFloat());
-                    }
+                    loadVectorAccessor(g, normalAccessorIndex, normalsList, readers);
                 }
 
                 if(primitives.attributes.get("COLOR") == null) {
@@ -126,6 +127,7 @@ public class MeshLoader {
         }
 
     }
+
 
     public static MeshData loadGLTF2(Asset<String> gltf, Asset<byte[]>... bin){
         Source gltf2 = new Source(gltf, bin);
