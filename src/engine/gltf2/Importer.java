@@ -5,6 +5,7 @@ import engine.gltf2.schemas.*;
 import engine.graphics.MeshData;
 import engine.logging.Logger;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -23,7 +24,7 @@ public class Importer {
             default -> 0;
         };
     }
-    private static void loadVectorAccessor(int allowedSize, Gltf g, int accessorIndex, List<Float> list, Map<String, ByteBuffer> readers, Matrix4f transform) {
+    private static void loadVectorAccessor(int allowedSize, Gltf g, int accessorIndex, List<Float> list, Map<String, ByteBuffer> readers, Matrix4f transform, float scale, boolean translate) {
         Accessor accessor = g.accessors[accessorIndex];
         BufferView bufferView = g.bufferViews[accessor.bufferView];
         Buffer buffer = g.buffers[bufferView.buffer];
@@ -41,20 +42,21 @@ public class Importer {
 
         for(int i = 0; i < count; i++) {
             if(size == 3) {
-                Vector3f vector = new Vector3f(data.getFloat(), data.getFloat(), data.getFloat());
-                transform.transformDirection(vector);
+                Vector4f vector = new Vector4f(data.getFloat(), data.getFloat(), data.getFloat(), translate ? 1 : 0);
 
-                list.add(vector.x);
-                list.add(vector.y);
-                list.add(vector.z);
+                transform.transform(vector);
+
+                list.add(vector.x * scale);
+                list.add(vector.y * scale);
+                list.add(vector.z * scale);
             }
             else if(size == 4) {
                 Vector4f vector = new Vector4f(data.getFloat(), data.getFloat(), data.getFloat(), data.getFloat());
                 transform.transform(vector);
 
-                list.add(vector.x);
-                list.add(vector.y);
-                list.add(vector.z);
+                list.add(vector.x * scale);
+                list.add(vector.y * scale);
+                list.add(vector.z * scale);
                 list.add(vector.w);
             }
             else {
@@ -80,7 +82,8 @@ public class Importer {
         }
     }
 
-    private static void openNode(Map<String, ByteBuffer> readers,
+    private static void openNode(float scale,
+                                 Map<String, ByteBuffer> readers,
                                  Gltf g,
                                  Node node,
                                  Mesh[] meshes,
@@ -92,8 +95,6 @@ public class Importer {
                                  List<Integer> indicesList,
                                  Stack<Matrix4f> matrices) {
 
-        Mesh mesh = meshes[node.mesh];
-
         Matrix4f matrix = new Matrix4f().identity();
 
         if(node.matrix != null) {
@@ -103,90 +104,108 @@ public class Importer {
                     node.matrix[8], node.matrix[9], node.matrix[10], node.matrix[11],
                     node.matrix[12], node.matrix[13], node.matrix[14], node.matrix[15]
             );
+        }
 
-            matrices.push(matrix);
-            matrix = getCombinedMatrix(matrices);
+
+        if(node.translation != null) {
+            Vector3f translation = new Vector3f(node.translation[0], node.translation[1], node.translation[2]);
+            matrix.translate(translation);
+        }
+
+        if(node.rotation != null) {
+            Quaternionf rotation = new Quaternionf(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
+            matrix.rotate(rotation);
+        }
+
+        if(node.scale != null) {
+            Vector3f s = new Vector3f(node.scale[0], node.scale[1], node.scale[2]);
+            matrix.scale(s);
         }
 
 
 
-        for(Primitives primitives : mesh.primitives) {
 
-            //Indices
-            loadScalarAccessor(g, primitives.indices, indicesList, readers, verticesList.size() / 3);
 
-            //Everything else
-            {
-                int positionAccessorIndex = primitives.attributes.get("POSITION");
-                loadVectorAccessor(3, g, positionAccessorIndex, verticesList, readers, matrix);
 
-                int normalAccessorIndex = primitives.attributes.get("NORMAL");
-                loadVectorAccessor(3, g, normalAccessorIndex, normalsList, readers, matrix);
 
-                if(primitives.attributes.get("TEXCOORD_0") == null) {
-                    for (int i = 0; i < verticesList.size() / 3; i++) {
-                        textureUVsList.add(0f);
-                        textureUVsList.add(0f);
+        matrices.push(matrix);
+        matrix = getCombinedMatrix(matrices);
+
+        if(node.mesh != -1) {
+            Mesh mesh = meshes[node.mesh];
+
+
+            int vertexCount = verticesList.size() / 3;
+
+            for (Primitives primitives : mesh.primitives) {
+
+                //Indices
+                loadScalarAccessor(g, primitives.indices, indicesList, readers, vertexCount);
+
+                //Everything else
+                {
+                    int positionAccessorIndex = primitives.attributes.get("POSITION");
+                    loadVectorAccessor(3, g, positionAccessorIndex, verticesList, readers, matrix, scale, true);
+
+                    int normalAccessorIndex = primitives.attributes.get("NORMAL");
+                    loadVectorAccessor(3, g, normalAccessorIndex, normalsList, readers, matrix, 1, false);
+
+                    if (primitives.attributes.get("TEXCOORD_0") == null) {
+                        for (int i = 0; i < verticesList.size() / 3; i++) {
+                            textureUVsList.add(0f);
+                            textureUVsList.add(0f);
+                        }
+                    } else {
+                        int textureUVAccessorIndex = primitives.attributes.get("TEXCOORD_0");
+                        loadVectorAccessor(2, g, textureUVAccessorIndex, textureUVsList, readers, matrix, 1, false);
                     }
-                }
-                else {
-                    int textureUVAccessorIndex = primitives.attributes.get("TEXCOORD_0");
-                    loadVectorAccessor(2, g, textureUVAccessorIndex, textureUVsList, readers, matrix);
-                }
 
-                if(primitives.attributes.get("TANGENT") == null) {
-                    for (int i = 0; i < verticesList.size() / 3 - 1; i++) {
-                        Vector3f normal = new Vector3f(normalsList.get(i * 3), normalsList.get(i * 3 + 1), normalsList.get(i * 3 + 2));
-                        Vector3f position1 = new Vector3f(verticesList.get(i * 3), verticesList.get(i * 3 + 1), verticesList.get(i * 3 + 2));
-                        Vector3f position2 = new Vector3f(verticesList.get((i + 1) * 3), verticesList.get((i + 1) * 3 + 1), verticesList.get((i + 1) * 3 + 2));
+                    if (primitives.attributes.get("TANGENT") == null) {
+                        for (int i = 0; i < verticesList.size() / 3 - 1; i++) {
+                            Vector3f normal = new Vector3f(normalsList.get(i * 3), normalsList.get(i * 3 + 1), normalsList.get(i * 3 + 2));
+                            Vector3f position1 = new Vector3f(verticesList.get(i * 3), verticesList.get(i * 3 + 1), verticesList.get(i * 3 + 2));
+                            Vector3f position2 = new Vector3f(verticesList.get((i + 1) * 3), verticesList.get((i + 1) * 3 + 1), verticesList.get((i + 1) * 3 + 2));
 
-                        Vector3f tangent = new Vector3f(normal).cross(position2.sub(position1)).normalize().mul(-1);
+                            Vector3f tangent = new Vector3f(normal).cross(position2.sub(position1)).normalize().mul(-1);
 
-                        matrix.transformDirection(tangent);
-                        tangentsList.add(tangent.x);
-                        tangentsList.add(tangent.y);
-                        tangentsList.add(tangent.z);
+                            matrix.transformDirection(tangent);
+                            tangentsList.add(tangent.x);
+                            tangentsList.add(tangent.y);
+                            tangentsList.add(tangent.z);
+                        }
+                    } else {
+                        int tangentAccessorIndex = primitives.attributes.get("TANGENT");
+                        loadVectorAccessor(3, g, tangentAccessorIndex, tangentsList, readers, matrix, 1, false);
                     }
-                }
-                else {
-                    int tangentAccessorIndex = primitives.attributes.get("TANGENT");
-                    loadVectorAccessor(3, g, tangentAccessorIndex, tangentsList, readers, matrix);
-                }
 
-                if(primitives.attributes.get("COLOR") == null) {
-                    for (int i = 0; i < verticesList.size() / 3; i++) {
-                        colorsList.add(1f);
-                        colorsList.add(1f);
-                        colorsList.add(1f);
-                        colorsList.add(1f);
+                    if (primitives.attributes.get("COLOR") == null) {
+                        for (int i = 0; i < verticesList.size() / 3; i++) {
+                            colorsList.add(1f);
+                            colorsList.add(1f);
+                            colorsList.add(1f);
+                            colorsList.add(1f);
+                        }
                     }
+
+
                 }
-
-
-
             }
-
-
-
-
-
-
-
         }
 
-        if(node.children == null) return;
-        for(int i : node.children) {
-            Node child = g.nodes[i];
-            openNode(readers, g, child, g.meshes, verticesList, colorsList, normalsList, tangentsList, textureUVsList, indicesList, matrices);
+        if(node.children != null) {
+            for (int i : node.children) {
+                Node child = g.nodes[i];
+                openNode(scale, readers, g, child, g.meshes, verticesList, colorsList, normalsList, tangentsList, textureUVsList, indicesList, matrices);
+            }
         }
 
-        if(node.matrix != null) matrices.pop();
+        matrices.pop();
     }
 
     private static Matrix4f getCombinedMatrix(Stack<Matrix4f> matrices) {
         Matrix4f matrix = new Matrix4f();
 
-        for(int i = matrices.size() - 1; i >= 0; i--) {
+        for(int i = 0; i < matrices.size(); i++) {
             matrix.mul(matrices.get(i));
         }
 
@@ -194,7 +213,7 @@ public class Importer {
     }
 
 
-    public static MeshData loadGLTF2(Asset<String> gltf, Asset<byte[]>... bin){
+    public static MeshData loadGLTF2(float scale, Asset<String> gltf, Asset<byte[]>... bin){
         Source gltf2 = new Source(gltf, bin);
         Loader parser = new Loader();
         Gltf g = parser.parse(gltf2);
@@ -224,7 +243,7 @@ public class Importer {
 
         for(int i : root.nodes) {
             Node node = g.nodes[i];
-            openNode(readers, g, node, g.meshes, verticesList, colorsList, normalsList, tangentsList, textureUVsList, indicesList, matrices);
+            openNode(scale, readers, g, node, g.meshes, verticesList, colorsList, normalsList, tangentsList, textureUVsList, indicesList, matrices);
         }
 
 

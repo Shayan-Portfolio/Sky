@@ -214,6 +214,7 @@ public class Scene extends Disposable {
 
 
                                     meshComponent.setMeshData(Importer.loadGLTF2(
+                                            0.1f,
                                             gltf,
                                             glbs
                                     ));
