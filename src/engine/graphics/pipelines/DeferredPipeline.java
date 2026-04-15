@@ -151,8 +151,8 @@ public class DeferredPipeline extends RenderPipeline {
                                     Texture.newStorageTexture(lightingPassRT, renderer.getWidth() / 2, renderer.getHeight() / 2, Session.isDiscrete() ? TextureFormatType.ColorR32G32B32A32 : TextureFormatType.ColorR16G16B16A16)
                             },
                             new Sampler[]{
-                                    Sampler.newSampler(lightingPassRT, Linear, Linear, true),
-                                    Sampler.newSampler(lightingPassRT, Linear, Linear, true)
+                                    Sampler.newSampler(lightingPassRT, Linear, Linear, false),
+                                    Sampler.newSampler(lightingPassRT, Linear, Linear, false)
                             }
                     )
             );
@@ -734,7 +734,7 @@ public class DeferredPipeline extends RenderPipeline {
                     pPushConstants.putInt(lightCount);
                     pPushConstants.putInt(renderer.getWidth());
                     pPushConstants.putInt(renderer.getHeight());
-                    pPushConstants.putFloat((int) getFeatures(SkyboxFeatures.class).getSampleIntensity());
+                    pPushConstants.putFloat(getFeatures(SkyboxFeatures.class).getSampleIntensity());
                     lightingPass.setPushConstants(pPushConstants);
                 }
 

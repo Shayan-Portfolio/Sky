@@ -80,10 +80,8 @@ void computeMain(uniform int light_count, uniform int width, uniform int height,
             fragment_shadow_map_ps /= fragment_shadow_map_ps.w;
             float4 shadow_map_uv_ts = fragment_shadow_map_ps * 0.5 + 0.5;
 
-
-            if (shadow_map_uv_ts.x >= 0 && shadow_map_uv_ts.x <= 1 && shadow_map_uv_ts.y >= 0 && shadow_map_uv_ts.y <= 1) {
-
-
+            bool in_frustum = shadow_map_uv_ts.x >= 0 && shadow_map_uv_ts.x <= 1 && shadow_map_uv_ts.y >= 0 && shadow_map_uv_ts.y <= 1;
+            if (in_frustum) {
             
                 // Shadows
                 {
@@ -99,28 +97,39 @@ void computeMain(uniform int light_count, uniform int width, uniform int height,
                     shadow += shadow_per_pixel;
                 }
 
-                
-                // Lighting BRDF
+            }
+
+            // Lighting BRDF
+            {
+
+
+                CookTorranceEval lighting_eval;
+                float3 brdf = lighting_eval.get_color(
+                    light,
+                    light_pos_ws,
+                    light_dir_ws,
+                    camera_pos_ws,
+                    fragment_ws,
+                    normal_ws,
+                    metallic,
+                    roughness,
+                    albedo
+                );
+
+                float distance = length(light_pos_ws - fragment_ws.xyz);
+                float sigmoid = 0;
                 {
-                    
-                   
-                    CookTorranceEval lighting_eval;
-                    output_color.rgb += lighting_eval.get_color(
-                        light,
-                        light_pos_ws,
-                        light_dir_ws,
-                        camera_pos_ws,
-                        fragment_ws,
-                        normal_ws,
-                        metallic,
-                        roughness,
-                        albedo,
-                        input_skybox_texture.Sample(input_skybox_texture_sampler, -reflect(camera_dir_ws, normal_ws), 0).rgb * cubemap_sample_intensity
+                    float n = 1.0;
+                    float k = 0.1;
 
-                    );
-
+                    sigmoid = (-n / (1 + exp(-distance * 0.1))) + 1;
                 }
 
+                brdf *= sigmoid;
+
+                float3 env = input_skybox_texture.SampleLevel(input_skybox_texture_sampler, -reflect(camera_dir_ws, normal_ws), 3).rgb * cubemap_sample_intensity;
+
+                output_color.rgb += brdf + env;
 
             }
         }
