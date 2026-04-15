@@ -4,11 +4,9 @@ import engine.asset.Asset;
 import engine.gltf2.schemas.*;
 import engine.graphics.MeshData;
 import engine.logging.Logger;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 
+import java.lang.Math;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -24,7 +22,7 @@ public class Importer {
             default -> 0;
         };
     }
-    private static void loadVectorAccessor(int allowedSize, Gltf g, int accessorIndex, List<Float> list, Map<String, ByteBuffer> readers, Matrix4f transform, float scale, boolean translate) {
+    private static void loadVectorAccessor(String name, int allowedSize, Gltf g, int accessorIndex, List<Float> list, Map<String, ByteBuffer> readers, Matrix4f transform, float scale, boolean translate) {
         Accessor accessor = g.accessors[accessorIndex];
         BufferView bufferView = g.bufferViews[accessor.bufferView];
         Buffer buffer = g.buffers[bufferView.buffer];
@@ -36,12 +34,14 @@ public class Importer {
 
         int size = getSize(accessor.type);
         if(size != allowedSize) {
-            Logger.error(Importer.class, "Accessor type " + accessor.type + " is not allowed for this type of data");
-            size = allowedSize;
+            Logger.info(
+                    Importer.class,
+                    name + " accessor type " + accessor.type + " does not match allowed size of " + allowedSize
+            );
         }
 
         for(int i = 0; i < count; i++) {
-            if(size == 3) {
+            if(allowedSize == 3) {
                 Vector4f vector = new Vector4f(data.getFloat(), data.getFloat(), data.getFloat(), translate ? 1 : 0);
 
                 transform.transform(vector);
@@ -50,7 +50,7 @@ public class Importer {
                 list.add(vector.y * scale);
                 list.add(vector.z * scale);
             }
-            else if(size == 4) {
+            else if(allowedSize == 4) {
                 Vector4f vector = new Vector4f(data.getFloat(), data.getFloat(), data.getFloat(), data.getFloat());
                 transform.transform(vector);
 
@@ -60,10 +60,12 @@ public class Importer {
                 list.add(vector.w);
             }
             else {
-                for (int j = 0; j < size; j++) {
+                for (int j = 0; j < allowedSize; j++) {
                     list.add(data.getFloat());
                 }
             }
+
+            for (int j = 0; j < size - allowedSize; j++) data.getFloat();
 
         }
     }
@@ -136,6 +138,7 @@ public class Importer {
 
 
             int vertexCount = verticesList.size() / 3;
+            int oldTriangleCount = indicesList.size() / 3;
 
             for (Primitives primitives : mesh.primitives) {
 
@@ -145,38 +148,137 @@ public class Importer {
                 //Everything else
                 {
                     int positionAccessorIndex = primitives.attributes.get("POSITION");
-                    loadVectorAccessor(3, g, positionAccessorIndex, verticesList, readers, matrix, scale, true);
+                    loadVectorAccessor("POSITION", 3, g, positionAccessorIndex, verticesList, readers, matrix, scale, true);
 
                     int normalAccessorIndex = primitives.attributes.get("NORMAL");
-                    loadVectorAccessor(3, g, normalAccessorIndex, normalsList, readers, matrix, 1, false);
+                    loadVectorAccessor("NORMAL",3, g, normalAccessorIndex, normalsList, readers, matrix, 1, false);
 
                     if (primitives.attributes.get("TEXCOORD_0") == null) {
                         for (int i = 0; i < verticesList.size() / 3; i++) {
-                            textureUVsList.add(0f);
-                            textureUVsList.add(0f);
+                            float nx = normalsList.get(i * 3);
+                            float ny = normalsList.get(i * 3 + 1);
+                            float nz = normalsList.get(i * 3 + 2);
+
+                            float px = verticesList.get(i * 3);
+                            float py = verticesList.get(i * 3 + 1);
+                            float pz = verticesList.get(i * 3 + 2);
+
+                            float ax = Math.abs(nx);
+                            float ay = Math.abs(ny);
+                            float az = Math.abs(nz);
+
+                            float u, v;
+
+                            // dominant axis projection
+                            if (ax > ay && ax > az) {
+                                // X dominant → project YZ
+                                u = py;
+                                v = pz;
+                            }
+                            else if (ay > az) {
+                                // Y dominant → project XZ
+                                u = px;
+                                v = pz;
+                            }
+                            else {
+                                // Z dominant → project XY
+                                u = px;
+                                v = py;
+                            }
+
+                            textureUVsList.add(u);
+                            textureUVsList.add(v);
                         }
                     } else {
                         int textureUVAccessorIndex = primitives.attributes.get("TEXCOORD_0");
-                        loadVectorAccessor(2, g, textureUVAccessorIndex, textureUVsList, readers, matrix, 1, false);
+                        loadVectorAccessor("TEXCOORD_0", 2, g, textureUVAccessorIndex, textureUVsList, readers, matrix, 1, false);
                     }
 
                     if (primitives.attributes.get("TANGENT") == null) {
-                        for (int i = 0; i < verticesList.size() / 3 - 1; i++) {
-                            Vector3f normal = new Vector3f(normalsList.get(i * 3), normalsList.get(i * 3 + 1), normalsList.get(i * 3 + 2));
-                            Vector3f position1 = new Vector3f(verticesList.get(i * 3), verticesList.get(i * 3 + 1), verticesList.get(i * 3 + 2));
-                            Vector3f position2 = new Vector3f(verticesList.get((i + 1) * 3), verticesList.get((i + 1) * 3 + 1), verticesList.get((i + 1) * 3 + 2));
+                        int triangleCount = indicesList.size() / 3;
 
-                            Vector3f tangent = new Vector3f(normal).cross(position2.sub(position1)).normalize().mul(-1);
+                        Matrix4f inverseMatrix = new Matrix4f(matrix).invert();
 
-                            matrix.transformDirection(tangent);
+                        for (int triangleIndex = oldTriangleCount; triangleIndex < triangleCount; triangleIndex++) {
+                            int index1 = indicesList.get(triangleIndex * 3);
+                            int index2 = indicesList.get(triangleIndex * 3 + 1);
+                            int index3 = indicesList.get(triangleIndex * 3 + 2);
+
+
+                            Vector4f pos1 = new Vector4f(
+                                    verticesList.get(index1 * 3),
+                                    verticesList.get(index1 * 3 + 1),
+                                    verticesList.get(index1 * 3 + 2),
+                                    1);
+                            Vector4f pos2 = new Vector4f(
+                                    verticesList.get(index2 * 3),
+                                    verticesList.get(index2 * 3 + 1),
+                                    verticesList.get(index2 * 3 + 2),
+                                    1);
+                            Vector4f pos3 = new Vector4f(
+                                    verticesList.get(index3 * 3),
+                                    verticesList.get(index3 * 3 + 1),
+                                    verticesList.get(index3 * 3 + 2),
+                                    1);
+
+
+                            pos1.mul(inverseMatrix);
+                            pos2.mul(inverseMatrix);
+                            pos3.mul(inverseMatrix);
+
+
+                            Vector2f uv1 = new Vector2f(
+                                    textureUVsList.get(index1 * 2),
+                                    textureUVsList.get(index1 * 2 + 1)
+                            );
+                            Vector2f uv2 = new Vector2f(
+                                    textureUVsList.get(index2 * 2),
+                                    textureUVsList.get(index2 * 2 + 1)
+                            );
+                            Vector2f uv3 = new Vector2f(
+                                    textureUVsList.get(index3 * 2),
+                                    textureUVsList.get(index3 * 2 + 1)
+                            );
+
+
+
+                            Vector4f edge1 = pos2.sub(pos1);
+                            Vector4f edge2 = pos3.sub(pos1);
+
+                            Vector2f dUV1 = uv2.sub(uv1);
+                            Vector2f dUV2 = uv3.sub(uv1);
+
+                            float f = 1.0f / (dUV1.x * dUV2.y - dUV2.x * dUV1.y);
+                            if(Float.isNaN(f)) {
+                                System.out.println("Uh oh!");
+                            }
+
+                            Vector3f tangent = new Vector3f();
+
+                            tangent.x = (dUV2.y * edge1.x - dUV1.y * edge2.x);
+                            tangent.y = (dUV2.y * edge1.y - dUV1.y * edge2.y);
+                            tangent.z = (dUV2.y * edge1.z - dUV1.y * edge2.z);
+                            tangent.mul(f);
+
                             tangentsList.add(tangent.x);
                             tangentsList.add(tangent.y);
                             tangentsList.add(tangent.z);
+
+                            tangentsList.add(tangent.x);
+                            tangentsList.add(tangent.y);
+                            tangentsList.add(tangent.z);
+
+
+
+
+
+
                         }
                     } else {
                         int tangentAccessorIndex = primitives.attributes.get("TANGENT");
-                        loadVectorAccessor(3, g, tangentAccessorIndex, tangentsList, readers, matrix, 1, false);
+                        loadVectorAccessor("TANGENT", 3, g, tangentAccessorIndex, tangentsList, readers, matrix, 1, false);
                     }
+
 
                     if (primitives.attributes.get("COLOR") == null) {
                         for (int i = 0; i < verticesList.size() / 3; i++) {
