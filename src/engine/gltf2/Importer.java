@@ -12,8 +12,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
 
-public class MeshLoader {
-    private MeshLoader(){}
+public class Importer {
+    private Importer(){}
     private static int getSize(String s) {
         return switch (s) {
             case "SCALAR" -> 1;
@@ -35,7 +35,7 @@ public class MeshLoader {
 
         int size = getSize(accessor.type);
         if(size != allowedSize) {
-            Logger.error(MeshLoader.class, "Accessor type " + accessor.type + " is not allowed for this type of data");
+            Logger.error(Importer.class, "Accessor type " + accessor.type + " is not allowed for this type of data");
             size = allowedSize;
         }
 
@@ -196,7 +196,7 @@ public class MeshLoader {
 
     public static MeshData loadGLTF2(Asset<String> gltf, Asset<byte[]>... bin){
         Source gltf2 = new Source(gltf, bin);
-        GltfParser parser = new GltfParser();
+        Loader parser = new Loader();
         Gltf g = parser.parse(gltf2);
 
         Map<String, ByteBuffer> readers = new HashMap<>();

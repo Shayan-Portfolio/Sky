@@ -4,7 +4,7 @@ package engine.ecs;
 import engine.asset.Asset;
 import engine.asset.AssetRegistry;
 import engine.bridge.ProjectLoader;
-import engine.gltf2.MeshLoader;
+import engine.gltf2.Importer;
 import engine.graphics.*;
 import engine.logging.Logger;
 import engine.mio.SceneBytecode;
@@ -193,7 +193,6 @@ public class Scene extends Disposable {
 
                                     MeshData meshData = MeshGenerator.newBox(width, height, depth);
                                     meshComponent.setMeshData(meshData);
-                                    System.out.println("Foo");
                                     break;
                                 }
                                 case "cylinder": {
@@ -213,9 +212,8 @@ public class Scene extends Disposable {
                                         glbs[i - 2] = AssetRegistry.getAsset((String) params.operands()[i]);
                                     }
 
-                                    System.out.println(Arrays.toString(glbs));
 
-                                    meshComponent.setMeshData(MeshLoader.loadGLTF2(
+                                    meshComponent.setMeshData(Importer.loadGLTF2(
                                             gltf,
                                             glbs
                                     ));
