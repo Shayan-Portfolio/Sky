@@ -44,18 +44,18 @@ public class MeshLoader {
                 Vector3f vector = new Vector3f(data.getFloat(), data.getFloat(), data.getFloat());
                 transform.transformDirection(vector);
 
-                list.add(vector.x * 0.5f);
-                list.add(vector.y * 0.5f);
-                list.add(vector.z * 0.5f);
+                list.add(vector.x);
+                list.add(vector.y);
+                list.add(vector.z);
             }
             else if(size == 4) {
                 Vector4f vector = new Vector4f(data.getFloat(), data.getFloat(), data.getFloat(), data.getFloat());
                 transform.transform(vector);
 
-                list.add(vector.x * 0.5f);
-                list.add(vector.y * 0.5f);
-                list.add(vector.z * 0.5f);
-                list.add(vector.w * 0.5f);
+                list.add(vector.x);
+                list.add(vector.y);
+                list.add(vector.z);
+                list.add(vector.w);
             }
             else {
                 for (int j = 0; j < size; j++) {
