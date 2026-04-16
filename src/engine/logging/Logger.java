@@ -6,6 +6,7 @@ import java.util.Calendar;
 
 public class Logger {
 
+    private static File output;
     private static PrintWriter writer;
 
     private enum LogTarget {
@@ -27,7 +28,7 @@ public class Logger {
     public static void setFileTarget(File file){
         setConsoleTarget(System.out);
         info(Logger.class, "The log file can be found at " + file.getAbsolutePath());
-
+        output = file;
 
 
         target = LogTarget.File;
@@ -39,11 +40,14 @@ public class Logger {
     }
 
     public static void setConsoleTarget(OutputStream outputStream){
+        output = null;
         target = LogTarget.Console;
         writer = new PrintWriter(new OutputStreamWriter(outputStream));
     }
 
-
+    public static File getOutputFile() {
+        return output;
+    }
 
     private static String timeStr(){
 
