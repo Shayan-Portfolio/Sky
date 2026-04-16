@@ -10,7 +10,7 @@ public class Main {
                 "        \"fragmentShader\" string(\"core:assets/shaders/deferred/Default2_fragment.spv\")\n" +
                 "    )\n" +
                 "    \"MeshComponent\" data(\n" +
-                "        \"type string(\"cylinder\"),\n" +
+                "        \"type\" string(\"cylinder\"),\n" +
                 "        \"params\" array[0.7, -.0 , 20],\n" +
                 "        \"maxVertexCount\" float1(500),\n" +
                 "        \"maxIndexCount\" float1(500),\n" +
@@ -39,9 +39,8 @@ public class Main {
                 "    )\n" +
                 "end\n" +
                 "\n");
-
         System.out.println("[" + (System.currentTimeMillis() - start) + " ms]");
-       //for(Instruction frame : ir.getList()) {
+       //for(Instruction frame : sceneBytecode.getList()) {
        //    System.out.println(frame);
        //}
 

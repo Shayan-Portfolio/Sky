@@ -24,7 +24,7 @@ public class Analyzer {
 
         while (index < source.length()) {
             char character = source.charAt(index);
-            token.content.append(character);
+            //token.content.append(character);
 
             //Order indicates match priority!
             //Make sure to update the index before emitting and quitting the loop!
@@ -40,23 +40,28 @@ public class Analyzer {
                         string = true;
                         token.type = Token.TokenType.StringLiteral;
                         index++;
-                        token.content.deleteCharAt(token.content.length() - 1);
                         continue;
                     }
                     else {
                         string = false;
                         index++;
-                        token.content.deleteCharAt(token.content.length() - 1);
                         break;
                     }
 
                 }
                 if (!string) {
                     if (Character.isWhitespace(character)) {
-                        token.content.deleteCharAt(token.content.length() - 1);
                         index++;
                         continue;
                     }
+
+                    if (character == ',' || character == ')' || character == ']') {
+                        if (numeric) {
+                            break;
+                        }
+                    }
+                    token.content.append(character);
+
                     if (character == '(') {
                         token.type = Token.TokenType.LeftParen;
                         index++;
@@ -67,6 +72,7 @@ public class Analyzer {
                         index++;
                         break;
                     }
+                    //Numeric start
                     if ((Character.isDigit(character) || character == '-') && !Character.isDigit(source.charAt(index - 1)) && !Character.isLetter(source.charAt(index - 1))) {
                         if (!numeric) numeric = true;
                         token.type = Token.TokenType.Numeric;
@@ -76,14 +82,11 @@ public class Analyzer {
                             if (!token.foundDecimal) token.foundDecimal = true;
                             else unexpectedSymbol(character);
                         }
-
-
                     }
                     if (character == ',' || character == ')' || character == ']') {
-                        if (numeric) {
-                            token.content.deleteCharAt(token.content.length() - 1);
-                            break;
-                        }
+                        //if (numeric) {
+                        //    break;
+                        //}
                         switch (character) {
                             case ',' -> token.type = Token.TokenType.ArgDelimiter;
                             case ')' -> token.type = Token.TokenType.RightParen;
@@ -94,6 +97,7 @@ public class Analyzer {
                         break;
 
                     }
+
 
                     //Match keywords
                     {
@@ -112,6 +116,10 @@ public class Analyzer {
                         }
                     }
                 }
+                else {
+                    token.content.append(character);
+                }
+
 
             }
 
