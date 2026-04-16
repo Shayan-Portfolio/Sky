@@ -27,7 +27,7 @@ public class Analyzer {
             token.content.append(character);
 
             //Order indicates match priority!
-            //Make sure to update index before emitting and quitting the loop!
+            //Make sure to update the index before emitting and quitting the loop!
 
             if(character == '#') comment = true;
             if(character == '\n') {
@@ -39,23 +39,25 @@ public class Analyzer {
                     if (!string) {
                         string = true;
                         token.type = Token.TokenType.StringLiteral;
+                        index++;
+                        token.content.deleteCharAt(token.content.length() - 1);
+                        continue;
                     }
                     else {
                         string = false;
                         index++;
-                        token.content.deleteCharAt(0);
                         token.content.deleteCharAt(token.content.length() - 1);
                         break;
                     }
+
                 }
                 if (!string) {
                     if (Character.isWhitespace(character)) {
+                        token.content.deleteCharAt(token.content.length() - 1);
                         index++;
-                        token.type = Token.TokenType.Whitespace;
-                        break;
+                        continue;
                     }
                     if (character == '(') {
-                        if (numeric) numeric = false;
                         token.type = Token.TokenType.LeftParen;
                         index++;
                         break;
@@ -66,10 +68,8 @@ public class Analyzer {
                         break;
                     }
                     if ((Character.isDigit(character) || character == '-') && !Character.isDigit(source.charAt(index - 1)) && !Character.isLetter(source.charAt(index - 1))) {
-                        if (!numeric) {
-                            token.type = Token.TokenType.Numeric;
-                            numeric = true;
-                        }
+                        if (!numeric) numeric = true;
+                        token.type = Token.TokenType.Numeric;
                     }
                     if (character == '.') {
                         if (numeric) {
@@ -156,9 +156,7 @@ public class Analyzer {
             LateKeyword("late"),
             TrueKeyword("true"),
             FalseKeyword("false"),
-            BoolKeyword("bool"),
-
-            Whitespace(null);
+            BoolKeyword("bool");
 
             public String value;
 

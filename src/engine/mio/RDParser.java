@@ -12,9 +12,7 @@ public class RDParser {
     private Analyzer.Token nextProperToken(Analyzer analyzer) {
         Analyzer.Token token;
         while ((token = analyzer.next()) != null) {
-            if(token.type != Analyzer.Token.TokenType.Whitespace) {
-                return token;
-            }
+            return token;
         }
         return null;
     }

@@ -17,9 +17,7 @@ public class SceneCompiler {
         Analyzer.Token t = null;
 
         while((t = tokenizer.next()) != null) {
-            if(t.type != Analyzer.Token.TokenType.Whitespace) {
-                System.out.println(t.type + "| " + t.content.toString());
-            }
+            System.out.println(t.type + "| " + t.content.toString());
         }
 
     }
