@@ -1,5 +1,6 @@
 package engine;
 
+import com.formdev.flatlaf.FlatDarkLaf;
 import engine.graphics.Disposable;
 import engine.graphics.RenderAPI;
 import engine.graphics.RendererSettings;
@@ -17,7 +18,6 @@ import org.lwjgl.vulkan.awt.AWTVK;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.AffineTransform;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -32,7 +32,7 @@ import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
-public class SwingSurface extends Surface {
+public class EditorSurface extends Surface {
 
     private JFrame frame;
     private Canvas canvas;
@@ -40,18 +40,18 @@ public class SwingSurface extends Surface {
     private long startTime;
     private volatile int width, height;
     private volatile float mouseX, mouseY;
-    private volatile float scaleX, scaleY;
     private volatile boolean shouldResize;
 
-    public SwingSurface(Disposable parent, String title, int width, int height, boolean resizable) {
+    public EditorSurface(Disposable parent, String title, int width, int height, boolean resizable) {
         super(parent, title, width, height, resizable);
-        Logger.info(SwingSurface.class, "SwingSurface is experimental and may have performance issues");
+        Logger.info(EditorSurface.class, "EditorSurface is experimental and may have performance issues");
         startTime = System.currentTimeMillis();
         this.width = width;
         this.height = height;
 
         try {
             SwingUtilities.invokeAndWait((Runnable) () -> {
+                FlatDarkLaf.setup();
                 frame = new JFrame(title);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setLayout(new BorderLayout());
@@ -59,36 +59,35 @@ public class SwingSurface extends Surface {
 
                 canvas = new Canvas();
 
-                GraphicsConfiguration gc =
-                        GraphicsEnvironment.getLocalGraphicsEnvironment()
-                                .getDefaultScreenDevice()
-                                .getDefaultConfiguration();
-
-                AffineTransform transform = gc.getDefaultTransform();
-
-                scaleX = (float) transform.getScaleX();
-                scaleY = (float) transform.getScaleY();
-
-                canvas.setPreferredSize(new Dimension((int) (this.width / scaleX), (int) (this.height / scaleY)));
-                frame.setSize((int) (this.width / scaleX), (int) (this.height / scaleY));
-
                 canvas.addMouseMotionListener(new MouseMotionAdapter() {
                     @Override
                     public void mouseMoved(MouseEvent e) {
-                        Point mousePosScr = MouseInfo.getPointerInfo().getLocation();
-                        Point canvasPosScr = canvas.getLocationOnScreen();
+                        float scalex = (e.getX() / (float) canvas.getWidth());
+                        float scaley = (e.getY() / (float) canvas.getHeight());
 
-                        mouseX = mousePosScr.x - canvasPosScr.x;
-                        mouseY = mousePosScr.y - canvasPosScr.y;
+                        mouseX = width * scalex;
+                        mouseY = height * scaley;
 
                     }
                 });
 
 
 
+
+
+                JDesktopPane desktopPane = new JDesktopPane();
+
+                JInternalFrame internalFrame = new JInternalFrame("Scene", false, false, false, false);
+                internalFrame.setSize(1920 / 2, 1080 / 2);
+                internalFrame.setLocation(100, 100);
+                internalFrame.add(canvas);
+                internalFrame.setVisible(true);
+
+                desktopPane.add(internalFrame);
+
                 JPanel panel = new JPanel(new BorderLayout());
-                panel.add(canvas, BorderLayout.CENTER);
-                panel.add(new JButton("Foo"), BorderLayout.NORTH);
+                panel.add(desktopPane, BorderLayout.CENTER);
+
 
 
 
@@ -102,6 +101,7 @@ public class SwingSurface extends Surface {
 
                 frame.setContentPane(panel);
                 frame.pack();
+                frame.setSize(1920, 1080);
 
                 frame.addWindowListener(new WindowAdapter() {
                     @Override
@@ -113,14 +113,17 @@ public class SwingSurface extends Surface {
                 canvas.addComponentListener(new ComponentAdapter() {
                     @Override
                     public void componentResized(ComponentEvent e) {
-                        if(SwingSurface.this.width != canvas.getWidth() || SwingSurface.this.height != canvas.getHeight()) {
-                            SwingSurface.this.width = canvas.getWidth();
-                            SwingSurface.this.height = canvas.getHeight();
+                        if(EditorSurface.this.width != canvas.getWidth() || EditorSurface.this.height != canvas.getHeight()) {
+                            EditorSurface.this.width = canvas.getWidth();
+                            EditorSurface.this.height = canvas.getHeight();
 
                             shouldResize = true;
                         }
                     }
                 });
+
+
+
 
 
 
@@ -187,7 +190,6 @@ public class SwingSurface extends Surface {
 
     @Override
     public Vector2f getMousePos() {
-        System.out.println(mouseX + " " + mouseY);
         return new Vector2f(mouseX, mouseY);
     }
 

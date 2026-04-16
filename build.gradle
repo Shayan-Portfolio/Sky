@@ -45,6 +45,7 @@ project.ext.kryoVersion = "5.6.2"
 project.ext.gsonVersion = "2.13.2"
 project.ext.jbulletVersion = "1.0.3"
 project.ext.vecmathVersion = "1.5.2"
+project.ext.flatlafVersion = "3.7.1"
 
 switch (OperatingSystem.current()) {
     case OperatingSystem.LINUX:
@@ -88,6 +89,7 @@ dependencies {
         implementation "org.lwjgl:lwjgl-openal"
         implementation "com.github.stephengold:jbullet:$jbulletVersion"
         implementation "javax.vecmath:vecmath:$vecmathVersion"
+        implementation "com.formdev:flatlaf:$flatlafVersion"
 
 
     }

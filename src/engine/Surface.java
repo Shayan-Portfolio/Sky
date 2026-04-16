@@ -78,7 +78,7 @@ public abstract class Surface extends Disposable {
         return newSurface(parent, title, width, height, true);
     }
     public static Surface newSwingSurface(Disposable parent, String title, int width, int height) {
-        return new SwingSurface(parent, title, width, height, true);
+        return new EditorSurface(parent, title, width, height, true);
     }
     public static Surface newSurface(Disposable parent, String title, int width, int height, boolean resizable) {
         return new GLFWSurface(parent, title, width, height, resizable);
