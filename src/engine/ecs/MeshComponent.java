@@ -78,7 +78,7 @@ public class MeshComponent {
         ByteBuffer indexBufferData = indexBuffer.get();
         indexBufferData.clear();
 
-        new MeshDataWriter(0).upload(meshData, shaderProgram, vertexBufferData, indexBufferData, 0);
+        MeshDataWriter.upload(meshData, shaderProgram, vertexBufferData, indexBufferData, 0);
 
 
         this.vertexCount = meshData.getVertexCount();

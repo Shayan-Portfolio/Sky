@@ -7,14 +7,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 public class MeshDataWriter {
-    private int entityIndex;
 
-    public MeshDataWriter(int entityIndex) {
-        this.entityIndex = entityIndex;
-    }
-
-
-    public void upload(MeshData meshData, ShaderProgram shaderProgram, ByteBuffer vertexBufferData, ByteBuffer indexBufferData, int vertexOffset) {
+    public static void upload(MeshData meshData, ShaderProgram shaderProgram, ByteBuffer vertexBufferData, ByteBuffer indexBufferData, int vertexOffset) {
 
         List<Float> positions = meshData.getData().get("Positions");
         List<Float> textureUVs = meshData.getData().get("TextureUVs");
@@ -35,9 +29,6 @@ public class MeshDataWriter {
                         vertexBufferData.putFloat(x);
                         vertexBufferData.putFloat(y);
                         vertexBufferData.putFloat(z);
-                    }
-                    case "vertex.entity_index" -> {
-                        vertexBufferData.putFloat(entityIndex);
                     }
                     case "vertex.uv_ts" -> {
                         float u = textureUVs.get(2 * vertexIndex + 0);

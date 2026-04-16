@@ -2,7 +2,7 @@
 #include "../../common/SceneDesc.slang"
 
 struct Transforms {
-    float4x4 transforms[MAX_TRANSFORMS];
+    float4x4 transform[1];
 }
 
 StructuredBuffer<Scene> scene_desc;
@@ -14,14 +14,12 @@ struct VSOutput {
     float4 color;
     float3 normal_ws;
     float2 uv_ts;
-    float1 mesh_index;
     float3x3 tbn_ws_inv;
 }
 
 struct Vertex
 {
     float3 pos_ms;
-    float1 mesh_index;
     float4 color;
     float3 normal_ms;
     float2 uv_ts;
@@ -46,14 +44,13 @@ VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_in
         proj = scene_desc[0].lights[light_index].proj;
     }
 
-    float4x4 transform = transforms[0].transforms[int(vertex.mesh_index)];
+    float4x4 transform = transforms[0].transform[0];
 
     output.normal_ws = normalize(mul(float3x3(transform), vertex.normal_ms));
     output.pos_vs = mul(view, mul(transform, float4(vertex.pos_ms, 1.0)));
     output.pos = mul(proj, output.pos_vs);
     output.color = vertex.color;
     output.uv_ts = vertex.uv_ts;
-    output.mesh_index = vertex.mesh_index;
 
     float3 tangent_ws = normalize(mul(float3x3(transform), vertex.tangent_ms));
     float3 bitangent_ws = cross(output.normal_ws, tangent_ws);
