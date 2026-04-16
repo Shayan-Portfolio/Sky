@@ -1,7 +1,10 @@
 package engine.threads;
 
+import engine.logging.SkyRuntimeException;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -13,14 +16,16 @@ public class Dispatcher {
         this.executorService = executorService;
     }
 
-    public void submit(Runnable runnable) {
-        futures.add(executorService.submit(runnable));
+    public Future submit(Runnable runnable) {
+        Future future = executorService.submit(runnable);
+        futures.add(future);
+        return future;
     }
 
     public void tick() {
         futures.removeIf(Future::isDone);
     }
-    public boolean isWaiting() {
+    public boolean isBusy() {
         for(Future future : futures) {
             if(!future.isDone()) return true;
         }
