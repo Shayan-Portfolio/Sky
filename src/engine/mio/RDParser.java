@@ -1,5 +1,7 @@
 package engine.mio;
 
+import engine.logging.SkyRuntimeException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
@@ -26,7 +28,7 @@ public class RDParser {
         for(Analyzer.Token.TokenType type : types) {
             if(token.type.equals(type)) return token;
         }
-        throw new RuntimeException("Expected any of " + Arrays.asList(types) + " next instead of " + token.type + " (" + token.content.toString() + ") on line " + token.line);
+        throw new SkyRuntimeException("Expected any of " + Arrays.asList(types) + " next instead of " + token.type + " (" + token.content.toString() + ") on line " + token.line);
     }
 
     public SceneBytecode getEmittedBytecode() {
