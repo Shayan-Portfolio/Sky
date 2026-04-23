@@ -24,10 +24,6 @@ public class Analyzer {
 
         while (index < source.length()) {
             char character = source.charAt(index);
-            //token.content.append(character);
-
-            //Order indicates match priority!
-            //Make sure to update the index before emitting and quitting the loop!
 
             if(character == '#') comment = true;
             if(character == '\n') {
