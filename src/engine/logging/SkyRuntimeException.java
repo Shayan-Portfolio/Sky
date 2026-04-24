@@ -1,52 +1,91 @@
 package engine.logging;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
 import engine.util.ExceptionUtil;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
 
 public class SkyRuntimeException extends RuntimeException {
     public SkyRuntimeException(String msg, Exception e) {
-        super(msg);
-        Logger.meltdown(SkyRuntimeException.class, msg + "\n" + ExceptionUtil.exceptionToString(e));
-        showDialogBox();
+        super(msg, e);
+        String stackTrace = ExceptionUtil.exceptionToString(this);
+        Logger.meltdown(SkyRuntimeException.class, "\n" + stackTrace);
+        showDialogBox(stackTrace);
     }
     public SkyRuntimeException(Exception e) {
-        super("A fatal error occurred and the engine exited");
-        Logger.meltdown(SkyRuntimeException.class, "\n" + ExceptionUtil.exceptionToString(e));
-        showDialogBox();
+        super("A fatal error occurred and the engine exited", e);
+        String stackTrace = ExceptionUtil.exceptionToString(this);
+        Logger.meltdown(SkyRuntimeException.class, "\n" + stackTrace);
+        showDialogBox(stackTrace);
     }
     public SkyRuntimeException(String msg) {
         super(msg);
-        Logger.meltdown(SkyRuntimeException.class, "\n" + ExceptionUtil.exceptionToString(this));
-        showDialogBox();
+        String stackTrace = ExceptionUtil.exceptionToString(this);
+        Logger.meltdown(SkyRuntimeException.class, "\n" + stackTrace);
+        showDialogBox(stackTrace);
     }
 
-    private static void showDialogBox() {
+    private static void showDialogBox(String stackTrace) {
         try {
-            SwingUtilities.invokeAndWait((Runnable) () -> {
+            SwingUtilities.invokeAndWait(() -> {
+                FlatDarculaLaf.setup();
 
-                String message = "An irrecoverable error occurred and the application will now exit.\n ";
-                if(Logger.getOutputFile() == null) {
-                    message += "The log can be found in the console";
-                }
-                else
-                    message += "The log file is located at " + Logger.getOutputFile().getAbsolutePath();
+                JDialog dialog = new JDialog();
+                dialog.setTitle("SkyEngine Error");
+                dialog.setModal(true);
+                dialog.setLayout(new BorderLayout(10, 10));
+                JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
 
-                try {
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                         UnsupportedLookAndFeelException e) {
-                    throw new RuntimeException(e);
+                JTextArea stackTraceArea = new JTextArea(stackTrace);
+                stackTraceArea.setEditable(false);
+
+                JScrollPane scrollPane = new JScrollPane(stackTraceArea);
+                contentPanel.add(scrollPane, BorderLayout.CENTER);
+
+                if (Logger.getOutputFile() != null) {
+                    JLabel logPathLabel = new JLabel("Full log available at: " + Logger.getOutputFile().getAbsolutePath());
+                    logPathLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+                    contentPanel.add(logPathLabel, BorderLayout.SOUTH);
                 }
-                JOptionPane jOptionPane = new JOptionPane(message, JOptionPane.ERROR_MESSAGE);
-                jOptionPane.createDialog(null, "SkyEngine").setVisible(true);
-                System.exit(-1);
+
+                dialog.add(contentPanel, BorderLayout.CENTER);
+
+                JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+
+                JButton copyButton = new JButton("Copy to Clipboard");
+                copyButton.addActionListener(e -> {
+                    StringSelection selection = new StringSelection(stackTrace);
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+                    copyButton.setText("Copied!");
+                });
+
+                JButton closeButton = new JButton("Close");
+                closeButton.addActionListener(e -> System.exit(-1));
+                dialog.getRootPane().setDefaultButton(closeButton);
+
+                buttonPanel.add(copyButton);
+                buttonPanel.add(closeButton);
+                dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+                dialog.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        System.exit(-1);
+                    }
+                });
+
+                dialog.pack();
+                dialog.setVisible(true);
             });
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException | InvocationTargetException e) {
+            e.printStackTrace();
+            System.exit(-1);
         }
     }
 }
