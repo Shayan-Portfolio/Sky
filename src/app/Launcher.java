@@ -27,7 +27,7 @@ public class Launcher {
         System.setProperty("org.lwjgl.system.stackSize", "128");
 
         Application application = ProjectLoader.instantiateApplication(args);
-        Surface surface = Surface.newSurface(application, "SkySOFT Engine", 1920, 1080);
+        Surface surface = Surface.newSurface(application, "SkyEngine", 1920, 1080);
         Session.setSurface(surface);
 
 
