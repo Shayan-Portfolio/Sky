@@ -19,6 +19,10 @@ public class ProjectLoader {
     }
 
     public static Application instantiateApplication(String[] args) {
+        if(args.length == 0) throw new SkyRuntimeException("No project JAR specified");
+        if(args.length == 1) throw new SkyRuntimeException("No application class specified");
+
+
         Path path = Path.of(args[0]);
         try {
             URL url = path.toUri().toURL();
