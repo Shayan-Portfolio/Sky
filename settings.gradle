@@ -1,1 +1,3 @@
 rootProject.name = 'Sky'
+
+include 'test'

@@ -20,6 +20,13 @@ sourceSets {
         java {
             srcDirs = ['src']
         }
+        
+        
+    }
+    test {
+        java {
+            srcDirs = ['test']
+        }
     }
 }
 
