@@ -12,13 +12,13 @@ import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
 
 public class SkyRuntimeException extends RuntimeException {
-    public SkyRuntimeException(String msg, Exception e) {
+    public SkyRuntimeException(String msg, Throwable e) {
         super(msg, e);
         String stackTrace = ExceptionUtil.exceptionToString(this);
         Logger.meltdown(SkyRuntimeException.class, "\n" + stackTrace);
         showDialogBox(stackTrace);
     }
-    public SkyRuntimeException(Exception e) {
+    public SkyRuntimeException(Throwable e) {
         super("A fatal error occurred and the engine exited", e);
         String stackTrace = ExceptionUtil.exceptionToString(this);
         Logger.meltdown(SkyRuntimeException.class, "\n" + stackTrace);

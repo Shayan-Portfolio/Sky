@@ -5,6 +5,7 @@ import engine.Application;
 import engine.Surface;
 import engine.bridge.ProjectLoader;
 import engine.graphics.Session;
+import engine.logging.SkyRuntimeException;
 import org.lwjgl.system.Configuration;
 
 import java.io.File;
@@ -25,6 +26,9 @@ public class Launcher {
 
     public void launch(String[] args) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException, MalformedURLException {
         System.setProperty("org.lwjgl.system.stackSize", "128");
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            throw new SkyRuntimeException(e);
+        });
 
         Application application = ProjectLoader.instantiateApplication(args);
         Surface surface = Surface.newSurface(application, "SkyEngine", 1920, 1080);
