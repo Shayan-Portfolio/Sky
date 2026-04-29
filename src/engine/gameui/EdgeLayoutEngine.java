@@ -59,6 +59,7 @@ public class EdgeLayoutEngine extends LayoutEngine {
         int topOffset = 0, bottomOffset = 0;
 
         for(Widget child : widget.getWidgets()) {
+            int childWidth = child.getRequiredWidth();
             int childHeight = child.getRequiredHeight();
 
             if(child.hasHint(Top)) {
@@ -69,25 +70,28 @@ public class EdgeLayoutEngine extends LayoutEngine {
                 child.update(platform, dx, dy + (widgetHeight - childHeight), widgetWidth, childHeight);
                 bottomOffset = childHeight;
             }
-        }
-
-        for(Widget child : widget.getWidgets()) {
-            int childWidth = child.getRequiredWidth();
-            if(child.hasHint(Right)) {
-                child.update(platform, dx + (widgetWidth - childWidth), dy + topOffset, childWidth, widgetHeight - topOffset - bottomOffset);
+            else if(child.hasHint(Right)) {
+                 child.update(platform, dx + (widgetWidth - childWidth), dy + topOffset, childWidth, widgetHeight - topOffset - bottomOffset);
             }
             else if(child.hasHint(Left)) {
                 child.update(platform, dx, dy + topOffset, child.getRequiredWidth(), widgetHeight - topOffset - bottomOffset);
             }
             else if(child.hasHint(Center)) {
-                int childHeight = child.getRequiredHeight();
 
                 float hw = childWidth / 2f;
                 float hh = childHeight / 2f;
 
                 child.update(platform, (int) (dx + (widgetWidth / 2f - hw)), (int) (dy + (widgetHeight / 2f - hh)), childWidth, childHeight);
             }
+            else {
+                child.update(platform, dx, dy, childWidth, childHeight);
+            }
+
+
+
+
         }
+
 
     }
 }
