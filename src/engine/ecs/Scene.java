@@ -82,7 +82,7 @@ public class Scene extends Disposable {
                 float rotation = (float) Math.toRadians((float) rotateDeg.operands()[1]);
 
 
-                return (new TransformComponent(new Matrix4f().identity().translate(translation).rotate(rotation, rotationAxis)));
+                return (new TransformComponent(new Matrix4f().identity().rotate(rotation, rotationAxis).translate(translation)));
 
             });
             registerDeserializer("ShaderComponent", (iterator, renderer) -> {
