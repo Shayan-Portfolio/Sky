@@ -14,7 +14,6 @@ public class RenderSystem extends ActorSystem {
         this.renderer = renderer;
         this.renderPipeline = renderPipeline;
         this.scene = scene;
-        renderPipeline.init(renderer);
     }
 
     @Override
