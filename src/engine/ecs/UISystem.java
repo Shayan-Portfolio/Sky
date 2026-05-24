@@ -22,7 +22,6 @@ public class UISystem extends ActorSystem {
     private ByteBuffer vertexBufferData, indexBufferData;
     private Matrix4f transform = new Matrix4f();
     private Vector4f origin = new Vector4f();
-    private MsdfFont msdfFont;
     private Surface surface;
     private GfxPlatform gfxPlatform;
     private Theme theme;
@@ -38,12 +37,6 @@ public class UISystem extends ActorSystem {
         this.scene = scene;
         this.theme = theme;
 
-
-        msdfFont = new MsdfFont(
-                renderer,
-                AssetRegistry.getAsset("core:assets/fonts/Roboto/roboto-atlas.png"),
-                AssetRegistry.getAsset("core:assets/fonts/Roboto/roboto-atlas.json")
-        );
 
         textureBindings = new TextureBindings();
 
@@ -242,7 +235,7 @@ public class UISystem extends ActorSystem {
                 }
 
                 @Override
-                public void drawString(float x, float y, String text, MsdfFont font, TextEffect textEffect, Color color) {
+                public void drawString(float x, float y, String text, MsdfFont msdfFont, TextEffect textEffect, Color color) {
                     if(textEffect != null)
                         textEffect.update();
 
