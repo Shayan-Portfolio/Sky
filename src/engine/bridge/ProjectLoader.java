@@ -1,6 +1,10 @@
 package engine.bridge;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import engine.Application;
+import engine.FileSystem;
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
 
@@ -18,17 +22,33 @@ public class ProjectLoader {
         return classLoader;
     }
 
+    private static JsonArray parseClasspathJSON(Path classpathData) {
+        Gson gson = new Gson();
+        JsonObject jsonObject = gson.fromJson(FileSystem.readString(classpathData), JsonObject.class);
+        return jsonObject.getAsJsonArray("classpath");
+    }
+
     public static Application instantiateApplication(String[] args) {
-        if(args.length == 0) throw new SkyRuntimeException("No project JAR specified");
-        if(args.length == 1) throw new SkyRuntimeException("No application class specified");
-
-
-        Path path = Path.of(args[0]);
+        boolean isRelease = args[0].endsWith("jar");
+        Path gamepath = Path.of(args[0]);
         try {
-            URL url = path.toUri().toURL();
-            Logger.info(ProjectLoader.class, "Loading project " + url);
+            if(isRelease) {
+                Logger.info(ProjectLoader.class, "Opening JAR " + gamepath);
+                URL url = gamepath.toUri().toURL();
+                classLoader = new URLClassLoader(new URL[]{url});
+            }
+            else {
+                Logger.info(ProjectLoader.class, "Opening project " + gamepath);
+                Path classpathData = Path.of(args[2]);
+                JsonArray classpathJSON = parseClasspathJSON(classpathData);
 
-            classLoader = new URLClassLoader(new URL[]{url});
+                URL[] urls = new URL[1 + classpathJSON.size()];
+                urls[0] = gamepath.toUri().toURL();
+                for(int i = 0; i < classpathJSON.size(); i++) {
+                    urls[i + 1] = Path.of(classpathJSON.get(i).getAsString()).toUri().toURL();
+                }
+                classLoader = new URLClassLoader(urls);
+            }
 
             Class clazz = classLoader.loadClass(args[1]);
             Constructor constructor = clazz.getConstructor();
