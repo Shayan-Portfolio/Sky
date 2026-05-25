@@ -119,8 +119,8 @@ void computeMain(uniform int light_count, uniform int width, uniform int height,
                 float distance = length(light_pos_ws - fragment_ws.xyz);
                 float sigmoid = 0;
                 {
-                    float n = 1.0;
-                    float k = 0.1;
+                    float n = 0.2;
+                    float k = 0.7;
 
                     sigmoid = (-n / (1 + exp(-distance * 0.1))) + 1;
                 }
