@@ -148,6 +148,7 @@ public class Scene extends Disposable {
                 MeshComponent meshComponent = new MeshComponent(
                         actor,
                         renderer,
+                        1,
                         (int) ((float) maxVertexCount.operands()[1]),
                         (int) ((float) maxIndexCount.operands()[1]),
                         actor.getComponent(ShaderComponent.class).shaderProgram()

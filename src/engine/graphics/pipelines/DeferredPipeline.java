@@ -579,7 +579,8 @@ public class DeferredPipeline extends RenderPipeline {
                                                 pPushConstants.putInt(shadowMapGenPassLightIndex);
                                                 shadowMapGenPass.setPushConstants(pPushConstants);
                                             }
-                                            shadowMapGenPass.drawIndexed(meshComponent.indexCount);
+                                            if(meshComponent.instanced) shadowMapGenPass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
+                                            else shadowMapGenPass.drawIndexed(meshComponent.indexCount);
                                         }
                                     }
                                 });
@@ -630,7 +631,8 @@ public class DeferredPipeline extends RenderPipeline {
                                         pPushConstants.putInt(-1);
                                         scenePass.setPushConstants(pPushConstants);
                                     }
-                                    scenePass.drawIndexed(meshComponent.indexCount);
+                                    if(meshComponent.instanced) scenePass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
+                                    else scenePass.drawIndexed(meshComponent.indexCount);
                                 }
                             }
 

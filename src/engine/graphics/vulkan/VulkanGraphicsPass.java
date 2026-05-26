@@ -94,6 +94,18 @@ public class VulkanGraphicsPass extends GraphicsPass {
     }
 
     @Override
+    public void drawInstanced(int indexCount, int instanceCount) {
+        vkCmdDrawIndexed(
+                commandBuffers[frameIndex],
+                indexCount,
+                instanceCount,
+                0,
+                0,
+                0
+        );
+    }
+
+    @Override
     public void drawIndexed(int indexCount) {
         vkCmdDrawIndexed(
                 commandBuffers[frameIndex],
