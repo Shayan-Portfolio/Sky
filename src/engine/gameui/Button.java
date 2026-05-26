@@ -26,10 +26,6 @@ public class Button extends Widget {
 
     @Override
     public void update(GfxPlatform platform, int x, int y, int w, int h) {
-
-        int radius = 5;
-
-
         if(Rect2D.contains(platform.getMouseX(), platform.getMouseY(), x + padding, y + padding, w - padding * 2, h - padding * 2)){
             platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonHoverColor);
 
