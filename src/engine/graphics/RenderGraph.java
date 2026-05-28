@@ -48,7 +48,7 @@ public class RenderGraph extends Disposable {
             if(otherPass != thisPass) {
                 for (Dependency otherDependency : otherPass.getDependencies()) {
                     if((otherDependency.getType() & DependencyTypes.RenderTargetWrite) != 0 ||
-                            (otherDependency.getType() & DependencyTypes.RenderTargetDepthWrite) != 0 ||
+                            (otherDependency.getType() & DependencyTypes.RenderTargetWriteDepth) != 0 ||
                         (otherDependency.getType() & DependencyTypes.FragmentShaderWrite) != 0 ||
                         (otherDependency.getType() & DependencyTypes.ComputeShaderWrite) != 0) {
                         if(otherDependency.getResource() == dependency.getResource()) {

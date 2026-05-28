@@ -1,4 +1,3 @@
-#include "KnarkowiczOctahedral.slang"
 #include "../../common/SceneDesc.slang"
 
 struct Transforms {
@@ -77,7 +76,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
         float3 normal_ts = material[1].Sample(material_sampler, vsOutput.uv_ts).xyz * 2.0 - 1.0;
         float3 normal_ws = normalize(mul(vsOutput.tbn_ws_inv, normalize(normal_ts)));
 
-        float2 encoded_normal_ws = encode(normal_ws);
+        float2 encoded_normal_ws = float2(0, 0); //encode(normal_ws);
 
         float3 albedo = material[0].Sample(material_sampler, vsOutput.uv_ts).rgb;
 

@@ -596,7 +596,7 @@ public class VulkanRenderer extends Renderer {
                                             1
                                     );
                                 }
-                                if ((rd.getType() & DependencyTypes.FragmentShaderDepthRead) != 0) {
+                                if ((rd.getType() & DependencyTypes.FragmentShaderReadDepth) != 0) {
                                     VulkanUtil.transitionImages(
                                             image,
                                             commandBuffer,
@@ -675,7 +675,7 @@ public class VulkanRenderer extends Renderer {
                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                             1
                                     );
-                                } else if ((rd.getType() & DependencyTypes.RenderTargetDepthWrite) != 0) {
+                                } else if ((rd.getType() & DependencyTypes.RenderTargetWriteDepth) != 0) {
                                     VulkanUtil.transitionImages(
                                             image,
                                             commandBuffer,

@@ -323,25 +323,11 @@ public class UISystem extends ActorSystem {
                 0,
                 0,
                 -1,
-                new Color(3, 3, 3, 1)
+                new Color(1, 1, 1, 1)
         );
 
-        if(SystemState.running) {
-            drawQuad(
-                    0,
-                    0,
-                    renderer.getWidth(),
-                    renderer.getHeight(),
-                    0, 0,
-                    0, 1,
-                    1, 0,
-                    1, 1,
-                    0,
-                    1,
-                    1,
-                    Color.WHITE
-            );
-        }
+
+
 
         root.previsitAllActors(actor -> {
             if (actor.has(UIComponent.class)) {

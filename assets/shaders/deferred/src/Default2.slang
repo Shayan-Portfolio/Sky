@@ -1,5 +1,10 @@
-#include "KnarkowiczOctahedral.slang"
+#include "../../common/CookTorranceEval.slang"
 #include "../../common/SceneDesc.slang"
+#include "../../common/NormalDepthBiasEval.slang"
+#include "../../common/ShadowEval.slang"
+#include "../../common/ReinhardTonemappingEval.slang"
+
+
 
 struct Transforms {
     float4x4 transform[1];
@@ -7,6 +12,10 @@ struct Transforms {
 
 StructuredBuffer<Scene> scene_desc;
 StructuredBuffer<Transforms> transforms;
+
+
+Texture2D input_shadow_maps[MAX_LIGHTS];
+SamplerState input_shadow_maps_samplers[MAX_LIGHTS];
 
 struct VSOutput {
     float4 pos : SV_POSITION;
@@ -69,24 +78,109 @@ Texture2D material[4];
 SamplerState material_sampler;
 
 [shader("fragment")]
-FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int light_index) {
+FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int light_index, uniform int light_count) {
     FSOutput output;
+    float3 output_color = float3(0, 0, 0);
 
     if (render_mode == 0) {
 
         float3 normal_ts = material[1].Sample(material_sampler, vsOutput.uv_ts).xyz * 2.0 - 1.0;
         float3 normal_ws = normalize(mul(vsOutput.tbn_ws_inv, normalize(normal_ts)));
 
-        float2 encoded_normal_ws = encode(normal_ws);
-
         float3 albedo = material[0].Sample(material_sampler, vsOutput.uv_ts).rgb;
 
-        output.color0 = float4(vsOutput.color.xyz * albedo, encoded_normal_ws.x);
+        float3 color = vsOutput.color.xyz * albedo;
 
         float metallic = material[2].Sample(material_sampler, vsOutput.uv_ts).r;
         float roughness = material[3].Sample(material_sampler, vsOutput.uv_ts).r;
+        
 
-        output.color1 = float4(0.0, metallic, roughness, encoded_normal_ws.y);
+        //BRDF
+        {
+           
+             Camera camera = scene_desc[0].camera;
+             float3 camera_pos_ws = float3(camera.invView[0][3], camera.invView[1][3], camera.invView[2][3]);
+
+
+             float4 fragment_ws = mul(camera.invView, float4(vsOutput.pos_vs.xyz, 1.0));
+
+             float shadow = 0;
+
+             for (int light_index = 0; light_index < light_count; light_index++) {
+
+                 Light light = scene_desc[0].lights[light_index];
+
+                 float3 light_pos_ws = float3(light.invView[0][3], light.invView[1][3], light.invView[2][3]);
+                 float3 light_dir_ws = normalize(light_pos_ws - fragment_ws.xyz);
+                 float3 camera_dir_ws = normalize(camera_pos_ws - fragment_ws.xyz);
+
+                 NormalDepthBiasEval normalDepthBiasEval;
+                 float4 normal_biased_fragment_ws = normalDepthBiasEval.get_normal_biased_fragment_ws(light, fragment_ws, light_dir_ws, normal_ws);
+
+                 float4 fragment_shadow_map_ps = mul(light.proj, mul(light.view, normal_biased_fragment_ws));
+                 fragment_shadow_map_ps /= fragment_shadow_map_ps.w;
+                 float4 shadow_map_uv_ts = fragment_shadow_map_ps * 0.5 + 0.5;
+
+                 bool in_frustum = shadow_map_uv_ts.x >= 0 && shadow_map_uv_ts.x <= 1 && shadow_map_uv_ts.y >= 0 && shadow_map_uv_ts.y <= 1;
+                 if (in_frustum) {
+
+                     // Shadows
+                     {
+                         float shadow_per_pixel = pcf(
+                             input_shadow_maps[light_index],
+                             input_shadow_maps_samplers[light_index],
+                             1,
+                             shadow_map_uv_ts.xy,
+                             fragment_shadow_map_ps,
+                             light
+                         );
+
+                         shadow += shadow_per_pixel;
+                     }
+
+                 }
+
+                 // Lighting BRDF
+                 {
+
+
+                     CookTorranceEval lighting_eval;
+                     float3 brdf = lighting_eval.get_color(
+                         light,
+                         light_pos_ws,
+                         light_dir_ws,
+                         camera_pos_ws,
+                         fragment_ws,
+                         normal_ws,
+                         metallic,
+                         roughness,
+                         albedo
+                     );
+
+                     float distance = length(light_pos_ws - fragment_ws.xyz);
+                     float sigmoid = 0;
+                     {
+                         float n = 0.2;
+                         float k = 0.7;
+
+                         sigmoid = (-n / (1 + exp(-distance * 0.1))) + 1;
+                     }
+
+                     brdf *= sigmoid;
+
+                     //float3 env = input_skybox_texture.SampleLevel(input_skybox_texture_sampler, -reflect(camera_dir_ws, normal_ws), 3).rgb * cubemap_sample_intensity;
+
+                     output_color.rgb += brdf;// + env;
+
+                 }
+             }
+
+             output_color.rgb *= (1 - max(0.0, shadow));
+             output.color0 = float4(reinhard_hdr(output_color), 1.0);
+
+
+        }
+
     }
 
 
