@@ -44,7 +44,7 @@ VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_in
 
 
     
-    if(render_mode == 0) {
+    if(render_mode == 0 || render_mode == 2) {
         view = scene_desc[0].camera.view;
         proj = scene_desc[0].camera.proj;
     }
@@ -82,7 +82,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
     FSOutput output;
     float3 output_color = float3(0, 0, 0);
 
-    if (render_mode == 0) {
+    if (render_mode == 0) {        
 
         float3 normal_ts = material[1].Sample(material_sampler, vsOutput.uv_ts).xyz * 2.0 - 1.0;
         float3 normal_ws = normalize(mul(vsOutput.tbn_ws_inv, normalize(normal_ts)));
@@ -95,6 +95,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
         float roughness = material[3].Sample(material_sampler, vsOutput.uv_ts).r;
         
 
+        
         //BRDF
         {
            
@@ -177,8 +178,6 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
 
              output_color.rgb *= (1 - max(0.0, shadow));
              output.color0 = float4(reinhard_hdr(output_color), 1.0);
-
-
         }
 
     }

@@ -68,6 +68,8 @@ public class RenderGraph extends Disposable {
 
             if((dependency.getType() & DependencyTypes.RenderTargetRead) != 0 ||
                     (dependency.getType() & DependencyTypes.FragmentShaderRead) != 0 ||
+                    (dependency.getType() & DependencyTypes.FragmentShaderReadDepth) != 0 ||
+
                     (dependency.getType() & DependencyTypes.ComputeShaderRead) != 0 ||
                     (dependency.getType() & DependencyTypes.ComputeShaderReadDepth) != 0) {
 

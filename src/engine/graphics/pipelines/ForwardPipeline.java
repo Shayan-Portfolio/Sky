@@ -22,12 +22,14 @@ public class ForwardPipeline extends RenderPipeline {
     private GraphicsPass shadowMapGenPass;
     private int shadowMapGenPassLightIndex = 0;
 
+    private GraphicsPass depthPass;
+    private RenderTarget depthPassRT;
+    private Resource<Pair<Texture[], Sampler[]>> r_sceneDepthTextures;
 
     private GraphicsPass scenePass;
     private RenderTarget scenePassRT;
     private Resource<Pair<Texture[], Sampler[]>> r_sceneColorTextures;
     private Resource<Pair<Texture[], Sampler[]>> r_sceneHDRTextures;
-    private Resource<Pair<Texture[], Sampler[]>> r_sceneDepthStencilTextures;
 
     private GraphicsPass displayPass;
     private RenderTarget displayPassRT;
@@ -54,7 +56,31 @@ public class ForwardPipeline extends RenderPipeline {
 
         TextureFormatType textureFormatType = TextureFormatType.ColorR16G16B16A16;
 
+        //Depth-only Pass Resources
+        {
+            depthPassRT = new RenderTarget(renderer);
+            r_sceneDepthTextures = new Resource<>(
+                    new Pair<>(
+                            new Texture[]{
+                                    Texture.newDepthTexture(depthPassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.Depth32),
+                                    Texture.newDepthTexture(depthPassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.Depth32)
+                            },
+                            new Sampler[]{
+                                    Sampler.newSampler(depthPassRT, Linear, Linear, false),
+                                    Sampler.newSampler(depthPassRT, Linear, Linear, false)
+                            }
+                    )
+            );
 
+            depthPassRT.addAttachment(
+                    new RenderTargetAttachment(
+                            RenderTargetAttachmentTypes.Depth,
+                            r_sceneDepthTextures.get().key,
+                            r_sceneDepthTextures.get().value
+
+                    )
+            );
+        }
 
         //Scene Pass Resources
         {
@@ -85,21 +111,6 @@ public class ForwardPipeline extends RenderPipeline {
                     )
             );
 
-
-
-            r_sceneDepthStencilTextures = new Resource<>(
-                    new Pair<>(
-                            new Texture[]{
-                                    Texture.newDepthTexture(scenePassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.Depth32),
-                                    Texture.newDepthTexture(scenePassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.Depth32)
-                            },
-                            new Sampler[]{
-                                    Sampler.newSampler(scenePassRT, Linear, Linear, false),
-                                    Sampler.newSampler(scenePassRT, Linear, Linear, false)
-                            }
-                    )
-            );
-
             scenePassRT.addAttachment(
                     new RenderTargetAttachment(
                             RenderTargetAttachmentTypes.Color0,
@@ -120,9 +131,8 @@ public class ForwardPipeline extends RenderPipeline {
             scenePassRT.addAttachment(
                     new RenderTargetAttachment(
                             RenderTargetAttachmentTypes.Depth,
-                            r_sceneDepthStencilTextures.get().key,
-                            r_sceneDepthStencilTextures.get().value
-
+                            r_sceneDepthTextures.get().key,
+                            r_sceneDepthTextures.get().value
                     )
             );
         }
@@ -211,6 +221,20 @@ public class ForwardPipeline extends RenderPipeline {
                     )
             );
         }
+
+
+        depthPass = Pass.newGraphicsPass(renderGraph, "Depth Pre-pass", renderer.getMaxFramesInFlight());
+        {
+            depthPass.addDependencies(
+                    new Dependency(
+                            "NDepthTextures",
+                            r_sceneDepthTextures,
+                            DependencyTypes.RenderTargetWriteDepth
+                    )
+            );
+
+        }
+
         scenePass = Pass.newGraphicsPass(renderGraph, "Scene", renderer.getMaxFramesInFlight());
         {
             scenePass.addDependencies(
@@ -220,15 +244,11 @@ public class ForwardPipeline extends RenderPipeline {
                             DependencyTypes.FragmentShaderReadDepth
                     ),
                     new Dependency("NSceneHDRTextures", r_sceneHDRTextures, DependencyTypes.RenderTargetWrite),
+                    new Dependency("IDepthTextures", r_sceneDepthTextures, DependencyTypes.FragmentShaderReadDepth),
                     new Dependency(
                             "NColorTextures",
                             r_sceneColorTextures,
                             DependencyTypes.RenderTargetWrite
-                    ),
-                    new Dependency(
-                            "NDepthStencilTextures",
-                            r_sceneDepthStencilTextures,
-                            DependencyTypes.RenderTargetWriteDepth
                     )
             );
 
@@ -255,6 +275,7 @@ public class ForwardPipeline extends RenderPipeline {
         }
 
         renderGraph.addPasses(
+                depthPass,
                 shadowMapGenPass,
                 scenePass,
                 displayPass
@@ -420,173 +441,229 @@ public class ForwardPipeline extends RenderPipeline {
             }
         }
 
-        shadowMapGenPassLightIndex = 0;
-        shadowMapGenPass.setPassExecuteCallback(() -> {
-            shadowMapGenPass.startRecording(renderer.getFrameIndex());
-            {
-                shadowMapGenPass.resolveBarriers();
-
-                //Shadow Map Gen (mode 1)
+        //Shadow Map Gen
+        {
+            shadowMapGenPassLightIndex = 0;
+            shadowMapGenPass.setPassExecuteCallback(() -> {
+                shadowMapGenPass.startRecording(renderer.getFrameIndex());
                 {
-                    int mode = 1;
+                    shadowMapGenPass.resolveBarriers();
 
-                    scene.getRootActor().previsitAllActors(actor -> {
-                        if(actor.has(LightComponent.class)) {
-                            LightComponent lightComponent = actor.getComponent(LightComponent.class);
-
-
-
-                            int width, height;
-                            {
-                                Texture texture = lightComponent.renderTarget.getAttachmentByIndex(0).getTextures()[0];
-                                width = texture.getWidth();
-                                height = texture.getHeight();
-                            }
-
-
-                            shadowMapGenPass.startRendering(lightComponent.renderTarget, 3, width, height, true, Color.BLACK);
-                            {
-                                shadowMapGenPass.setCullMode(CullMode.Front);
-
-
-                                scene.getRootActor().previsitAllActors(e -> {
-
-                                    if (e.has(MeshComponent.class)) {
-                                        MeshComponent meshComponent = e.getComponent(MeshComponent.class);
-                                        if(meshComponent.isVisible()) {
-                                            shadowMapGenPass.setDrawBuffers(
-                                                    meshComponent.vertexBuffer,
-                                                    meshComponent.indexBuffer
-                                            );
-
-                                            shadowMapGenPass.setShaderProgram(
-                                                    meshComponent.shaderProgram
-                                            );
-                                            try (MemoryStack stack = stackPush()) {
-                                                ByteBuffer pPushConstants = stack.calloc(3 * Integer.BYTES);
-                                                pPushConstants.putInt(mode);
-                                                pPushConstants.putInt(shadowMapGenPassLightIndex);
-                                                pPushConstants.putInt(lightCount);
-                                                shadowMapGenPass.setPushConstants(pPushConstants);
-                                            }
-                                            if(meshComponent.instanced) shadowMapGenPass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
-                                            else shadowMapGenPass.drawIndexed(meshComponent.indexCount);
-                                        }
-                                    }
-                                });
-
-                            }
-                            shadowMapGenPass.endRendering();
-                            shadowMapGenPassLightIndex++;
-                        }
-
-
-                    });
-
-
-
-                }
-
-            }
-            shadowMapGenPass.endRecording();
-
-        });
-        scenePass.setPassExecuteCallback(() -> {
-            scene.getRootActor().previsitAllActors(actor -> {
-                if (actor.has(MeshComponent.class)) {
-                    MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
-                    if (meshComponent.isVisible()) {
-                        Resource<Pair<Texture[], Sampler[]>> r_shadowMapTextures = scenePass.getDependency("IShadowMaps").getResource();
-                        for (int i = 0; i < lightCount; i++) {
-                            meshComponent.shaderProgram.setTextures(
-                                    renderer.getFrameIndex(),
-                                    new DescriptorUpdate<>(
-                                            "input_shadow_maps",
-                                            r_shadowMapTextures.get().key[renderer.getMaxFramesInFlight() * i + renderer.getFrameIndex()]
-                                    ).arrayIndex(i)
-                            );
-                            meshComponent.shaderProgram.setSamplers(
-                                    renderer.getFrameIndex(),
-                                    new DescriptorUpdate<>(
-                                            "input_shadow_maps_samplers",
-                                            r_shadowMapTextures.get().value[renderer.getMaxFramesInFlight() * i + renderer.getFrameIndex()]
-                                    ).arrayIndex(i)
-                            );
-                        }
-                    }
-                }
-            });
-
-            scenePass.startRecording(renderer.getFrameIndex());
-            {
-
-                scenePass.resolveBarriers();
-
-                //Default Rendering (mode 0)
-                {
-                    int mode = 0;
-                    scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
+                    //Shadow Map Gen (mode 1)
                     {
-                        scenePass.setCullMode(CullMode.Back);
-                        scene.getRootActor().previsitAllActors(actor -> {
-                            if(actor.has(MeshComponent.class)) {
-                                MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
-                                if(meshComponent.isVisible()) {
+                        int mode = 1;
 
-                                    scenePass.setDrawBuffers(
-                                            meshComponent.vertexBuffer,
-                                            meshComponent.indexBuffer
-                                    );
-                                    scenePass.setShaderProgram(
-                                            meshComponent.shaderProgram
-                                    );
-                                    try (MemoryStack stack = stackPush()) {
-                                        ByteBuffer pPushConstants = stack.calloc(3 * Integer.BYTES);
-                                        pPushConstants.putInt(mode);
-                                        pPushConstants.putInt(-1);
-                                        pPushConstants.putInt(lightCount);
-                                        scenePass.setPushConstants(pPushConstants);
-                                    }
-                                    if(meshComponent.instanced) scenePass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
-                                    else scenePass.drawIndexed(meshComponent.indexCount);
+                        scene.getRootActor().previsitAllActors(actor -> {
+                            if (actor.has(LightComponent.class)) {
+                                LightComponent lightComponent = actor.getComponent(LightComponent.class);
+
+
+                                int width, height;
+                                {
+                                    Texture texture = lightComponent.renderTarget.getAttachmentByIndex(0).getTextures()[0];
+                                    width = texture.getWidth();
+                                    height = texture.getHeight();
                                 }
+
+
+                                shadowMapGenPass.startRendering(lightComponent.renderTarget, 3, width, height, true, Color.BLACK);
+                                {
+                                    shadowMapGenPass.setCullMode(CullMode.Front);
+
+
+                                    scene.getRootActor().previsitAllActors(e -> {
+
+                                        if (e.has(MeshComponent.class)) {
+                                            MeshComponent meshComponent = e.getComponent(MeshComponent.class);
+                                            if (meshComponent.isVisible()) {
+                                                shadowMapGenPass.setDrawBuffers(
+                                                        meshComponent.vertexBuffer,
+                                                        meshComponent.indexBuffer
+                                                );
+
+                                                shadowMapGenPass.setShaderProgram(
+                                                        meshComponent.shaderProgram
+                                                );
+                                                try (MemoryStack stack = stackPush()) {
+                                                    ByteBuffer pPushConstants = stack.calloc(3 * Integer.BYTES);
+                                                    pPushConstants.putInt(mode);
+                                                    pPushConstants.putInt(shadowMapGenPassLightIndex);
+                                                    pPushConstants.putInt(lightCount);
+                                                    shadowMapGenPass.setPushConstants(pPushConstants);
+                                                }
+                                                if (meshComponent.instanced)
+                                                    shadowMapGenPass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
+                                                else shadowMapGenPass.drawIndexed(meshComponent.indexCount);
+                                            }
+                                        }
+                                    });
+
+                                }
+                                shadowMapGenPass.endRendering();
+                                shadowMapGenPassLightIndex++;
                             }
+
 
                         });
 
 
-
                     }
-                    scenePass.endRendering();
+
                 }
+                shadowMapGenPass.endRecording();
+
+            });
+        }
+        //Depth Prepass
+        {
+            depthPass.setPassExecuteCallback(() -> {
+                depthPass.startRecording(renderer.getFrameIndex());
+                {
+
+                    depthPass.resolveBarriers();
+
+                    //Depth-only Rendering (mode 0)
+                    {
+                        int mode = 2;
+                        depthPass.startRendering(depthPassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
+                        {
+                            depthPass.setCullMode(CullMode.Back);
+                            scene.getRootActor().previsitAllActors(actor -> {
+                                if(actor.has(MeshComponent.class)) {
+                                    MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
+                                    if(meshComponent.isVisible()) {
+                                        depthPass.setDrawBuffers(
+                                                meshComponent.vertexBuffer,
+                                                meshComponent.indexBuffer
+                                        );
+                                        depthPass.setShaderProgram(
+                                                meshComponent.shaderProgram
+                                        );
+                                        try (MemoryStack stack = stackPush()) {
+                                            ByteBuffer pPushConstants = stack.calloc(3 * Integer.BYTES);
+                                            pPushConstants.putInt(mode);
+                                            pPushConstants.putInt(-1);
+                                            pPushConstants.putInt(lightCount);
+                                            depthPass.setPushConstants(pPushConstants);
+                                        }
+                                        if(meshComponent.instanced) depthPass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
+                                        else depthPass.drawIndexed(meshComponent.indexCount);
+                                    }
+                                }
+                            });
+                        }
+                        depthPass.endRendering();
+                    }
 
 
-            }
-            scenePass.endRecording();
+                }
+                depthPass.endRecording();
 
-        });
+            });
+        }
 
-        displayPass.setPassExecuteCallback(() -> {
+        //Scene Render
+        {
+            scenePass.setPassExecuteCallback(() -> {
+                scene.getRootActor().previsitAllActors(actor -> {
+                    if (actor.has(MeshComponent.class)) {
+                        MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
+                        if (meshComponent.isVisible()) {
+                            Resource<Pair<Texture[], Sampler[]>> r_shadowMapTextures = scenePass.getDependency("IShadowMaps" ).getResource();
+                            for (int i = 0; i < lightCount; i++) {
+                                meshComponent.shaderProgram.setTextures(
+                                        renderer.getFrameIndex(),
+                                        new DescriptorUpdate<>(
+                                                "input_shadow_maps",
+                                                r_shadowMapTextures.get().key[renderer.getMaxFramesInFlight() * i + renderer.getFrameIndex()]
+                                        ).arrayIndex(i)
+                                );
+                                meshComponent.shaderProgram.setSamplers(
+                                        renderer.getFrameIndex(),
+                                        new DescriptorUpdate<>(
+                                                "input_shadow_maps_samplers",
+                                                r_shadowMapTextures.get().value[renderer.getMaxFramesInFlight() * i + renderer.getFrameIndex()]
+                                        ).arrayIndex(i)
+                                );
+                            }
+                        }
+                    }
+                });
 
-            //Provide display with the latest scene textures
-            {
-                Resource<Pair<Texture[], Sampler[]>> r_sceneColorTextures = displayPass.getDependency("ISceneColorTextures").getResource();
+                scenePass.startRecording(renderer.getFrameIndex());
+                {
 
-                displayPassShaderProgram.setTextures(
-                        renderer.getFrameIndex(),
-                        new DescriptorUpdate<>(
-                                "input_textures",
-                                r_sceneColorTextures.get().key[renderer.getFrameIndex()]
-                        ).arrayIndex(0)
-                );
+                    scenePass.resolveBarriers();
 
-                displayPassShaderProgram.setSamplers(
-                        renderer.getFrameIndex(),
-                        new DescriptorUpdate<>(
-                                "input_samplers",
-                                r_sceneColorTextures.get().value[renderer.getFrameIndex()]
-                        ).arrayIndex(0)
-                );
+                    //Default Rendering (mode 0)
+                    {
+                        int mode = 0;
+
+                        scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
+                        {
+                            scenePass.setCullMode(CullMode.Back);
+                            scene.getRootActor().previsitAllActors(actor -> {
+                                if (actor.has(MeshComponent.class)) {
+                                    MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
+                                    if (meshComponent.isVisible()) {
+
+                                        scenePass.setDrawBuffers(
+                                                meshComponent.vertexBuffer,
+                                                meshComponent.indexBuffer
+                                        );
+                                        scenePass.setShaderProgram(
+                                                meshComponent.shaderProgram
+                                        );
+                                        try (MemoryStack stack = stackPush()) {
+                                            ByteBuffer pPushConstants = stack.calloc(3 * Integer.BYTES);
+                                            pPushConstants.putInt(mode);
+                                            pPushConstants.putInt(-1);
+                                            pPushConstants.putInt(lightCount);
+                                            scenePass.setPushConstants(pPushConstants);
+                                        }
+                                        if (meshComponent.instanced)
+                                            scenePass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
+                                        else scenePass.drawIndexed(meshComponent.indexCount);
+                                    }
+                                }
+
+                            });
+
+
+                        }
+                        scenePass.endRendering();
+                    }
+
+
+                }
+                scenePass.endRecording();
+
+            });
+        }
+
+        //2D
+        {
+            displayPass.setPassExecuteCallback(() -> {
+
+                //Provide display with the latest scene textures
+                {
+                    Resource<Pair<Texture[], Sampler[]>> r_sceneColorTextures = displayPass.getDependency("ISceneColorTextures" ).getResource();
+
+                    displayPassShaderProgram.setTextures(
+                            renderer.getFrameIndex(),
+                            new DescriptorUpdate<>(
+                                    "input_textures",
+                                    r_sceneColorTextures.get().key[renderer.getFrameIndex()]
+                            ).arrayIndex(0)
+                    );
+
+                    displayPassShaderProgram.setSamplers(
+                            renderer.getFrameIndex(),
+                            new DescriptorUpdate<>(
+                                    "input_samplers",
+                                    r_sceneColorTextures.get().value[renderer.getFrameIndex()]
+                            ).arrayIndex(0)
+                    );
 
                 /*
 
@@ -607,32 +684,31 @@ public class ForwardPipeline extends RenderPipeline {
                                 r_sceneHDRTextures.get().value[renderer.getFrameIndex()]
                         ).arrayIndex(1)
                 );*/
-            }
-
-            displayPass.startRecording(renderer.getFrameIndex());
-            {
-
-                displayPass.resolveBarriers();
-
-                displayPass.startRendering(renderer.getSwapchainRenderTarget(), 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
-                {
-                    ScreenSpaceFeatures screenSpaceFeatures = getFeatures(ScreenSpaceFeatures.class);
-                    screenSpaceFeatures.setShaderProgram(displayPassShaderProgram);
-
-
-                    displayPass.setCullMode(CullMode.Back);
-                    displayPass.setDrawBuffers(displayPassVertexBuffers[renderer.getFrameIndex()], displayPassIndexBuffers[renderer.getFrameIndex()]);
-                    displayPass.setShaderProgram(displayPassShaderProgram);
-                    displayPass.drawIndexed(screenSpaceFeatures.getIndexCount());
                 }
-                displayPass.endRendering();
+
+                displayPass.startRecording(renderer.getFrameIndex());
+                {
+
+                    displayPass.resolveBarriers();
+
+                    displayPass.startRendering(renderer.getSwapchainRenderTarget(), 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
+                    {
+                        ScreenSpaceFeatures screenSpaceFeatures = getFeatures(ScreenSpaceFeatures.class);
+                        screenSpaceFeatures.setShaderProgram(displayPassShaderProgram);
 
 
+                        displayPass.setCullMode(CullMode.Back);
+                        displayPass.setDrawBuffers(displayPassVertexBuffers[renderer.getFrameIndex()], displayPassIndexBuffers[renderer.getFrameIndex()]);
+                        displayPass.setShaderProgram(displayPassShaderProgram);
+                        displayPass.drawIndexed(screenSpaceFeatures.getIndexCount());
+                    }
+                    displayPass.endRendering();
 
-            }
-            displayPass.endRecording();
-        });
 
+                }
+                displayPass.endRecording();
+            });
+        }
 
 
         renderGraph.setTargetPass(displayPass);
