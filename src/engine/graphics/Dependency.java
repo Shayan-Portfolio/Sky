@@ -21,7 +21,7 @@ public class Dependency {
         return dependency;
     }
 
-    public void setDependency(Resource dependency) {
+    public void setResource(Resource dependency) {
         this.dependency = dependency;
     }
 

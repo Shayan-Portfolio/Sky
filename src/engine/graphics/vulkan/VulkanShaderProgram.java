@@ -20,6 +20,7 @@ import static org.lwjgl.util.spvc.Spv.SpvDecorationBinding;
 import static org.lwjgl.util.spvc.Spv.SpvDecorationDescriptorSet;
 import static org.lwjgl.util.spvc.Spvc.*;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK12.*;
 import static org.lwjgl.vulkan.VK13.VK_DYNAMIC_STATE_CULL_MODE;
 
 public class VulkanShaderProgram extends ShaderProgram {
@@ -571,6 +572,7 @@ public class VulkanShaderProgram extends ShaderProgram {
                 descriptorPoolCreateInfo.pPoolSizes(descriptorPoolSizes);
                 descriptorPoolCreateInfo.maxSets(descriptorSetsSpec.size());
 
+
                 for (int i = 0; i < VulkanRenderer.FRAMES_IN_FLIGHT; i++) {
                     LongBuffer pDescriptorPool = stack.callocLong(1);
                     if (vkCreateDescriptorPool(VulkanRuntime.getCurrentDevice(), descriptorPoolCreateInfo, null, pDescriptorPool) != VK_SUCCESS) {
@@ -603,10 +605,11 @@ public class VulkanShaderProgram extends ShaderProgram {
 
                         LongBuffer pDescriptorSetLayout = stack.callocLong(1);
 
+
+
                         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack);
                         descriptorSetLayoutCreateInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
                         descriptorSetLayoutCreateInfo.pBindings(descriptorSetLayoutBindings);
-
 
                         if (vkCreateDescriptorSetLayout(VulkanRuntime.getCurrentDevice(), descriptorSetLayoutCreateInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
                             throw new SkyRuntimeException("Failed to create descriptor set layout");
@@ -625,6 +628,7 @@ public class VulkanShaderProgram extends ShaderProgram {
                         if (vkAllocateDescriptorSets(VulkanRuntime.getCurrentDevice(), descriptorSetAllocateInfo, pDescriptorSet) != VK_SUCCESS) {
                             throw new SkyRuntimeException("Failed to allocate descriptor set");
                         }
+                        VulkanUtil.nameObject("DescriptorSet " + descriptorSet.getSetNum(), VK_OBJECT_TYPE_DESCRIPTOR_SET, pDescriptorSet.get(0), stack);
                         descriptorSetHandles.get(frameIndex).add(pDescriptorSet.get(0));
                     }
 
@@ -704,6 +708,7 @@ public class VulkanShaderProgram extends ShaderProgram {
                 descriptorSetsWrite.descriptorType(VulkanUtil.getVulkanDescriptorType(descriptor.getType()));
                 descriptorSetsWrite.pBufferInfo(bufferInfo);
                 descriptorSetsWrite.descriptorCount(bufferUpdate.getUpdateCount());
+                VulkanUtil.nameObject(bufferUpdate.getName(), VK_OBJECT_TYPE_BUFFER, buffer.getHandle(), stack);
             }
 
             vkUpdateDescriptorSets(VulkanRuntime.getCurrentDevice(), descriptorSetsWrites, null);
@@ -746,6 +751,9 @@ public class VulkanShaderProgram extends ShaderProgram {
                 descriptorSetsWrite.descriptorType(VulkanUtil.getVulkanDescriptorType(descriptor.getType()));
                 descriptorSetsWrite.pImageInfo(descriptorImageInfo);
                 descriptorSetsWrite.descriptorCount(combinedTextureSamplerUpdate.getUpdateCount());
+
+                VulkanUtil.nameObject(combinedTextureSamplerUpdate.getName(), VK_OBJECT_TYPE_IMAGE, texture.getImage().getHandle(), stack);
+
             }
 
             vkUpdateDescriptorSets(VulkanRuntime.getCurrentDevice(), descriptorSetsWrites, null);
@@ -785,6 +793,9 @@ public class VulkanShaderProgram extends ShaderProgram {
                 descriptorSetsWrite.descriptorType(VulkanUtil.getVulkanDescriptorType(descriptor.getType()));
                 descriptorSetsWrite.pImageInfo(descriptorImageInfo);
                 descriptorSetsWrite.descriptorCount(textureUpdate.getUpdateCount());
+
+                VulkanUtil.nameObject(textureUpdate.getName(), VK_OBJECT_TYPE_IMAGE, texture.getImage().getHandle(), stack);
+
             }
 
             vkUpdateDescriptorSets(VulkanRuntime.getCurrentDevice(), descriptorSetsWrites, null);
@@ -817,6 +828,9 @@ public class VulkanShaderProgram extends ShaderProgram {
                 descriptorSetsWrite.descriptorType(VulkanUtil.getVulkanDescriptorType(descriptor.getType()));
                 descriptorSetsWrite.pImageInfo(descriptorImageInfo);
                 descriptorSetsWrite.descriptorCount(samplerUpdate.getUpdateCount());
+
+                VulkanUtil.nameObject(samplerUpdate.getName(), VK_OBJECT_TYPE_SAMPLER, sampler.getHandle(), stack);
+
             }
 
             vkUpdateDescriptorSets(VulkanRuntime.getCurrentDevice(), descriptorSetsWrites, null);

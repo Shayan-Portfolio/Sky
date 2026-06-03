@@ -1,5 +1,7 @@
 package engine.graphics;
 
+import engine.logging.SkyRuntimeException;
+
 import java.util.*;
 
 public class RenderGraph extends Disposable {
@@ -74,6 +76,7 @@ public class RenderGraph extends Disposable {
                     (dependency.getType() & DependencyTypes.ComputeShaderReadDepth) != 0) {
 
                 Pass writer = getWriter(thisPass, dependency);
+                if(writer == null) throw new SkyRuntimeException("No writer for " + dependency.getName());
 
                 if(!passes.contains(writer)) {
                     tracePasses(passes, writer);

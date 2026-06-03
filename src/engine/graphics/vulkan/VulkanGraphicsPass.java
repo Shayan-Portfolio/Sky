@@ -11,6 +11,8 @@ import java.nio.LongBuffer;
 import java.util.Optional;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.vulkan.EXTDebugUtils.VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+import static org.lwjgl.vulkan.EXTDebugUtils.vkSetDebugUtilsObjectNameEXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK13.vkCmdSetCullMode;
@@ -53,6 +55,7 @@ public class VulkanGraphicsPass extends GraphicsPass {
                 }
 
                 commandBuffers[i] = new VkCommandBuffer(pCommandBuffers.get(i), device);
+                VulkanUtil.nameObject(name, VK_OBJECT_TYPE_COMMAND_BUFFER, pCommandBuffers.get(i), stack);
             }
         }
 

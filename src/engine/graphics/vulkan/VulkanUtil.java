@@ -6,6 +6,8 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.vulkan.EXTDebugUtils.VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+import static org.lwjgl.vulkan.EXTDebugUtils.vkSetDebugUtilsObjectNameEXT;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class VulkanUtil {
@@ -108,6 +110,17 @@ public class VulkanUtil {
 
 
             image.setCurrentLayout(newLayout);
+        }
+    }
+
+    public static void nameObject(String name, int type, long handle, MemoryStack stack) {
+        if(VulkanRuntime.hasValidation()){
+            VkDebugUtilsObjectNameInfoEXT debugUtilsObjectNameInfoEXT = VkDebugUtilsObjectNameInfoEXT.calloc(stack);
+            debugUtilsObjectNameInfoEXT.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT);
+            debugUtilsObjectNameInfoEXT.objectType(type);
+            debugUtilsObjectNameInfoEXT.pObjectName(stack.UTF8(name));
+            debugUtilsObjectNameInfoEXT.objectHandle(handle);
+            vkSetDebugUtilsObjectNameEXT(VulkanRuntime.getCurrentDevice(), debugUtilsObjectNameInfoEXT);
         }
     }
 

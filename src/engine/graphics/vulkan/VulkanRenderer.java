@@ -37,10 +37,11 @@ public class VulkanRenderer extends Renderer {
     private VkPhysicalDeviceProperties physicalDeviceProperties;
     private VulkanQueueFamilies queueFamilies;
     private static final Set<String> DEVICE_EXTENSIONS = Stream.of(
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-            KHRDynamicRendering.VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-            KHRComputeShaderDerivatives.VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME,
-            EXTDynamicRenderingUnusedAttachments.VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME)
+                    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                    KHRDynamicRendering.VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+                    KHRComputeShaderDerivatives.VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME,
+                    EXTDynamicRenderingUnusedAttachments.VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME,
+                    EXTDescriptorIndexing.VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
             .collect(toSet());
 
     private VkDevice device;
@@ -65,6 +66,7 @@ public class VulkanRenderer extends Renderer {
         physicalDeviceProperties = getPhysicalDeviceProperties(physicalDevice);
         Session.setDiscrete(physicalDeviceProperties.deviceType() == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
 
+        VulkanRuntime.setValidation(rendererSettings.validation);
 
         VulkanRuntime.setPhysicalDeviceProperties(physicalDeviceProperties);
         Logger.info(VulkanRenderer.class, "Selected Physical Device " + physicalDeviceProperties.deviceNameString());
@@ -319,23 +321,6 @@ public class VulkanRenderer extends Renderer {
             deviceFeatures.samplerAnisotropy(true);
 
 
-            //Bindless Setup
-            VkPhysicalDeviceDescriptorIndexingFeatures physicalDeviceDescriptorIndexingFeatures = VkPhysicalDeviceDescriptorIndexingFeatures.calloc(stack);
-            {
-                physicalDeviceDescriptorIndexingFeatures.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES);
-
-                physicalDeviceDescriptorIndexingFeatures.runtimeDescriptorArray(true);
-                physicalDeviceDescriptorIndexingFeatures.descriptorBindingPartiallyBound(true);
-                physicalDeviceDescriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing(true);
-                physicalDeviceDescriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing(true);
-                physicalDeviceDescriptorIndexingFeatures.shaderStorageImageArrayNonUniformIndexing(true);
-                physicalDeviceDescriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind(true);
-
-                physicalDeviceDescriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind(true);
-                physicalDeviceDescriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind(true);
-                physicalDeviceDescriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind(true);
-            }
-
             //Dynamic Rendering
             VkPhysicalDeviceDynamicRenderingFeaturesKHR physicalDeviceDynamicRenderingFeaturesKHR = VkPhysicalDeviceDynamicRenderingFeaturesKHR.calloc(stack);
             {
@@ -362,7 +347,6 @@ public class VulkanRenderer extends Renderer {
             createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
             createInfo.pQueueCreateInfos(queueCreateInfos);
             createInfo
-                    .pNext(physicalDeviceDescriptorIndexingFeatures)
                     .pNext(physicalDeviceDynamicRenderingFeaturesKHR)
                     .pNext(physicalDeviceComputeShaderDerivativesFeaturesKHR)
                     .pNext(physicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT);
@@ -561,134 +545,131 @@ public class VulkanRenderer extends Renderer {
                                 textures = ((Pair<Texture[], Sampler[]>) resource.get()).key;
                             }
 
+                            if(textures != null) {
+                                int texturePairs = textures.length / maxFramesInFlight;
+                                for (int i = 0; i < texturePairs; i++) {
+                                    Texture texture = textures[i * maxFramesInFlight + frameIndex];
+                                    VulkanImage image = ((VulkanTexture) texture).getImage();
 
-                            int texturePairs = textures.length / maxFramesInFlight;
-                            for (int i = 0; i < texturePairs; i++) {
-                                Texture texture = textures[i * maxFramesInFlight + frameIndex];
-                                VulkanImage image = ((VulkanTexture) texture).getImage();
+
+                                    int srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+                                    //All writes have to wait on reads
+                                    int writeSrcAccessMask = VK_ACCESS_NONE;
+                                    //All reads have to wait on writes
+                                    int readSrcAccessMask = VK_ACCESS_NONE;
+
+                                    if (resource.getOutboundFrom() != null) {
+                                        srcStageMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                        writeSrcAccessMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT : VK_ACCESS_SHADER_READ_BIT;
+                                        readSrcAccessMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_SHADER_WRITE_BIT;
+                                    }
 
 
-                                int srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                                    if ((rd.getType() & DependencyTypes.FragmentShaderRead) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                readSrcAccessMask,
+                                                VK_ACCESS_SHADER_READ_BIT,
+                                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                1
+                                        );
+                                    }
+                                    if ((rd.getType() & DependencyTypes.FragmentShaderReadDepth) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                readSrcAccessMask,
+                                                VK_ACCESS_SHADER_READ_BIT,
+                                                VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                1
+                                        );
+                                    } else if ((rd.getType() & DependencyTypes.FragmentShaderWrite) != 0) {
+                                        Logger.todo(VulkanRenderer.class, "FragmentShaderWrite transitions are not supported");
+                                    } else if ((rd.getType() & DependencyTypes.ComputeShaderRead) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                readSrcAccessMask,
+                                                VK_ACCESS_SHADER_READ_BIT,
+                                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                1
+                                        );
+                                    } else if ((rd.getType() & DependencyTypes.ComputeShaderReadDepth) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                readSrcAccessMask,
+                                                VK_ACCESS_SHADER_READ_BIT,
+                                                VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                1
+                                        );
+                                    } else if ((rd.getType() & DependencyTypes.ComputeShaderWrite) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                writeSrcAccessMask,
+                                                VK_ACCESS_SHADER_WRITE_BIT,
+                                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                1
+                                        );
+                                    } else if ((rd.getType() & DependencyTypes.Present) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                                writeSrcAccessMask,
+                                                VK_ACCESS_NONE,
+                                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                                1
+                                        );
+                                    } else if ((rd.getType() & DependencyTypes.RenderTargetRead) != 0) {
+                                        Logger.todo(VulkanRenderer.class, "RenderTargetRead transitions are not supported");
+                                    } else if ((rd.getType() & DependencyTypes.RenderTargetWrite) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                writeSrcAccessMask,
+                                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                1
+                                        );
+                                    } else if ((rd.getType() & DependencyTypes.RenderTargetWriteDepth) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                writeSrcAccessMask,
+                                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                                VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                1
+                                        );
+                                    }
 
-                                //All writes have to wait on reads
-                                int writeSrcAccessMask = VK_ACCESS_NONE;
-                                //All reads have to wait on writes
-                                int readSrcAccessMask = VK_ACCESS_NONE;
-
-                                if (resource.getOutboundFrom() != null) {
-                                    srcStageMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-                                    writeSrcAccessMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT : VK_ACCESS_SHADER_READ_BIT;
-                                    readSrcAccessMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_SHADER_WRITE_BIT;
                                 }
-
-
-
-                                if ((rd.getType() & DependencyTypes.FragmentShaderRead) != 0) {
-                                    VulkanUtil.transitionImages(
-                                            image,
-                                            commandBuffer,
-                                            VK_IMAGE_LAYOUT_GENERAL,
-                                            readSrcAccessMask,
-                                            VK_ACCESS_SHADER_READ_BIT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            srcStageMask,
-                                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                            1
-                                    );
-                                }
-                                if ((rd.getType() & DependencyTypes.FragmentShaderReadDepth) != 0) {
-                                    VulkanUtil.transitionImages(
-                                            image,
-                                            commandBuffer,
-                                            VK_IMAGE_LAYOUT_GENERAL,
-                                            readSrcAccessMask,
-                                            VK_ACCESS_SHADER_READ_BIT,
-                                            VK_IMAGE_ASPECT_DEPTH_BIT,
-                                            srcStageMask,
-                                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                            1
-                                    );
-                                }
-                                else if ((rd.getType() & DependencyTypes.FragmentShaderWrite) != 0) {
-                                    Logger.todo(VulkanRenderer.class, "FragmentShaderWrite transitions are not supported");
-                                }
-                                else if ((rd.getType() & DependencyTypes.ComputeShaderRead) != 0) {
-                                    VulkanUtil.transitionImages(
-                                            image,
-                                            commandBuffer,
-                                            VK_IMAGE_LAYOUT_GENERAL,
-                                            readSrcAccessMask,
-                                            VK_ACCESS_SHADER_READ_BIT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            srcStageMask,
-                                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                            1
-                                    );
-                                }
-                                else if ((rd.getType() & DependencyTypes.ComputeShaderReadDepth) != 0) {
-                                    VulkanUtil.transitionImages(
-                                            image,
-                                            commandBuffer,
-                                            VK_IMAGE_LAYOUT_GENERAL,
-                                            readSrcAccessMask,
-                                            VK_ACCESS_SHADER_READ_BIT,
-                                            VK_IMAGE_ASPECT_DEPTH_BIT,
-                                            srcStageMask,
-                                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                            1
-                                    );
-                                }else if ((rd.getType() & DependencyTypes.ComputeShaderWrite) != 0) {
-                                    VulkanUtil.transitionImages(
-                                            image,
-                                            commandBuffer,
-                                            VK_IMAGE_LAYOUT_GENERAL,
-                                            writeSrcAccessMask,
-                                            VK_ACCESS_SHADER_WRITE_BIT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            srcStageMask,
-                                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                            1
-                                    );
-                                } else if ((rd.getType() & DependencyTypes.Present) != 0) {
-                                    VulkanUtil.transitionImages(
-                                            image,
-                                            commandBuffer,
-                                            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                                            writeSrcAccessMask,
-                                            VK_ACCESS_NONE,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            srcStageMask,
-                                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                            1
-                                    );
-                                } else if ((rd.getType() & DependencyTypes.RenderTargetRead) != 0) {
-                                    Logger.todo(VulkanRenderer.class, "RenderTargetRead transitions are not supported");
-                                } else if ((rd.getType() & DependencyTypes.RenderTargetWrite) != 0) {
-                                    VulkanUtil.transitionImages(
-                                            image,
-                                            commandBuffer,
-                                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                            writeSrcAccessMask,
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                            srcStageMask,
-                                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                            1
-                                    );
-                                } else if ((rd.getType() & DependencyTypes.RenderTargetWriteDepth) != 0) {
-                                    VulkanUtil.transitionImages(
-                                            image,
-                                            commandBuffer,
-                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                            writeSrcAccessMask,
-                                            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                            VK_IMAGE_ASPECT_DEPTH_BIT,
-                                            srcStageMask,
-                                            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                                            1
-                                    );
-                                }
-
                             }
 
 

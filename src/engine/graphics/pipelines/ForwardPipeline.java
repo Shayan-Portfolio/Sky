@@ -22,6 +22,11 @@ public class ForwardPipeline extends RenderPipeline {
     private GraphicsPass shadowMapGenPass;
     private int shadowMapGenPassLightIndex = 0;
 
+    //private ComputePass lightCullingPass;
+    //private Resource<Buffer[]> r_lightCullingOutputBuffer;
+    //private ShaderProgram lightCullingPassShaderProgram;
+    //private Buffer[] lightCullingPassSceneDescBuffers;
+
     private GraphicsPass depthPass;
     private RenderTarget depthPassRT;
     private Resource<Pair<Texture[], Sampler[]>> r_sceneDepthTextures;
@@ -56,6 +61,38 @@ public class ForwardPipeline extends RenderPipeline {
 
         TextureFormatType textureFormatType = TextureFormatType.ColorR16G16B16A16;
 
+        /*
+        //Light culling Pass Resources
+        {
+            lightCullingPassShaderProgram = ShaderProgram.newShaderProgram(renderer);
+            lightCullingPassShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/deferred/LightCull_compute.spv"), ShaderType.ComputeShader);
+            lightCullingPassShaderProgram.assemble();
+
+            lightCullingPassSceneDescBuffers = new Buffer[renderer.getMaxFramesInFlight()];
+
+            Buffer[] lc = new Buffer[renderer.getMaxFramesInFlight()];
+            for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
+                lightCullingPassSceneDescBuffers[i] = Buffer.newBuffer(
+                        renderer,
+                        lightCullingPassShaderProgram.getDescriptorByName("scene_desc").getSizeBytes(),
+                        Buffer.Usage.ShaderStorageBuffer,
+                        Buffer.Type.CPUGPUShared,
+                        false
+                );
+
+                lc[i] = Buffer.newBuffer(
+                        renderer,
+                        lightCullingPassShaderProgram.getDescriptorByName("output").getSizeBytes(),
+                        Buffer.Usage.ShaderStorageBuffer,
+                        Buffer.Type.CPUGPUShared,
+                        false
+                );
+            }
+
+            r_lightCullingOutputBuffer = new Resource<>(lc);
+
+
+        }*/
         //Depth-only Pass Resources
         {
             depthPassRT = new RenderTarget(renderer);
@@ -211,7 +248,21 @@ public class ForwardPipeline extends RenderPipeline {
 
         renderGraph = new RenderGraph(renderer);
 
-        shadowMapGenPass = Pass.newGraphicsPass(renderGraph, "ShadowMapGen", renderer.getMaxFramesInFlight());
+        /*
+        lightCullingPass = Pass.newComputePass(renderGraph, "Light Culling", renderer.getMaxFramesInFlight());
+        {
+            lightCullingPass.addDependencies(
+                    new Dependency(
+                            "NTileLightMap",
+                            r_lightCullingOutputBuffer,
+                            DependencyTypes.ComputeShaderWrite
+                    )
+            );
+        }
+
+         */
+
+        shadowMapGenPass = Pass.newGraphicsPass(renderGraph, "Shadow Map Generation", renderer.getMaxFramesInFlight());
         {
             shadowMapGenPass.addDependencies(
                     new Dependency(
@@ -243,6 +294,11 @@ public class ForwardPipeline extends RenderPipeline {
                             null,
                             DependencyTypes.FragmentShaderReadDepth
                     ),
+                    /*new Dependency(
+                            "ITileLightMap",
+                            r_lightCullingOutputBuffer,
+                            DependencyTypes.FragmentShaderRead
+                    ),*/
                     new Dependency("NSceneHDRTextures", r_sceneHDRTextures, DependencyTypes.RenderTargetWrite),
                     new Dependency("IDepthTextures", r_sceneDepthTextures, DependencyTypes.FragmentShaderReadDepth),
                     new Dependency(
@@ -275,6 +331,7 @@ public class ForwardPipeline extends RenderPipeline {
         }
 
         renderGraph.addPasses(
+                //lightCullingPass,
                 depthPass,
                 shadowMapGenPass,
                 scenePass,
@@ -282,7 +339,7 @@ public class ForwardPipeline extends RenderPipeline {
         );
     }
 
-    private void updateSceneDesc(ByteBuffer sceneDescData, Camera camera, Scene scene) {
+    private void writeSceneDescToByteBuffer(ByteBuffer sceneDescData, Camera camera, Scene scene) {
         sceneDescData.clear();
 
         camera.getView().get(sceneDescData);
@@ -344,11 +401,11 @@ public class ForwardPipeline extends RenderPipeline {
 
             displayPass.getDependency(
                     "NSwapchainTextures"
-            ).setDependency(r_swapchainTextures);
+            ).setResource(r_swapchainTextures);
 
             displayPass.getDependency(
                     "NSwapchainTexturesPresent"
-            ).setDependency(r_swapchainTextures);
+            ).setResource(r_swapchainTextures);
 
         }
 
@@ -360,87 +417,160 @@ public class ForwardPipeline extends RenderPipeline {
             }
         });
 
-        //Update all shadow map descriptors
-        {
-
-            lightCount = 0;
-
-            scene.getRootActor().previsitAllActors(actor -> {
-                if (actor.has(LightComponent.class))
-                    lightCount++;
-            });
-
-
-
-            Texture[] shadowMapTextures = new Texture[lightCount * renderer.getMaxFramesInFlight()];
-            Sampler[] shadowMapSamplers = new Sampler[shadowMapTextures.length];
-
-            final int[] lightIndex = {0};
-
-            scene.getRootActor().previsitAllActors(actor -> {
-                if (actor.has(LightComponent.class)) {
-                    LightComponent lightComponent = actor.getComponent(LightComponent.class);
-                    int i1 = renderer.getMaxFramesInFlight() * lightIndex[0];
-                    int i2 = renderer.getMaxFramesInFlight() * lightIndex[0] + 1;
-
-                    shadowMapTextures[i1] = lightComponent.renderTarget
-                            .getAttachment(RenderTargetAttachmentTypes.Depth)
-                            .getTextures()[0];
-
-                    shadowMapSamplers[i1] = lightComponent.renderTarget
-                            .getAttachment(RenderTargetAttachmentTypes.Depth)
-                            .getSamplers()[0];
-
-                    shadowMapTextures[i2] = lightComponent.renderTarget
-                            .getAttachment(RenderTargetAttachmentTypes.Depth)
-                            .getTextures()[1];
-
-                    shadowMapSamplers[i2] = lightComponent.renderTarget
-                            .getAttachment(RenderTargetAttachmentTypes.Depth)
-                            .getSamplers()[1];
-
-                    lightIndex[0]++;
-                }
-            });
-
-
-            Resource<Pair<Texture[], Sampler[]>> r_shadowMapTextures = new Resource<>(new Pair<>(shadowMapTextures, shadowMapSamplers));
-
-
-            shadowMapGenPass.getDependency(
-                    "NShadowMaps"
-            ).setDependency(r_shadowMapTextures);
-
-            scenePass.getDependency(
-                    "IShadowMaps"
-            ).setDependency(r_shadowMapTextures);
-        }
 
         //Ensure all descriptors are up to date
         {
+
             //Update entity shaders
             {
                 scene.getRootActor().previsitAllActors(actor -> {
                     if(actor.has(TransformComponent.class)) {
                         TransformComponent transformComponent = actor.getComponent(TransformComponent.class);
-
-
                         if(actor.has(MeshComponent.class)) {
                             MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
                             if(meshComponent.isVisible()) {
                                 ByteBuffer transformsData = meshComponent.transformsBuffers[renderer.getFrameIndex()].get();
                                 transformComponent.transform().get(0, transformsData);
                                 ByteBuffer sceneDescData = meshComponent.sceneDescBuffers[renderer.getFrameIndex()].get();
-                                updateSceneDesc(sceneDescData, sceneCamera, scene);
+                                writeSceneDescToByteBuffer(sceneDescData, sceneCamera, scene);
                             }
                         }
-
-
                     }
                 });
             }
+
+            //Shadow maps out
+            {
+                lightCount = 0;
+                scene.getRootActor().previsitAllActors(actor -> {
+                    if (actor.has(LightComponent.class))
+                        lightCount++;
+                });
+
+                Texture[] shadowMapTextures = new Texture[lightCount * renderer.getMaxFramesInFlight()];
+                Sampler[] shadowMapSamplers = new Sampler[shadowMapTextures.length];
+
+                final int[] lightIndex = {0};
+
+                scene.getRootActor().previsitAllActors(actor -> {
+                    if (actor.has(LightComponent.class)) {
+                        LightComponent lightComponent = actor.getComponent(LightComponent.class);
+                        int i1 = renderer.getMaxFramesInFlight() * lightIndex[0];
+                        int i2 = renderer.getMaxFramesInFlight() * lightIndex[0] + 1;
+
+                        shadowMapTextures[i1] = lightComponent.renderTarget
+                                .getAttachment(RenderTargetAttachmentTypes.Depth)
+                                .getTextures()[0];
+
+                        shadowMapSamplers[i1] = lightComponent.renderTarget
+                                .getAttachment(RenderTargetAttachmentTypes.Depth)
+                                .getSamplers()[0];
+
+                        shadowMapTextures[i2] = lightComponent.renderTarget
+                                .getAttachment(RenderTargetAttachmentTypes.Depth)
+                                .getTextures()[1];
+
+                        shadowMapSamplers[i2] = lightComponent.renderTarget
+                                .getAttachment(RenderTargetAttachmentTypes.Depth)
+                                .getSamplers()[1];
+
+                        lightIndex[0]++;
+                    }
+                });
+
+                Resource<Pair<Texture[], Sampler[]>> r_shadowMapTextures = new Resource<>(new Pair<>(shadowMapTextures, shadowMapSamplers));
+
+
+                shadowMapGenPass.getDependency(
+                        "NShadowMaps"
+                ).setResource(r_shadowMapTextures);
+
+                scenePass.getDependency(
+                        "IShadowMaps"
+                ).setResource(r_shadowMapTextures);
+            }
+
+            //Shadow maps in
+            {
+                Resource<Pair<Texture[], Sampler[]>> r_shadowMapTextures = scenePass.getDependency("IShadowMaps" ).getResource();
+                scene.getRootActor().previsitAllActors(actor -> {
+                    if (actor.has(MeshComponent.class)) {
+                        MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
+                        if (meshComponent.isVisible()) {
+                            for (int i = 0; i < lightCount; i++) {
+                                //These promise a layout of VK_IMAGE_LAYOUT_GENERAL even though the rendergraph for shadow map gen tries to VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                                meshComponent.shaderProgram.setTextures(
+                                        renderer.getFrameIndex(),
+                                        new DescriptorUpdate<>(
+                                                "input_shadow_maps",
+                                                r_shadowMapTextures.get().key[renderer.getMaxFramesInFlight() * i + renderer.getFrameIndex()]
+                                        ).arrayIndex(i)
+                                );
+                                meshComponent.shaderProgram.setSamplers(
+                                        renderer.getFrameIndex(),
+                                        new DescriptorUpdate<>(
+                                                "input_shadow_maps_samplers",
+                                                r_shadowMapTextures.get().value[renderer.getMaxFramesInFlight() * i + renderer.getFrameIndex()]
+                                        ).arrayIndex(i)
+                                );
+                            }
+                        }
+                    }
+                });
+            }
+
+            //2D
+            {
+                //Provide display with the latest scene textures
+                {
+                    Resource<Pair<Texture[], Sampler[]>> r_sceneColorTextures = displayPass.getDependency("ISceneColorTextures" ).getResource();
+
+                    displayPassShaderProgram.setTextures(
+                            renderer.getFrameIndex(),
+                            new DescriptorUpdate<>(
+                                    "input_textures",
+                                    r_sceneColorTextures.get().key[renderer.getFrameIndex()]
+                            ).arrayIndex(0)
+                    );
+
+                    displayPassShaderProgram.setSamplers(
+                            renderer.getFrameIndex(),
+                            new DescriptorUpdate<>(
+                                    "input_samplers",
+                                    r_sceneColorTextures.get().value[renderer.getFrameIndex()]
+                            ).arrayIndex(0)
+                    );
+
+
+                }
+            }
         }
 
+        /*
+        //Light Culling
+        {
+            lightCullingPass.setPassExecuteCallback(() -> {
+                ByteBuffer sceneDescData = lightCullingPassSceneDescBuffers[renderer.getFrameIndex()].get();
+                writeSceneDescToByteBuffer(sceneDescData, sceneCamera, scene);
+                Resource<Buffer[]> r_lightCullingOutputBuffer = lightCullingPass.getDependency("NTileLightMap" ).getResource();
+
+                lightCullingPassShaderProgram.setBuffers(
+                        renderer.getFrameIndex(),
+                        new DescriptorUpdate<>("scene_desc", lightCullingPassSceneDescBuffers[renderer.getFrameIndex()]),
+                        new DescriptorUpdate<>("output", r_lightCullingOutputBuffer.get()[renderer.getFrameIndex()])
+
+                );
+
+                lightCullingPass.startRecording(renderer.getFrameIndex());
+                {
+                    lightCullingPass.resolveBarriers();
+                    lightCullingPass.setShaderProgram(lightCullingPassShaderProgram);
+                    lightCullingPass.dispatch(lightCount, 1, 1);
+                }
+                lightCullingPass.endRecording();
+            });
+
+        }*/
         //Shadow Map Gen
         {
             shadowMapGenPassLightIndex = 0;
@@ -546,8 +676,8 @@ public class ForwardPipeline extends RenderPipeline {
                                             pPushConstants.putInt(lightCount);
                                             depthPass.setPushConstants(pPushConstants);
                                         }
-                                        if(meshComponent.instanced) depthPass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
-                                        else depthPass.drawIndexed(meshComponent.indexCount);
+                                        //if(meshComponent.instanced) depthPass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
+                                        //else depthPass.drawIndexed(meshComponent.indexCount);
                                     }
                                 }
                             });
@@ -565,31 +695,6 @@ public class ForwardPipeline extends RenderPipeline {
         //Scene Render
         {
             scenePass.setPassExecuteCallback(() -> {
-                scene.getRootActor().previsitAllActors(actor -> {
-                    if (actor.has(MeshComponent.class)) {
-                        MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
-                        if (meshComponent.isVisible()) {
-                            Resource<Pair<Texture[], Sampler[]>> r_shadowMapTextures = scenePass.getDependency("IShadowMaps" ).getResource();
-                            for (int i = 0; i < lightCount; i++) {
-                                meshComponent.shaderProgram.setTextures(
-                                        renderer.getFrameIndex(),
-                                        new DescriptorUpdate<>(
-                                                "input_shadow_maps",
-                                                r_shadowMapTextures.get().key[renderer.getMaxFramesInFlight() * i + renderer.getFrameIndex()]
-                                        ).arrayIndex(i)
-                                );
-                                meshComponent.shaderProgram.setSamplers(
-                                        renderer.getFrameIndex(),
-                                        new DescriptorUpdate<>(
-                                                "input_shadow_maps_samplers",
-                                                r_shadowMapTextures.get().value[renderer.getMaxFramesInFlight() * i + renderer.getFrameIndex()]
-                                        ).arrayIndex(i)
-                                );
-                            }
-                        }
-                    }
-                });
-
                 scenePass.startRecording(renderer.getFrameIndex());
                 {
 
@@ -621,9 +726,10 @@ public class ForwardPipeline extends RenderPipeline {
                                             pPushConstants.putInt(lightCount);
                                             scenePass.setPushConstants(pPushConstants);
                                         }
+                                        /*
                                         if (meshComponent.instanced)
                                             scenePass.drawInstanced(meshComponent.indexCount, meshComponent.instanceCount);
-                                        else scenePass.drawIndexed(meshComponent.indexCount);
+                                        else scenePass.drawIndexed(meshComponent.indexCount);*/
                                     }
                                 }
 
@@ -644,48 +750,6 @@ public class ForwardPipeline extends RenderPipeline {
         //2D
         {
             displayPass.setPassExecuteCallback(() -> {
-
-                //Provide display with the latest scene textures
-                {
-                    Resource<Pair<Texture[], Sampler[]>> r_sceneColorTextures = displayPass.getDependency("ISceneColorTextures" ).getResource();
-
-                    displayPassShaderProgram.setTextures(
-                            renderer.getFrameIndex(),
-                            new DescriptorUpdate<>(
-                                    "input_textures",
-                                    r_sceneColorTextures.get().key[renderer.getFrameIndex()]
-                            ).arrayIndex(0)
-                    );
-
-                    displayPassShaderProgram.setSamplers(
-                            renderer.getFrameIndex(),
-                            new DescriptorUpdate<>(
-                                    "input_samplers",
-                                    r_sceneColorTextures.get().value[renderer.getFrameIndex()]
-                            ).arrayIndex(0)
-                    );
-
-                /*
-
-                Resource<Pair<Texture[], Sampler[]>> r_sceneHDRTextures = displayPass.getDependency("ISceneHDRTextures").getResource();
-
-                displayPassShaderProgram.setTextures(
-                        renderer.getFrameIndex(),
-                        new DescriptorUpdate<>(
-                                "input_textures",
-                                r_sceneHDRTextures.get().key[renderer.getFrameIndex()]
-                        ).arrayIndex(1)
-                );
-
-                displayPassShaderProgram.setSamplers(
-                        renderer.getFrameIndex(),
-                        new DescriptorUpdate<>(
-                                "input_samplers",
-                                r_sceneHDRTextures.get().value[renderer.getFrameIndex()]
-                        ).arrayIndex(1)
-                );*/
-                }
-
                 displayPass.startRecording(renderer.getFrameIndex());
                 {
 
