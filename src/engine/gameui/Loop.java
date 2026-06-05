@@ -1,17 +1,15 @@
 package engine.gameui;
 
-import org.joml.Vector2f;
-
 public class Loop {
-    private GfxPlatform gfxPlatform;
+    private UIPainter UIPainter;
     private Widget widget;
 
-    public GfxPlatform getGfxPlatform() {
-        return gfxPlatform;
+    public UIPainter getGfxPlatform() {
+        return UIPainter;
     }
 
-    public void setGfxPlatform(GfxPlatform gfxPlatform) {
-        this.gfxPlatform = gfxPlatform;
+    public void setGfxPlatform(UIPainter UIPainter) {
+        this.UIPainter = UIPainter;
     }
 
     public Widget getWidget() {
@@ -23,10 +21,10 @@ public class Loop {
     }
 
     public void update(int x, int y) {
-        widget.update(gfxPlatform, x, y, widget.getRequiredWidth(), widget.getRequiredHeight());
+        widget.update(UIPainter, x, y, widget.getRequiredWidth(), widget.getRequiredHeight());
     }
     public void update(int x, int y, int w, int h) {
-        widget.update(gfxPlatform, x, y, w, h);
+        widget.update(UIPainter, x, y, w, h);
     }
 
 

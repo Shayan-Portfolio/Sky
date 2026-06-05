@@ -5,14 +5,10 @@ import engine.graphics.Sampler;
 import engine.graphics.Texture;
 import engine.graphics.text.MsdfFont;
 import engine.graphics.text.TextEffect;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
-public abstract class GfxPlatform {
-    public abstract int getMouseX();
-    public abstract int getMouseY();
-    public abstract boolean isMousePressed(int mouseButton);
+public abstract class UIPainter {
     public abstract void drawRect(float x, float y, float w, float h, Color color);
 
     public abstract void drawArc(float x, float y, float w, float h, float start, float end, Color color);

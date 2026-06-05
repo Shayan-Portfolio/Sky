@@ -1,6 +1,5 @@
 package engine.gameui;
 
-import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
 
 ;
@@ -29,7 +28,7 @@ public class Text extends Widget {
     }
 
     @Override
-    public void update(GfxPlatform platform, int x, int y, int w, int h) {
+    public void update(UIPainter platform, int x, int y, int w, int h) {
 
 
         platform.drawString(x + (2 * padding), y + (2 * padding), value.string.toString(), font, null, platform.getTheme().textColor);

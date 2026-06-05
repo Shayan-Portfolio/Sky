@@ -26,7 +26,7 @@ public abstract class Widget {
         }
 
         @Override
-        public void updateChildren(GfxPlatform platform, int x, int y, int w, int h) {
+        public void updateChildren(UIPainter platform, int x, int y, int w, int h) {
 
         }
     };
@@ -87,8 +87,8 @@ public abstract class Widget {
     public abstract int getRequiredWidth();
     public abstract int getRequiredHeight();
 
-    public abstract void update(GfxPlatform platform, int x, int y, int w, int h);
-    public void updateChildren(GfxPlatform platform, int x, int y, int w, int h) {
+    public abstract void update(UIPainter platform, int x, int y, int w, int h);
+    public void updateChildren(UIPainter platform, int x, int y, int w, int h) {
         layoutEngine.updateChildren(platform, x, y, w, h);
     }
     public Widget setLayoutEngine(LayoutEngine layoutEngine) {

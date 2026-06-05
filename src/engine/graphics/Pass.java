@@ -14,7 +14,7 @@ public abstract class Pass extends Disposable {
     protected Semaphore[] waitSemaphores;
     protected Semaphore[] finishedSemaphores;
     protected BarrierCallback barrierCallback;
-    protected PassExecuteCallback passExecuteCallback;
+    protected Runnable recorder;
     protected List<Dependency> dependencyList = new ArrayList<>();
     protected String name;
 
@@ -58,12 +58,12 @@ public abstract class Pass extends Disposable {
     }
 
 
-    public PassExecuteCallback getPassExecuteCallback() {
-        return passExecuteCallback;
+    public Runnable getRecorder() {
+        return recorder;
     }
 
-    public void setPassExecuteCallback(PassExecuteCallback passExecuteCallback) {
-        this.passExecuteCallback = passExecuteCallback;
+    public void submit(Runnable recorder) {
+        this.recorder = recorder;
     }
 
     public BarrierCallback getBarrierInsertCallback() {

@@ -8,6 +8,7 @@ import engine.graphics.Color;
 import engine.graphics.Rect2D;
 import engine.graphics.Session;
 import engine.graphics.text.MsdfFont;
+import org.joml.Vector2f;
 
 ;
 
@@ -95,13 +96,14 @@ public class TextField extends Widget {
     }
 
     @Override
-    public void update(GfxPlatform platform, int x, int y, int w, int h) {
+    public void update(UIPainter platform, int x, int y, int w, int h) {
         String visibleString = getVisibleString();
-        if(platform.isMousePressed(Input.MOUSE_BUTTON_1)) {
-            focused = Rect2D.contains(platform.getMouseX(), platform.getMouseY(), x + padding, y + padding, w - padding * 2, h - padding * 2);
+        Vector2f mousePos = Session.getSurface().getMousePos();
+        if(Session.getSurface().getMousePressed(Input.MOUSE_BUTTON_1)) {
+            focused = Rect2D.contains(mousePos.x, mousePos.y, x + padding, y + padding, w - padding * 2, h - padding * 2);
 
             if(focused) {
-                float sx = platform.getMouseX() - x - padding;
+                float sx = mousePos.x - x - padding;
 
                 for(int i = 0; i < getText().string.length(); i++) {
                     float width = font.getStringWidth(getText().string.substring(0, i));

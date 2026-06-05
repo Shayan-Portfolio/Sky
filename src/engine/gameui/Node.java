@@ -3,8 +3,6 @@ package engine.gameui;
 import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
 
-import static engine.gameui.TextValue.text;
-
 public class Node extends ContainerWidget {
     private boolean expanded;
     private Button button;
@@ -61,7 +59,7 @@ public class Node extends ContainerWidget {
     }
 
     @Override
-    public void update(GfxPlatform platform, int x, int y, int w, int h) {
+    public void update(UIPainter platform, int x, int y, int w, int h) {
         int bx = button.getRequiredWidth(), by = button.getRequiredHeight();
         button.update(platform, x, y, bx, by);
         if(expanded) super.update(platform, x + indent, y + by, w, h);

@@ -18,19 +18,13 @@ struct Vertex
     float op1;
 }
 
-struct Camera
-{
-    float4x4 proj;
-}
-
-ConstantBuffer<Camera> camera;
 
 
 
 [shader("vertex")]
-VSOutput vertexMain(Vertex vertex) {
+VSOutput vertexMain(Vertex vertex, uniform float4x4 view, uniform float4x4 proj) {
     VSOutput output;
-    output.pos = mul(camera.proj, float4(vertex.pos, 0, 1.0));
+    output.pos = mul(proj, mul(view, float4(vertex.pos, 0, 1.0)));
     output.color = vertex.color;
     output.uv = vertex.uv;
     output.shape_mode = vertex.shape_mode;

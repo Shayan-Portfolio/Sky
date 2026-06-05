@@ -1,10 +1,10 @@
 package engine.graphics.vulkan;
 
 import engine.logging.Logger;
-import engine.util.Pair;
 import engine.logging.SkyRuntimeException;
 import engine.Surface;
 import engine.graphics.*;
+import engine.util.Pair;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
@@ -487,15 +487,11 @@ public class VulkanRenderer extends Renderer {
     }
 
     @Override
-    public void render(RenderGraph renderGraph) {
+    public void submit(List<Pass> passes) {
 
 
         try(MemoryStack stack = stackPush()) {
-
-
             IntBuffer pImageIndex = stack.callocInt(1);
-
-
             vkAcquireNextImageKHR(
                     device,
                     swapchain.getHandle(),
@@ -506,14 +502,8 @@ public class VulkanRenderer extends Renderer {
             );
 
 
-
-
-
             Semaphore[] waitSemaphores = frameStartSemaphores;
             Pass lastPass = null;
-
-
-            List<Pass> passes = renderGraph.walk(renderGraph.getTargetPass());
 
 
             int passCount = 0;
@@ -524,6 +514,7 @@ public class VulkanRenderer extends Renderer {
                 waitSemaphores = pass.getFinishedSemaphores();
                 lastPass = pass;
                 passCount++;
+
 
                 //Insert actual barriers
                 {
@@ -686,14 +677,13 @@ public class VulkanRenderer extends Renderer {
                 }
 
 
-                pass.getPassExecuteCallback().onExecutePass();
-
+                pass.startRecording(frameIndex);
+                pass.resolveBarriers();
+                pass.getRecorder().run();
+                pass.endRecording();
                 if(passCount == passes.size()) pass.submit(Optional.of(submissionFences));
                 else pass.submit(Optional.empty());
             }
-
-
-
 
             Semaphore[] finishedSemaphores = lastPass.getFinishedSemaphores();
 
@@ -706,12 +696,8 @@ public class VulkanRenderer extends Renderer {
             presentInfo.pSwapchains(stack.longs(swapchain.getHandle()));
             presentInfo.pImageIndices(pImageIndex);
 
-
             vkQueuePresentKHR(presentQueue, presentInfo);
-
-
             frameIndex = (frameIndex + 1) % FRAMES_IN_FLIGHT;
-
         }
     }
 
@@ -724,6 +710,8 @@ public class VulkanRenderer extends Renderer {
     public void waitForDevice() {
         vkDeviceWaitIdle(device);
     }
+
+
 
     @Override
     public void dispose() {

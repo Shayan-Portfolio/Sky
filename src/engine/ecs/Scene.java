@@ -210,36 +210,35 @@ public class Scene extends Disposable {
 
                 LightComponent lightComponent = new LightComponent(
                         this,
-                        new Matrix4f().lookAt(
-                                new Vector3f(
-                                        (float) eye.operands()[1],
-                                        (float) eye.operands()[2],
-                                        (float) eye.operands()[3]
+                        new LightData(
+                                new Matrix4f().lookAt(
+                                        new Vector3f(
+                                                (float) eye.operands()[1],
+                                                (float) eye.operands()[2],
+                                                (float) eye.operands()[3]
+                                        ),
+                                        new Vector3f(
+                                                (float) center.operands()[1],
+                                                (float) center.operands()[2],
+                                                (float) center.operands()[3]
+                                        ),
+                                        new Vector3f(
+                                                (float) up.operands()[1],
+                                                (float) up.operands()[2],
+                                                (float) up.operands()[3]
+                                        )
                                 ),
-                                new Vector3f(
-                                        (float) center.operands()[1],
-                                        (float) center.operands()[2],
-                                        (float) center.operands()[3]
+                                new Matrix4f().perspective(
+                                        (float) Math.toRadians((float) fovDeg.operands()[1]),
+                                        ((float) aspectRatio.operands()[1]),
+                                        ((float) zNear.operands()[1]),
+                                        ((float) zFar.operands()[1]),
+                                        (boolean) zZeroToOne.operands()[1]
                                 ),
-                                new Vector3f(
-                                        (float) up.operands()[1],
-                                        (float) up.operands()[2],
-                                        (float) up.operands()[3]
-                                )
-                        ),
-                        new Matrix4f().perspective(
-                                (float) Math.toRadians((float) fovDeg.operands()[1]),
-                                ((float) aspectRatio.operands()[1]),
-                                ((float) zNear.operands()[1]),
-                                ((float) zFar.operands()[1]),
-                                (boolean) zZeroToOne.operands()[1]
-                        ),
-                        (boolean) invertY.operands()[1]
-                );
-                lightComponent.color = new Vector3f(
-                        (float) color.operands()[1],
-                        (float) color.operands()[2],
-                        (float) color.operands()[3]
+                                (boolean) invertY.operands()[1],
+                                new Color((float) color.operands()[1], (float) color.operands()[2], (float) color.operands()[3], 1f)
+                        )
+
                 );
                 return lightComponent;
             });

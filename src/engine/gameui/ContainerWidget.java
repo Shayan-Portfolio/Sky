@@ -1,7 +1,5 @@
 package engine.gameui;
 
-import engine.graphics.Color;
-
 public class ContainerWidget extends Widget {
     private boolean ignore;
 
@@ -21,7 +19,7 @@ public class ContainerWidget extends Widget {
     }
 
     @Override
-    public void update(GfxPlatform platform, int x, int y, int w, int h) {
+    public void update(UIPainter platform, int x, int y, int w, int h) {
         if(!ignore)
             platform.drawRect(x, y, w, h, platform.getTheme().containerBackgroundColor);
         updateChildren(platform, x + padding, y + padding, w - padding, h - padding);

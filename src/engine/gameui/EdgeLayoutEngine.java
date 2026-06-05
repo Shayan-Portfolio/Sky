@@ -50,7 +50,7 @@ public class EdgeLayoutEngine extends LayoutEngine {
     }
 
     @Override
-    public void updateChildren(GfxPlatform platform, int x, int y, int w, int h) {
+    public void updateChildren(UIPainter platform, int x, int y, int w, int h) {
 
         int dx = x, dy = y;
         Widget myWidget = getWidget();

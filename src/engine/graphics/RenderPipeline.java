@@ -1,15 +1,16 @@
 package engine.graphics;
 
+import engine.ecs.RenderSystem;
 import engine.logging.SkyRuntimeException;
 import engine.graphics.pipelines.Features;
 
 import java.util.List;
 
 public abstract class RenderPipeline {
-    protected RenderGraph renderGraph;
+    protected RenderGraph graph;
     protected List<Features> supportedFeatures;
     public abstract void init(Renderer renderer);
-    public abstract void render(Renderer renderer);
+    public abstract List<Pass> buildFrame(ScenePack scenePack);
 
     public <T> T getFeatures(Class<T> c) {
 

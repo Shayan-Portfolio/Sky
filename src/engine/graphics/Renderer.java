@@ -6,6 +6,8 @@ import engine.graphics.vulkan.VulkanRenderContext;
 import engine.graphics.vulkan.VulkanRenderer;
 import org.lwjgl.vulkan.VkInstance;
 
+import java.util.List;
+
 public abstract class Renderer extends Disposable {
 
     protected int width;
@@ -37,7 +39,6 @@ public abstract class Renderer extends Disposable {
 
 
     public abstract void updateRenderer(boolean surfaceInvalidated);
-    public abstract void render(RenderGraph renderGraph);
     public Semaphore[] getRenderStartSemaphores() {
         return frameStartSemaphores;
     }
@@ -85,4 +86,5 @@ public abstract class Renderer extends Disposable {
     }
     public RenderTarget getSwapchainRenderTarget() { return swapchainRenderTarget; }
 
+    public abstract void submit(List<Pass> passes);
 }

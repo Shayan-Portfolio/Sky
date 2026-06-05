@@ -7,19 +7,12 @@ import java.util.*;
 public class RenderGraph extends Disposable {
 
     private List<Pass> passes = new ArrayList<>();
-    private Pass targetPass;
 
     public RenderGraph(Disposable parent) {
         super(parent);
     }
 
-    public void setTargetPass(Pass targetPass) {
-        this.targetPass = targetPass;
-    }
 
-    public Pass getTargetPass() {
-        return targetPass;
-    }
 
     public void addPasses(Pass... passes) {
         this.passes.addAll(Arrays.asList(passes));
@@ -34,10 +27,10 @@ public class RenderGraph extends Disposable {
 
     }
 
-    public List<Pass> walk(Pass targetPass) {
+    public List<Pass> compile(Pass sink) {
         LinkedList<Pass> passes = new LinkedList<>();
-        tracePasses(passes, targetPass);
-        passes.add(targetPass);
+        tracePasses(passes, sink);
+        passes.add(sink);
 
         return passes;
     }

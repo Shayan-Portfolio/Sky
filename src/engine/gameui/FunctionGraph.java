@@ -1,8 +1,6 @@
 package engine.gameui;
 
 import engine.Time;
-import engine.graphics.Color;
-import org.joml.Matrix4f;
 
 public class FunctionGraph extends Widget {
     private int width, height;
@@ -28,7 +26,7 @@ public class FunctionGraph extends Widget {
 
     private float phase = 0;
     @Override
-    public void update(GfxPlatform platform, int x, int y, int w, int h) {
+    public void update(UIPainter platform, int x, int y, int w, int h) {
         platform.drawRect(x, y, w, h, platform.getTheme().containerBackgroundColor);
 
         int steps = 30;

@@ -25,11 +25,11 @@ public abstract class CanvasWidget extends Widget {
     }
 
     @Override
-    public void update(GfxPlatform platform, int x, int y, int w, int h) {
+    public void update(UIPainter platform, int x, int y, int w, int h) {
         if(!ignore)
             platform.drawRect(x, y, w, h, platform.getTheme().containerBackgroundColor);
         drawCustom(platform, x, y, w, h);
     }
 
-    public abstract void drawCustom(GfxPlatform platform, int x, int y, int w, int h);
+    public abstract void drawCustom(UIPainter platform, int x, int y, int w, int h);
 }
