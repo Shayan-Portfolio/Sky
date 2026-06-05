@@ -24,13 +24,7 @@ public class ForwardPipeline extends RenderPipeline {
         this.renderer = renderer;
         this.graph = new RenderGraph(renderer);
 
-        //Features
-        {
-            supportedFeatures = List.of(
-                    new SceneFeatures(true),
-                    new SkyboxFeatures(true)
-            );
-        }
+
 
         {
             rt_graphics2DPass = renderer.getSwapchainRenderTarget();

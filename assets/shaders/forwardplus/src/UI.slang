@@ -1,7 +1,7 @@
-#include "Constants.slang"
+#include "../../common/Constants.slang"
 struct VSOutput {
     float4 pos : SV_POSITION;
-    float4 color; 
+    float4 color;
     float2 uv;
     float shape_mode;
     float op0;
@@ -30,7 +30,7 @@ VSOutput vertexMain(Vertex vertex, uniform float4x4 view, uniform float4x4 proj)
     output.shape_mode = vertex.shape_mode;
     output.op0 = vertex.op0;
     output.op1 = vertex.op1;
-    
+
 
     return output;
 }

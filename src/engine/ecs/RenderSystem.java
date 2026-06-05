@@ -77,8 +77,8 @@ public class RenderSystem extends ActorSystem {
         uiShaderProgram = ShaderProgram.newShaderProgram(renderer);
         uiShaderProgram.setDepthTestType(DepthTestType.Always);
         uiShaderProgram.setEnableBlending(true);
-        uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/deferred/Display_vertex.spv"), ShaderType.VertexShader);
-        uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/deferred/Display_fragment.spv"), ShaderType.FragmentShader);
+        uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/UI_vertex.spv"), ShaderType.VertexShader);
+        uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/UI_fragment.spv"), ShaderType.FragmentShader);
         uiShaderProgram.assemble();
 
         //UI Compositing setup
