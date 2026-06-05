@@ -1,11 +1,11 @@
 package engine.graphics;
 
-public class RenderTargetAttachment {
+public class Attachment {
     private long flags = 0;
     private Texture[] textures;
     private Sampler[] samplers;
 
-    public RenderTargetAttachment(long flags, Texture[] textures, Sampler[] samplers) {
+    public Attachment(long flags, Texture[] textures, Sampler[] samplers) {
         this.flags = flags;
         this.textures = textures;
         this.samplers = samplers;

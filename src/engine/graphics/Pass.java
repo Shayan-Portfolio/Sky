@@ -2,6 +2,7 @@ package engine.graphics;
 
 import engine.graphics.vulkan.VulkanComputePass;
 import engine.graphics.vulkan.VulkanGraphicsPass;
+import engine.logging.SkyRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,11 +47,13 @@ public abstract class Pass extends Disposable {
         return null;
     }
 
-    public Dependency getDependency(String name) {
+    public <T> void bind(String name, T resource) {
+        Dependency dependency = null;
         for(Dependency rd : dependencyList) {
-            if(rd.getName().equals(name)) return rd;
+            if(rd.getName().equals(name)) dependency = rd;
         }
-        return null;
+        if(dependency == null) throw new SkyRuntimeException("Unable to find dependency " + name);
+        else dependency.setResource(new RenderGraphResource(resource));
     }
 
     public String getName() {
@@ -64,6 +67,18 @@ public abstract class Pass extends Disposable {
 
     public void submit(Runnable recorder) {
         this.recorder = recorder;
+    }
+
+    public <T> void reads(String name, T resource, int readType) {
+        addDependencies(new Dependency(name, new RenderGraphResource(resource), readType));
+    }
+
+    public <T> void writes(String name, T resource, int writeType) {
+        addDependencies(new Dependency(name, new RenderGraphResource(resource), writeType));
+    }
+
+    public void clearAll() {
+        dependencyList.clear();
     }
 
     public BarrierCallback getBarrierInsertCallback() {

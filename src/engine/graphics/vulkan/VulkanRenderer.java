@@ -167,11 +167,11 @@ public class VulkanRenderer extends Renderer {
             );
         }
 
-        RenderTargetAttachment colorAttachment = new RenderTargetAttachment(RenderTargetAttachmentTypes.Color0, colorTextures, null);
+        Attachment colorAttachment = new Attachment(AttachmentTypes.Color0, colorTextures, null);
 
 
-        RenderTargetAttachment depthAttachment = new RenderTargetAttachment(
-                RenderTargetAttachmentTypes.Depth,
+        Attachment depthAttachment = new Attachment(
+                AttachmentTypes.Depth,
                 new Texture[] {
                         Texture.newDepthTexture(
                                 swapchainRenderTarget,
@@ -524,16 +524,16 @@ public class VulkanRenderer extends Renderer {
                         VkCommandBuffer commandBuffer = (VkCommandBuffer) object;
 
                         for(Dependency rd : pass.getDependencies()) {
-                            Resource resource = rd.getResource();
+                            RenderGraphResource renderGraphResource = rd.getResource();
 
-                            assert resource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
+                            assert renderGraphResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
 
                             Texture[] textures = null;
-                            if(resource.get() instanceof Texture[]) {
-                                textures = ((Texture[]) resource.get());
+                            if(renderGraphResource.get() instanceof Texture[]) {
+                                textures = ((Texture[]) renderGraphResource.get());
                             }
-                            else if(resource.get() instanceof Pair) {
-                                textures = ((Pair<Texture[], Sampler[]>) resource.get()).key;
+                            else if(renderGraphResource.get() instanceof Pair) {
+                                textures = ((Pair<Texture[], Sampler[]>) renderGraphResource.get()).key;
                             }
 
                             if(textures != null) {
@@ -550,10 +550,10 @@ public class VulkanRenderer extends Renderer {
                                     //All reads have to wait on writes
                                     int readSrcAccessMask = VK_ACCESS_NONE;
 
-                                    if (resource.getOutboundFrom() != null) {
-                                        srcStageMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-                                        writeSrcAccessMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT : VK_ACCESS_SHADER_READ_BIT;
-                                        readSrcAccessMask = resource.getOutboundFrom() instanceof GraphicsPass ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_SHADER_WRITE_BIT;
+                                    if (renderGraphResource.getOutboundFrom() != null) {
+                                        srcStageMask = renderGraphResource.getOutboundFrom() instanceof GraphicsPass ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                        writeSrcAccessMask = renderGraphResource.getOutboundFrom() instanceof GraphicsPass ? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT : VK_ACCESS_SHADER_READ_BIT;
+                                        readSrcAccessMask = renderGraphResource.getOutboundFrom() instanceof GraphicsPass ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_SHADER_WRITE_BIT;
                                     }
 
 
@@ -664,7 +664,7 @@ public class VulkanRenderer extends Renderer {
                             }
 
 
-                            resource.setOutboundFrom(pass);
+                            renderGraphResource.setOutboundFrom(pass);
 
 
                         }

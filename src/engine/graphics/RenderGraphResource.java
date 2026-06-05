@@ -1,10 +1,10 @@
 package engine.graphics;
 
-public class Resource<Type> {
+public class RenderGraphResource<Type> {
     private Type type;
     private Pass outboundFrom;
 
-    public Resource(Type type) {
+    public RenderGraphResource(Type type) {
         this.type = type;
     }
 

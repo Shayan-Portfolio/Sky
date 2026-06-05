@@ -11,8 +11,6 @@ import java.nio.LongBuffer;
 import java.util.Optional;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
-import static org.lwjgl.vulkan.EXTDebugUtils.VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-import static org.lwjgl.vulkan.EXTDebugUtils.vkSetDebugUtilsObjectNameEXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK13.vkCmdSetCullMode;
@@ -191,7 +189,7 @@ public class VulkanGraphicsPass extends GraphicsPass {
 
             VkClearValue depthClearValue = VkClearValue.calloc(stack);
             depthClearValue.depthStencil().set(1.0f, 0);
-            RenderTargetAttachment depthAttachment = renderTarget.getAttachment(RenderTargetAttachmentTypes.Depth);
+            Attachment depthAttachment = renderTarget.getAttachment(AttachmentTypes.Depth);
 
 
 

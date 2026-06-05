@@ -1,8 +1,6 @@
 package engine.ecs;
 
 import engine.graphics.*;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 @ComponentArray(mask = 1 << 3)
 public class LightComponent {
@@ -15,8 +13,8 @@ public class LightComponent {
 
 
         this.data.renderTarget.addAttachment(
-                new RenderTargetAttachment(
-                        RenderTargetAttachmentTypes.Depth,
+                new Attachment(
+                        AttachmentTypes.Depth,
                         new Texture[]{
                                 Texture.newDepthTexture(this.data.renderTarget, 1024, 1024, TextureFormatType.Depth32),
                                 Texture.newDepthTexture(this.data.renderTarget, 1024, 1024, TextureFormatType.Depth32)

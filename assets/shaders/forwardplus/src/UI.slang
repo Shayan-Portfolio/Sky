@@ -58,45 +58,7 @@ FSOutput fragmentMain(VSOutput vsOutput) {
     if(vsOutput.shape_mode >= 0) {
         Texture2D texture = input_textures[int(vsOutput.op0)];
         SamplerState sampler = input_samplers[int(vsOutput.op0)];
-
-
-
-        if(int(vsOutput.op0) == 1) {
-            float w, h, num_levels;
-            texture.GetDimensions(0, w, h, num_levels);
-            w = 1 / w;
-            h = 1 / h;
-
-            float4 color_samples = texture.Sample(sampler, vsOutput.uv) * vsOutput.color;
-
-            {
-                int pcf_kernel_w = 2, pcf_kernel_h = 2;
-
-                for (int x = -pcf_kernel_w; x <= pcf_kernel_w; x++) {
-                    for (int y = -pcf_kernel_h; y <= -pcf_kernel_h; y++) {
-                        float4 sample = texture.Sample(sampler, vsOutput.uv + float2(2 * x, 2 * y) * float2(w, h));
-
-                        color_samples.rgb += sample.rgb;
-                    }
-                }
-
-
-
-
-
-            }
-
-
-            output.color0SW = color_samples;
-
-
-        }
-        else {
-            output.color0SW = texture.Sample(sampler, vsOutput.uv) * vsOutput.color;
-        }
-
-
-
+        output.color0SW = texture.Sample(sampler, vsOutput.uv) * vsOutput.color;
     }
     else if (vsOutput.shape_mode == -1) output.color0SW = vsOutput.color;
     else if (vsOutput.shape_mode == -2) {

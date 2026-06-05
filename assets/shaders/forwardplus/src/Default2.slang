@@ -38,7 +38,7 @@ struct Vertex
 
 
 [shader("vertex")]
-VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_index) {
+VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_index, uniform int light_count) {
     VSOutput output;
     float4x4 view, proj;
 
@@ -82,7 +82,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
     FSOutput output;
     float3 output_color = float3(0, 0, 0);
 
-    if (render_mode == 0) {        
+    if (render_mode == 0) {
 
         float3 normal_ts = material[1].Sample(material_sampler, vsOutput.uv_ts).xyz * 2.0 - 1.0;
         float3 normal_ws = normalize(mul(vsOutput.tbn_ws_inv, normalize(normal_ts)));
@@ -123,7 +123,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
                  float4 shadow_map_uv_ts = fragment_shadow_map_ps * 0.5 + 0.5;
 
                  bool in_frustum = shadow_map_uv_ts.x >= 0 && shadow_map_uv_ts.x <= 1 && shadow_map_uv_ts.y >= 0 && shadow_map_uv_ts.y <= 1;
-                 if (in_frustum) {
+                 /*if (in_frustum) {
 
                      // Shadows
                      {
@@ -139,7 +139,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
                          shadow += shadow_per_pixel;
                      }
 
-                 }
+                 }*/
 
                  // Lighting BRDF
                  {

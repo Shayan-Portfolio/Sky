@@ -32,6 +32,10 @@ public class Dispatcher {
         return false;
     }
 
+    public void join() {
+        do tick(); while (isBusy());
+    }
+
     public void shutdown() {
         executorService.shutdown();
     }

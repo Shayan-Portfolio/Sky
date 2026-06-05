@@ -1,12 +1,13 @@
 package engine.graphics.pipelines;
 
-import engine.util.Pair;
+import engine.ecs.RenderSystem;
 import engine.graphics.*;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import static engine.graphics.Texture.Filter.Linear;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 
@@ -14,11 +15,13 @@ public class ForwardPipeline extends RenderPipeline {
 
 
     private GraphicsPass uiPass;
-    private RenderTarget rt_graphics2DPass;
-    private Resource<Texture[]> r_swapchainTextures;
+    private RenderTarget scenePassRT;
+    private GraphicsPass scenePass;
     private Renderer renderer;
 
-
+    private Texture[] nRenderTextures;
+    private Texture[] nDepthTextures;
+    private Sampler sampler;
     @Override
     public void init(Renderer renderer) {
         this.renderer = renderer;
@@ -26,52 +29,75 @@ public class ForwardPipeline extends RenderPipeline {
 
 
 
+        nRenderTextures = new Texture[renderer.getMaxFramesInFlight()];
+        nDepthTextures = new Texture[renderer.getMaxFramesInFlight()];
+        for(int i = 0; i < nRenderTextures.length; i++) {
+            nRenderTextures[i] = Texture.newColorTexture(scenePassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.ColorR16G16B16A16);
+            nDepthTextures[i] = Texture.newDepthTexture(scenePassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.Depth32);
+        }
+        scenePassRT = new RenderTarget(renderer);
+        scenePassRT.addAttachment(new Attachment(AttachmentTypes.Color0, nRenderTextures, null));
+        scenePassRT.addAttachment(new Attachment(AttachmentTypes.Depth, nDepthTextures, null));
+
+        sampler = Sampler.newSampler(scenePassRT, Linear, Linear, false);
+
+
+        scenePass = Pass.newGraphicsPass(graph, "Scene", renderer.getMaxFramesInFlight());
         {
-            rt_graphics2DPass = renderer.getSwapchainRenderTarget();
-            r_swapchainTextures = new Resource<>(
-                    rt_graphics2DPass.getAttachment(RenderTargetAttachmentTypes.Color0).getTextures()
-            );
+            scenePass.writes("NRenderTextures", nRenderTextures, DependencyTypes.RenderTargetWrite);
         }
 
 
-        uiPass = Pass.newGraphicsPass(graph, "Display", renderer.getMaxFramesInFlight());
+        uiPass = Pass.newGraphicsPass(graph, "UI", renderer.getMaxFramesInFlight());
         {
-            uiPass.addDependencies(
-                    new Dependency(
-                            "NSwapchainTextures",
-                            r_swapchainTextures,
-                            DependencyTypes.RenderTargetWrite
-                    ),
-                    new Dependency(
-                            "NSwapchainTexturesPresent",
-                            r_swapchainTextures,
-                            DependencyTypes.Present
-                    )
-            );
+            uiPass.reads("IRenderTextures", nRenderTextures, DependencyTypes.FragmentShaderRead);
+            uiPass.writes("NSwapchainTextures", null, DependencyTypes.RenderTargetWrite);
+            uiPass.writes("NSwapchainTexturesPresent", null, DependencyTypes.Present);
         }
 
         graph.addPasses(
+                scenePass,
                 uiPass
         );
     }
 
     @Override
     public List<Pass> buildFrame(ScenePack scenePack) {
-        //Update the dependency with the new swapchain
-        if(rt_graphics2DPass != renderer.getSwapchainRenderTarget()) {
-            rt_graphics2DPass = renderer.getSwapchainRenderTarget();
-            RenderTargetAttachment colorAttachment = rt_graphics2DPass.getAttachment(RenderTargetAttachmentTypes.Color0);
-            r_swapchainTextures = new Resource<>(colorAttachment.getTextures());
 
-            uiPass.getDependency(
-                    "NSwapchainTextures"
-            ).setResource(r_swapchainTextures);
+        scenePass.submit(() -> {
+            scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
+            {
+                for(RenderSystem.IndexedDrawCall drawCall : scenePack.drawCalls()) {
+                    scenePass.setCullMode(CullMode.Back);
+                    scenePass.setShaderProgram(drawCall.shaderProgram);
+                    scenePass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
+                    try (MemoryStack stack = stackPush()) {
+                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
+                        pPushConstants.putInt(0);
+                        pPushConstants.putInt(-1);
+                        pPushConstants.putInt(scenePack.lights().size());
 
-            uiPass.getDependency(
-                    "NSwapchainTexturesPresent"
-            ).setResource(r_swapchainTextures);
-        }
+                        scenePass.setPushConstants(pPushConstants);
+                    }
+                    scenePass.drawIndexed(drawCall.indexCount);
+                }
+            }
+            scenePass.endRendering();
 
+        });
+
+
+        scenePack.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nRenderTextures[renderer.getFrameIndex()]).arrayIndex(0));
+        scenePack.uiShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
+
+
+
+        Texture[] swapchainTextures = renderer.getSwapchainRenderTarget()
+                .getAttachment(AttachmentTypes.Color0)
+                .getTextures();
+
+        uiPass.bind("NSwapchainTextures", swapchainTextures);
+        uiPass.bind("NSwapchainTexturesPresent", swapchainTextures);
         uiPass.submit(() -> {
             uiPass.startRendering(renderer.getSwapchainRenderTarget(), 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
             {
