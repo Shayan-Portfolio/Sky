@@ -17,45 +17,60 @@ public class ForwardPipeline extends RenderPipeline {
     private GraphicsPass uiPass;
     private RenderTarget scenePassRT;
     private GraphicsPass scenePass;
+    private Texture[] nSceneColorTextures;
+    private GraphicsPass depthPass;
+    private RenderTarget depthPassRT;
+    private Texture[] nDepthPrepassTextures;
     private Renderer renderer;
 
-    private Texture[] nRenderTextures;
-    private Texture[] nDepthTextures;
     private Sampler sampler;
     @Override
     public void init(Renderer renderer) {
         this.renderer = renderer;
         this.graph = new RenderGraph(renderer);
 
-
-
-        nRenderTextures = new Texture[renderer.getMaxFramesInFlight()];
-        nDepthTextures = new Texture[renderer.getMaxFramesInFlight()];
-        for(int i = 0; i < nRenderTextures.length; i++) {
-            nRenderTextures[i] = Texture.newColorTexture(scenePassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.ColorR16G16B16A16);
-            nDepthTextures[i] = Texture.newDepthTexture(scenePassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.Depth32);
+        {
+            nDepthPrepassTextures = new Texture[renderer.getMaxFramesInFlight()];
+            for (int i = 0; i < nDepthPrepassTextures.length; i++) {
+                nDepthPrepassTextures[i] = Texture.newDepthTexture(depthPassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.Depth32);
+            }
+            depthPassRT = new RenderTarget(renderer);
+            depthPassRT.addAttachment(new Attachment(AttachmentTypes.Depth, nDepthPrepassTextures, null));
         }
-        scenePassRT = new RenderTarget(renderer);
-        scenePassRT.addAttachment(new Attachment(AttachmentTypes.Color0, nRenderTextures, null));
-        scenePassRT.addAttachment(new Attachment(AttachmentTypes.Depth, nDepthTextures, null));
+
+        {
+            nSceneColorTextures = new Texture[renderer.getMaxFramesInFlight()];
+            for (int i = 0; i < nSceneColorTextures.length; i++) {
+                nSceneColorTextures[i] = Texture.newColorTexture(scenePassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.ColorR16G16B16A16);
+            }
+            scenePassRT = new RenderTarget(renderer);
+            scenePassRT.addAttachment(new Attachment(AttachmentTypes.Color0, nSceneColorTextures, null));
+            scenePassRT.addAttachment(new Attachment(AttachmentTypes.Depth, nDepthPrepassTextures, null));
+        }
 
         sampler = Sampler.newSampler(scenePassRT, Linear, Linear, false);
 
+        depthPass = Pass.newGraphicsPass(graph, "Depth", renderer.getMaxFramesInFlight());
+        {
+            depthPass.writes("NDepthPrepassTextures", nDepthPrepassTextures, DependencyTypes.RenderTargetWriteDepth);
+        }
 
         scenePass = Pass.newGraphicsPass(graph, "Scene", renderer.getMaxFramesInFlight());
         {
-            scenePass.writes("NRenderTextures", nRenderTextures, DependencyTypes.RenderTargetWrite);
+            scenePass.reads("IDepthPrepassTextures", nDepthPrepassTextures, DependencyTypes.RenderTargetReadDepth);
+            scenePass.writes("NRenderTextures", nSceneColorTextures, DependencyTypes.RenderTargetWrite);
         }
 
 
         uiPass = Pass.newGraphicsPass(graph, "UI", renderer.getMaxFramesInFlight());
         {
-            uiPass.reads("IRenderTextures", nRenderTextures, DependencyTypes.FragmentShaderRead);
+            uiPass.reads("IRenderTextures", nSceneColorTextures, DependencyTypes.FragmentShaderRead);
             uiPass.writes("NSwapchainTextures", null, DependencyTypes.RenderTargetWrite);
             uiPass.writes("NSwapchainTexturesPresent", null, DependencyTypes.Present);
         }
 
         graph.addPasses(
+                depthPass,
                 scenePass,
                 uiPass
         );
@@ -63,6 +78,27 @@ public class ForwardPipeline extends RenderPipeline {
 
     @Override
     public List<Pass> buildFrame(ScenePack scenePack) {
+
+        depthPass.submit(() -> {
+            depthPass.startRendering(depthPassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
+            {
+                for(RenderSystem.IndexedDrawCall drawCall : scenePack.drawCalls()) {
+                    depthPass.setCullMode(CullMode.Back);
+                    depthPass.setShaderProgram(drawCall.shaderProgram);
+                    depthPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
+                    try (MemoryStack stack = stackPush()) {
+                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
+                        pPushConstants.putInt(0);
+                        pPushConstants.putInt(-1);
+                        pPushConstants.putInt(scenePack.lights().size());
+                        depthPass.setPushConstants(pPushConstants);
+                    }
+                    depthPass.drawIndexed(drawCall.indexCount);
+                }
+            }
+            depthPass.endRendering();
+
+        });
 
         scenePass.submit(() -> {
             scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
@@ -76,7 +112,6 @@ public class ForwardPipeline extends RenderPipeline {
                         pPushConstants.putInt(0);
                         pPushConstants.putInt(-1);
                         pPushConstants.putInt(scenePack.lights().size());
-
                         scenePass.setPushConstants(pPushConstants);
                     }
                     scenePass.drawIndexed(drawCall.indexCount);
@@ -87,7 +122,7 @@ public class ForwardPipeline extends RenderPipeline {
         });
 
 
-        scenePack.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nRenderTextures[renderer.getFrameIndex()]).arrayIndex(0));
+        scenePack.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[renderer.getFrameIndex()]).arrayIndex(0));
         scenePack.uiShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
 
 

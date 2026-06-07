@@ -632,8 +632,18 @@ public class VulkanRenderer extends Renderer {
                                                 VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                                                 1
                                         );
-                                    } else if ((rd.getType() & DependencyTypes.RenderTargetRead) != 0) {
-                                        Logger.todo(VulkanRenderer.class, "RenderTargetRead transitions are not supported");
+                                    } else if ((rd.getType() & DependencyTypes.RenderTargetReadDepth) != 0) {
+                                        VulkanUtil.transitionImages(
+                                                image,
+                                                commandBuffer,
+                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                writeSrcAccessMask,
+                                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                                                VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                srcStageMask,
+                                                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                                1
+                                        );
                                     } else if ((rd.getType() & DependencyTypes.RenderTargetWrite) != 0) {
                                         VulkanUtil.transitionImages(
                                                 image,
@@ -655,7 +665,7 @@ public class VulkanRenderer extends Renderer {
                                                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                                 VK_IMAGE_ASPECT_DEPTH_BIT,
                                                 srcStageMask,
-                                                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
                                                 1
                                         );
                                     }

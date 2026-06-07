@@ -61,7 +61,7 @@ public class RenderGraph extends Disposable {
     private void tracePasses(LinkedList<Pass> passes, Pass thisPass) {
         for(Dependency dependency : thisPass.getDependencies()) {
 
-            if((dependency.getType() & DependencyTypes.RenderTargetRead) != 0 ||
+            if((dependency.getType() & DependencyTypes.RenderTargetReadDepth) != 0 ||
                     (dependency.getType() & DependencyTypes.FragmentShaderRead) != 0 ||
                     (dependency.getType() & DependencyTypes.FragmentShaderReadDepth) != 0 ||
 

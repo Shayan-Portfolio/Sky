@@ -71,7 +71,6 @@ VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_in
 
 struct FSOutput {
     float4 color0 : SV_Target0;
-    float4 color1 : SV_Target1;
 }
 
 Texture2D material[4];
