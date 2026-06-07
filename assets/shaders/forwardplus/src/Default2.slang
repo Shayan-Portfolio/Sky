@@ -2,7 +2,7 @@
 #include "../../common/SceneDesc.slang"
 #include "../../common/NormalDepthBiasEval.slang"
 #include "../../common/ShadowEval.slang"
-#include "../../common/ReinhardTonemappingEval.slang"
+#include "../../common/ACESEval.slang"
 
 
 
@@ -176,7 +176,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
              }
 
              output_color.rgb *= (1 - max(0.0, shadow));
-             output.color0 = float4(reinhard_hdr(output_color), 1.0);
+             output.color0 = float4(ACESFilm(output_color), 1.0);
         }
 
     }
