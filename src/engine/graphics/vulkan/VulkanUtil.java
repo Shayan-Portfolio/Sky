@@ -91,9 +91,6 @@ public class VulkanUtil {
                 imageBarrier.subresourceRange().layerCount(layerCount);
             }
 
-            if(image.getFormat() == VK_FORMAT_D32_SFLOAT && aspectMask == VK_IMAGE_ASPECT_COLOR_BIT) {
-                System.out.println();
-            }
 
 
 
