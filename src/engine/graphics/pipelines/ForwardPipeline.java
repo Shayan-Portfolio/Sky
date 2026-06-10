@@ -20,6 +20,7 @@ public class ForwardPipeline extends RenderPipeline {
     private Texture[] nSceneColorTextures;
     private GraphicsPass depthPass;
     private RenderTarget depthPassRT;
+    private GraphicsPass shadowMapPass;
     private Texture[] nDepthPrepassTextures;
     private Renderer renderer;
 
@@ -29,6 +30,7 @@ public class ForwardPipeline extends RenderPipeline {
         this.renderer = renderer;
         this.graph = new RenderGraph(renderer);
 
+        //Depth prepass
         {
             nDepthPrepassTextures = new Texture[renderer.getMaxFramesInFlight()];
             for (int i = 0; i < nDepthPrepassTextures.length; i++) {
@@ -38,6 +40,7 @@ public class ForwardPipeline extends RenderPipeline {
             depthPassRT.addAttachment(new Attachment(AttachmentTypes.Depth, nDepthPrepassTextures, null));
         }
 
+        //Scene pass
         {
             nSceneColorTextures = new Texture[renderer.getMaxFramesInFlight()];
             for (int i = 0; i < nSceneColorTextures.length; i++) {
@@ -50,6 +53,14 @@ public class ForwardPipeline extends RenderPipeline {
 
         sampler = Sampler.newSampler(scenePassRT, Linear, Linear, false);
 
+
+
+        shadowMapPass = Pass.newGraphicsPass(graph, "Shadow", renderer.getMaxFramesInFlight());
+        {
+            shadowMapPass.writes("NShadowTextures", null, DependencyTypes.RenderTargetWriteDepth);
+        }
+
+
         depthPass = Pass.newGraphicsPass(graph, "Depth", renderer.getMaxFramesInFlight());
         {
             depthPass.writes("NDepthPrepassTextures", nDepthPrepassTextures, DependencyTypes.RenderTargetWriteDepth);
@@ -57,6 +68,7 @@ public class ForwardPipeline extends RenderPipeline {
 
         scenePass = Pass.newGraphicsPass(graph, "Scene", renderer.getMaxFramesInFlight());
         {
+            scenePass.reads("IShadowTextures", null, DependencyTypes.FragmentShaderReadDepth);
             scenePass.reads("IDepthPrepassTextures", nDepthPrepassTextures, DependencyTypes.RenderTargetReadDepth);
             scenePass.writes("NRenderTextures", nSceneColorTextures, DependencyTypes.RenderTargetWrite);
         }
@@ -70,6 +82,7 @@ public class ForwardPipeline extends RenderPipeline {
         }
 
         graph.addPasses(
+                shadowMapPass,
                 depthPass,
                 scenePass,
                 uiPass
@@ -78,6 +91,61 @@ public class ForwardPipeline extends RenderPipeline {
 
     @Override
     public List<Pass> buildFrame(ScenePack scenePack) {
+
+        scenePack.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[renderer.getFrameIndex()]).arrayIndex(0));
+        scenePack.uiShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
+        Texture[] swapchainTextures = renderer.getSwapchainRenderTarget()
+                .getAttachment(AttachmentTypes.Color0)
+                .getTextures();
+
+        Texture[] shadowMapTextures = new Texture[scenePack.lights().size()];
+
+        List<LightData> lights = scenePack.lights();
+        for (int i = 0; i < lights.size(); i++) {
+            LightData lightData = lights.get(i);
+            shadowMapTextures[i] = lightData.renderTarget
+                    .getAttachment(AttachmentTypes.Depth)
+                    .getTextures()[renderer.getFrameIndex()];
+        }
+
+        List<RenderSystem.IndexedDrawCall> drawCalls = scenePack.drawCalls();
+        for (RenderSystem.IndexedDrawCall drawCall : drawCalls) {
+            for (int j = 0; j < scenePack.lights().size(); j++) {
+                drawCall.shaderProgram.setTextures(
+                        renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps", shadowMapTextures[j]).arrayIndex(j)
+                );
+            }
+            drawCall.shaderProgram.setSamplers(
+                    renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_map_sampler", sampler)
+            );
+        }
+
+
+
+        shadowMapPass.bind("NShadowTextures", shadowMapTextures);
+        shadowMapPass.submit(() -> {
+            List<LightData> lightDataList = scenePack.lights();
+            for (int i = 0; i < lightDataList.size(); i++) {
+                LightData lightData = lightDataList.get(i);
+                shadowMapPass.startRendering(lightData.renderTarget, 0, 1024, 1024, true, Color.BLACK);
+                shadowMapPass.setCullMode(CullMode.Front);
+
+                for (RenderSystem.IndexedDrawCall drawCall : scenePack.drawCalls()) {
+                    shadowMapPass.setShaderProgram(drawCall.shaderProgram);
+                    shadowMapPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
+                    try (MemoryStack stack = stackPush()) {
+                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
+                        pPushConstants.putInt(1);
+                        pPushConstants.putInt(i);
+                        pPushConstants.putInt(scenePack.lights().size());
+                        shadowMapPass.setPushConstants(pPushConstants);
+                    }
+                    shadowMapPass.drawIndexed(drawCall.indexCount);
+                }
+
+                shadowMapPass.endRendering();
+            }
+        });
 
         depthPass.submit(() -> {
             depthPass.startRendering(depthPassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
@@ -88,7 +156,7 @@ public class ForwardPipeline extends RenderPipeline {
                     depthPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
                         ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
-                        pPushConstants.putInt(0);
+                        pPushConstants.putInt(2);
                         pPushConstants.putInt(-1);
                         pPushConstants.putInt(scenePack.lights().size());
                         depthPass.setPushConstants(pPushConstants);
@@ -100,6 +168,8 @@ public class ForwardPipeline extends RenderPipeline {
 
         });
 
+
+        scenePass.bind("IShadowTextures", shadowMapTextures);
         scenePass.submit(() -> {
             scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
             {
@@ -120,16 +190,6 @@ public class ForwardPipeline extends RenderPipeline {
             scenePass.endRendering();
 
         });
-
-
-        scenePack.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[renderer.getFrameIndex()]).arrayIndex(0));
-        scenePack.uiShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
-
-
-
-        Texture[] swapchainTextures = renderer.getSwapchainRenderTarget()
-                .getAttachment(AttachmentTypes.Color0)
-                .getTextures();
 
         uiPass.bind("NSwapchainTextures", swapchainTextures);
         uiPass.bind("NSwapchainTexturesPresent", swapchainTextures);
