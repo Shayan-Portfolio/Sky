@@ -60,51 +60,47 @@ public class VulkanTexture extends Texture {
         imageView = new VulkanImageView(image, VulkanRuntime.getCurrentDevice(), image, aspectMask, arrayLayers);
 
         if(textureData != null) {
-
-
             imageData = Buffer.newBuffer(this, getWidth() * getHeight() * 4 * arrayLayers, Buffer.Usage.ImageBackingBuffer, Buffer.Type.CPUGPUShared, false);
             ByteBuffer bytes = imageData.map();
-            for(Asset<TextureData> faceAsset : textureData) {
+            for (Asset<TextureData> faceAsset : textureData) {
                 bytes.put(faceAsset.getObject().data);
             }
             imageData.unmap();
+        }
 
 
+        try (MemoryStack stack = stackPush()) {
 
 
+            commandPool = new VulkanCommandPool(this, VulkanRuntime.getCurrentDevice(), VulkanRuntime.getGraphicsFamilyIndex());
+
+            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+            allocInfo.commandPool(commandPool.getHandle());
+            allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+            allocInfo.commandBufferCount(1);
+
+            PointerBuffer pCommandBuffers = stack.mallocPointer(1);
+
+            if (vkAllocateCommandBuffers(VulkanRuntime.getCurrentDevice(), allocInfo, pCommandBuffers) != VK_SUCCESS) {
+                throw new SkyRuntimeException("Failed to create command buffer");
+            }
+
+            commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), VulkanRuntime.getCurrentDevice());
+
+            fence = new VulkanFence(this, VulkanRuntime.getCurrentDevice(), 0);
 
 
-            try (MemoryStack stack = stackPush()) {
+            vkResetFences(VulkanRuntime.getCurrentDevice(), fence.getHandle());
 
+            VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
+            beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
 
-                commandPool = new VulkanCommandPool(this, VulkanRuntime.getCurrentDevice(), VulkanRuntime.getGraphicsFamilyIndex());
+            if (vkBeginCommandBuffer(commandBuffer, beginInfo) != VK_SUCCESS) {
+                throw new SkyRuntimeException("Failed to start recording command buffer");
+            }
 
-                VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-                allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-                allocInfo.commandPool(commandPool.getHandle());
-                allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-                allocInfo.commandBufferCount(1);
-
-                PointerBuffer pCommandBuffers = stack.mallocPointer(1);
-
-                if (vkAllocateCommandBuffers(VulkanRuntime.getCurrentDevice(), allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                    throw new SkyRuntimeException("Failed to create command buffer");
-                }
-
-                commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), VulkanRuntime.getCurrentDevice());
-
-                fence = new VulkanFence(this, VulkanRuntime.getCurrentDevice(), 0);
-
-
-                vkResetFences(VulkanRuntime.getCurrentDevice(), fence.getHandle());
-
-                VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
-                beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
-
-                if (vkBeginCommandBuffer(commandBuffer, beginInfo) != VK_SUCCESS) {
-                    throw new SkyRuntimeException("Failed to start recording command buffer");
-                }
-
+            if(textureData != null) {
 
                 VulkanUtil.transitionImages(
                         image,
@@ -117,7 +113,6 @@ public class VulkanTexture extends Texture {
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         arrayLayers
                 );
-
 
 
                 VkBufferImageCopy.Buffer imageCopies = VkBufferImageCopy.calloc(1, stack);
@@ -135,28 +130,40 @@ public class VulkanTexture extends Texture {
                         VK_IMAGE_LAYOUT_GENERAL,
                         VK_ACCESS_TRANSFER_WRITE_BIT,
                         VK_ACCESS_SHADER_READ_BIT,
-                        VK_IMAGE_ASPECT_COLOR_BIT,
+                        aspectMask,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                         arrayLayers
                 );
-
-                if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-                    throw new SkyRuntimeException(Logger.error(VulkanTexture.class, "Failed to finish recording command buffer"));
-                }
-
-                VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
-                submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-                submitInfo.pCommandBuffers(stack.pointers(commandBuffer));
-
-                if (vkQueueSubmit(VulkanRuntime.getGraphicsQueue(), submitInfo, fence.getHandle()) != VK_SUCCESS) {
-                    throw new SkyRuntimeException("Failed to submit command buffer");
-                }
-
-                vkWaitForFences(VulkanRuntime.getCurrentDevice(), fence.getHandle(), true, VulkanUtil.UINT64_MAX);
             }
-        }
+            else {
+                VulkanUtil.transitionImages(
+                        image,
+                        commandBuffer,
+                        VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_TRANSFER_WRITE_BIT,
+                        VK_ACCESS_SHADER_READ_BIT,
+                        aspectMask,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                        arrayLayers
+                );
+            }
 
+            if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+                throw new SkyRuntimeException(Logger.error(VulkanTexture.class, "Failed to finish recording command buffer"));
+            }
+
+            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
+            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+            submitInfo.pCommandBuffers(stack.pointers(commandBuffer));
+
+            if (vkQueueSubmit(VulkanRuntime.getGraphicsQueue(), submitInfo, fence.getHandle()) != VK_SUCCESS) {
+                throw new SkyRuntimeException("Failed to submit command buffer");
+            }
+
+            vkWaitForFences(VulkanRuntime.getCurrentDevice(), fence.getHandle(), true, VulkanUtil.UINT64_MAX);
+        }
 
 
     }

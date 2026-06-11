@@ -88,6 +88,8 @@ public class VulkanImage extends Disposable {
     }
 
     public int getCurrentLayout() {
+        if(currentLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+            System.out.println();
         return currentLayout;
     }
 
