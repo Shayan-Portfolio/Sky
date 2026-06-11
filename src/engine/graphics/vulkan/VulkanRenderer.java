@@ -342,6 +342,12 @@ public class VulkanRenderer extends Renderer {
                 physicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT.dynamicRenderingUnusedAttachments(true);
             }
 
+            VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures = VkPhysicalDeviceDescriptorIndexingFeatures.calloc(stack);
+            {
+                descriptorIndexingFeatures.sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES);
+                descriptorIndexingFeatures.descriptorBindingPartiallyBound(true);
+
+            }
             VkDeviceCreateInfo createInfo = VkDeviceCreateInfo.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
@@ -349,7 +355,8 @@ public class VulkanRenderer extends Renderer {
             createInfo
                     .pNext(physicalDeviceDynamicRenderingFeaturesKHR)
                     .pNext(physicalDeviceComputeShaderDerivativesFeaturesKHR)
-                    .pNext(physicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT);
+                    .pNext(physicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT)
+                    .pNext(descriptorIndexingFeatures);
 
 
             createInfo.pEnabledFeatures(deviceFeatures);

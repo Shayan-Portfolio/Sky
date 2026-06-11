@@ -14,6 +14,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.util.spvc.Spv.SpvDecorationBinding;
@@ -611,6 +612,14 @@ public class VulkanShaderProgram extends ShaderProgram {
                         descriptorSetLayoutCreateInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
                         descriptorSetLayoutCreateInfo.pBindings(descriptorSetLayoutBindings);
 
+                        VkDescriptorSetLayoutBindingFlagsCreateInfo descriptorSetLayoutBindingFlagsCreateInfo = VkDescriptorSetLayoutBindingFlagsCreateInfo.calloc(stack);
+                        descriptorSetLayoutBindingFlagsCreateInfo.sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO);
+                        descriptorSetLayoutBindingFlagsCreateInfo.pBindingFlags(stack.ints(IntStream.generate(() -> VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)
+                                .limit(descriptorSetLayoutBindings.capacity())
+                                .toArray()));
+                        descriptorSetLayoutBindingFlagsCreateInfo.bindingCount(descriptorSetLayoutBindings.capacity());
+
+                        descriptorSetLayoutCreateInfo.pNext(descriptorSetLayoutBindingFlagsCreateInfo);
                         if (vkCreateDescriptorSetLayout(VulkanRuntime.getCurrentDevice(), descriptorSetLayoutCreateInfo, null, pDescriptorSetLayout) != VK_SUCCESS) {
                             throw new SkyRuntimeException("Failed to create descriptor set layout");
                         }
