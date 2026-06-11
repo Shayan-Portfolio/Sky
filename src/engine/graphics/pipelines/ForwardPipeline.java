@@ -116,7 +116,7 @@ public class ForwardPipeline extends RenderPipeline {
                 );
             }
             drawCall.shaderProgram.setSamplers(
-                    renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_map_sampler", sampler)
+                    renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps_sampler", sampler)
             );
         }
 

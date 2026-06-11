@@ -4,18 +4,12 @@
 #include "../../common/ShadowEval.slang"
 #include "../../common/ACESEval.slang"
 
-
-
-struct Transforms {
-    float4x4 transform[1];
-}
-
 StructuredBuffer<Scene> scene_desc;
-StructuredBuffer<Transforms> transforms;
+StructuredBuffer<float4x4> transforms;
 
 
 Texture2D input_shadow_maps[MAX_LIGHTS];
-SamplerState input_shadow_maps_samplers[MAX_LIGHTS];
+SamplerState input_shadow_maps_sampler;
 
 struct VSOutput {
     float4 pos : SV_POSITION;
@@ -43,7 +37,7 @@ VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_in
     float4x4 view, proj;
 
 
-    
+
     if(render_mode == 0 || render_mode == 2) {
         view = scene_desc[0].camera.view;
         proj = scene_desc[0].camera.proj;
@@ -53,7 +47,7 @@ VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_in
         proj = scene_desc[0].lights[light_index].proj;
     }
 
-    float4x4 transform = transforms[0].transform[0];
+    float4x4 transform = transforms[0];
 
     output.normal_ws = normalize(mul(float3x3(transform), vertex.normal_ms));
     output.pos_vs = mul(view, mul(transform, float4(vertex.pos_ms, 1.0)));
@@ -92,12 +86,12 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
 
         float metallic = material[2].Sample(material_sampler, vsOutput.uv_ts).r;
         float roughness = material[3].Sample(material_sampler, vsOutput.uv_ts).r;
-        
 
-        
+
+
         //BRDF
         {
-           
+
              Camera camera = scene_desc[0].camera;
              float3 camera_pos_ws = float3(camera.invView[0][3], camera.invView[1][3], camera.invView[2][3]);
 
@@ -122,13 +116,13 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
                  float4 shadow_map_uv_ts = fragment_shadow_map_ps * 0.5 + 0.5;
 
                  bool in_frustum = shadow_map_uv_ts.x >= 0 && shadow_map_uv_ts.x <= 1 && shadow_map_uv_ts.y >= 0 && shadow_map_uv_ts.y <= 1;
-                 /*if (in_frustum) {
+                 if (in_frustum) {
 
                      // Shadows
                      {
                          float shadow_per_pixel = pcf(
                              input_shadow_maps[light_index],
-                             input_shadow_maps_samplers[light_index],
+                             input_shadow_maps_sampler,
                              1,
                              shadow_map_uv_ts.xy,
                              fragment_shadow_map_ps,
@@ -138,7 +132,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
                          shadow += shadow_per_pixel;
                      }
 
-                 }*/
+                 }
 
                  // Lighting BRDF
                  {
