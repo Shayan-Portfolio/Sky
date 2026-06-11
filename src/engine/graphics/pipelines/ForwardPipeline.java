@@ -140,7 +140,8 @@ public class ForwardPipeline extends RenderPipeline {
                         pPushConstants.putInt(scenePack.lights().size());
                         shadowMapPass.setPushConstants(pPushConstants);
                     }
-                    shadowMapPass.drawIndexed(drawCall.indexCount);
+                    if(drawCall.instanced) shadowMapPass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
+                    else shadowMapPass.drawIndexed(drawCall.indexCount);
                 }
 
                 shadowMapPass.endRendering();
@@ -161,7 +162,8 @@ public class ForwardPipeline extends RenderPipeline {
                         pPushConstants.putInt(scenePack.lights().size());
                         depthPass.setPushConstants(pPushConstants);
                     }
-                    depthPass.drawIndexed(drawCall.indexCount);
+                    if(drawCall.instanced) depthPass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
+                    else depthPass.drawIndexed(drawCall.indexCount);
                 }
             }
             depthPass.endRendering();
@@ -184,7 +186,8 @@ public class ForwardPipeline extends RenderPipeline {
                         pPushConstants.putInt(scenePack.lights().size());
                         scenePass.setPushConstants(pPushConstants);
                     }
-                    scenePass.drawIndexed(drawCall.indexCount);
+                    if(drawCall.instanced) scenePass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
+                    else scenePass.drawIndexed(drawCall.indexCount);
                 }
             }
             scenePass.endRendering();
