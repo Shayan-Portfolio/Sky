@@ -385,16 +385,18 @@ public class RenderSystem extends ActorSystem {
                 ShaderComponent shaderComponent = actor.getComponent(ShaderComponent.class);
                 TransformComponent transformComponent = actor.getComponent(TransformComponent.class);
 
-                indexedDrawCalls.add(new IndexedDrawCall(
-                        meshComponent.vertexBuffer,
-                        meshComponent.indexBuffer,
-                        materialComponent.material,
-                        shaderComponent.shaderProgram(),
-                        meshComponent.visible,
-                        meshComponent.instanced,
-                        meshComponent.instanceCount,
-                        meshComponent.indexCount
-                ));
+                if(meshComponent.isVisible()) {
+                    indexedDrawCalls.add(new IndexedDrawCall(
+                            meshComponent.vertexBuffer,
+                            meshComponent.indexBuffer,
+                            materialComponent.material,
+                            shaderComponent.shaderProgram(),
+                            meshComponent.visible,
+                            meshComponent.instanced,
+                            meshComponent.instanceCount,
+                            meshComponent.indexCount
+                    ));
+                }
 
                 ByteBuffer transformsData = meshComponent.transformsBuffers[renderer.getFrameIndex()].get();
                 transformComponent.transform().get(0, transformsData);
