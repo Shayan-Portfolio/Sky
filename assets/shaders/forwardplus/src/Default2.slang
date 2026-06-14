@@ -32,7 +32,7 @@ struct Vertex
 
 
 [shader("vertex")]
-VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_index, uniform int light_count) {
+VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_index, uniform int light_count, int instanceID : SV_VulkanInstanceID) {
     VSOutput output;
     float4x4 view, proj;
 
@@ -47,7 +47,7 @@ VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_in
         proj = scene_desc[0].lights[light_index].proj;
     }
 
-    float4x4 transform = transforms[0];
+    float4x4 transform = transforms[instanceID];
 
     output.normal_ws = normalize(mul(float3x3(transform), vertex.normal_ms));
     output.pos_vs = mul(view, mul(transform, float4(vertex.pos_ms, 1.0)));
