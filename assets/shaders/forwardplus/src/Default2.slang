@@ -29,7 +29,9 @@ struct Vertex
     float3 tangent_ms;
 }
 
-
+#define PBR_MODE 0
+#define SHADOW_MAP_MODE 1
+#define DEPTH_PREPASS_MODE 2
 
 [shader("vertex")]
 VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_index, uniform int light_count, int instanceID : SV_VulkanInstanceID) {
@@ -38,11 +40,11 @@ VSOutput vertexMain(Vertex vertex, uniform int render_mode, uniform int light_in
 
 
 
-    if(render_mode == 0 || render_mode == 2) {
+    if(render_mode == PBR_MODE || render_mode == DEPTH_PREPASS_MODE) {
         view = scene_desc[0].camera.view;
         proj = scene_desc[0].camera.proj;
     }
-    if(render_mode == 1) {
+    if(render_mode == SHADOW_MAP_MODE) {
         view = scene_desc[0].lights[light_index].view;
         proj = scene_desc[0].lights[light_index].proj;
     }
@@ -75,7 +77,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
     FSOutput output;
     float3 output_color = float3(0, 0, 0);
 
-    if (render_mode == 0) {
+    if (render_mode == PBR_MODE) {
 
         float3 normal_ts = material[1].Sample(material_sampler, vsOutput.uv_ts).xyz * 2.0 - 1.0;
         float3 normal_ws = normalize(mul(vsOutput.tbn_ws_inv, normalize(normal_ts)));

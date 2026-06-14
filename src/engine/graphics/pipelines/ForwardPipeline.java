@@ -25,6 +25,7 @@ public class ForwardPipeline extends RenderPipeline {
     private Renderer renderer;
 
     private Sampler sampler;
+    private static final int PbrMode = 0, ShadowMapMode = 1, DepthPrepassMode = 2;
     @Override
     public void init(Renderer renderer) {
         this.renderer = renderer;
@@ -135,7 +136,7 @@ public class ForwardPipeline extends RenderPipeline {
                     shadowMapPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
                         ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
-                        pPushConstants.putInt(1);
+                        pPushConstants.putInt(ShadowMapMode);
                         pPushConstants.putInt(i);
                         pPushConstants.putInt(scenePack.lights().size());
                         shadowMapPass.setPushConstants(pPushConstants);
@@ -157,7 +158,7 @@ public class ForwardPipeline extends RenderPipeline {
                     depthPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
                         ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
-                        pPushConstants.putInt(2);
+                        pPushConstants.putInt(DepthPrepassMode);
                         pPushConstants.putInt(-1);
                         pPushConstants.putInt(scenePack.lights().size());
                         depthPass.setPushConstants(pPushConstants);
@@ -181,7 +182,7 @@ public class ForwardPipeline extends RenderPipeline {
                     scenePass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
                         ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
-                        pPushConstants.putInt(0);
+                        pPushConstants.putInt(PbrMode);
                         pPushConstants.putInt(-1);
                         pPushConstants.putInt(scenePack.lights().size());
                         scenePass.setPushConstants(pPushConstants);
