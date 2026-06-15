@@ -510,9 +510,7 @@ public class VulkanRenderer extends Renderer {
             int waitDstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             VulkanSemaphore wait = ((VulkanSemaphore[]) swapchainImageAcquireSemaphores)[frameIndex];
 
-            for (Pass value : passes) {
-                VulkanGraphicsPass pass = (VulkanGraphicsPass) value;
-
+            for (Pass pass : passes) {
                 //Insert barriers
                 {
                     pass.setStartingBarriers(object -> {
@@ -645,12 +643,12 @@ public class VulkanRenderer extends Renderer {
 
                     submitInfo.pWaitSemaphores(stack.longs(wait.getHandle()));
                     submitInfo.pWaitDstStageMask(stack.ints(waitDstStageMask));
-                    submitInfo.pCommandBuffers(stack.pointers(pass.getCommandBuffers()[frameIndex]));
+                    submitInfo.pCommandBuffers(stack.pointers(pass instanceof VulkanGraphicsPass ? ((VulkanGraphicsPass) pass).getCommandBuffers()[frameIndex] : ((VulkanComputePass) pass).getCommandBuffers()[frameIndex]));
                     submitInfo.pSignalSemaphores(stack.longs(((VulkanSemaphore) pass.getFinishedSemaphores()[frameIndex]).getHandle()));
 
                     vkQueueSubmit(graphicsQueue, submitInfo, pass == passes.getLast() ? ((VulkanFence[]) submissionFences)[frameIndex].getHandle() : VK_NULL_HANDLE);
 
-                    waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                    waitDstStageMask = pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
                     wait = (VulkanSemaphore) pass.getFinishedSemaphores()[frameIndex];
                 }
             }

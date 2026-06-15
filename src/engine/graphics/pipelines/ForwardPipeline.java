@@ -94,10 +94,10 @@ public class ForwardPipeline extends RenderPipeline {
             depthPass.writes("NDepthPrepassTextures", nDepthPrepassTextures, AccessTypes.DepthWrite);
         }
 
-        //tiledLightCullingPass = Pass.newComputePass(graph, "Forward+ Tiled Light Culling", renderer.getMaxFramesInFlight());
-        //{
-        //    tiledLightCullingPass.writes("NTiledLightingData", tiledLightingDataBuffers, AccessTypes.DepthRead);
-        //}
+        tiledLightCullingPass = Pass.newComputePass(graph, "Forward+ Tiled Light Culling", renderer.getMaxFramesInFlight());
+        {
+            tiledLightCullingPass.writes("NTiledLightingData", tiledLightingDataBuffers, AccessTypes.DepthRead);
+        }
 
 
         scenePass = Pass.newGraphicsPass(graph, "Scene", renderer.getMaxFramesInFlight());
@@ -119,7 +119,7 @@ public class ForwardPipeline extends RenderPipeline {
         graph.addPasses(
                 shadowMapPass,
                 depthPass,
-                //tiledLightCullingPass,
+                tiledLightCullingPass,
                 scenePass,
                 uiPass
         );
@@ -206,7 +206,7 @@ public class ForwardPipeline extends RenderPipeline {
             depthPass.endRendering();
 
         });
-        /*tiledLightCullingPass.submit(() -> {
+        tiledLightCullingPass.submit(() -> {
             tiledLightCullingPass.setShaderProgram(tiledLightingShaderProgram);
             try (MemoryStack stack = stackPush()) {
                 ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
@@ -216,7 +216,7 @@ public class ForwardPipeline extends RenderPipeline {
                 tiledLightCullingPass.setPushConstants(pPushConstants);
             }
             tiledLightCullingPass.dispatch(lights.size(), 1, 1);
-        });*/
+        });
 
 
 

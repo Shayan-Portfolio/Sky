@@ -96,6 +96,9 @@ public class VulkanComputePass extends ComputePass {
         vkCmdDispatch(commandBuffers[frameIndex], workGroupCountX, workGroupCountY, workGroupCountZ);
     }
 
+    public VkCommandBuffer[] getCommandBuffers() {
+        return commandBuffers;
+    }
 
     @Override
     public void endRecording() {
