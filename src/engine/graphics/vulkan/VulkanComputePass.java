@@ -105,25 +105,6 @@ public class VulkanComputePass extends ComputePass {
     }
 
     @Override
-    public void submit(Optional<Fence[]> submissionFences) {
-        try(MemoryStack stack = stackPush()) {
-
-            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
-            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-            submitInfo.waitSemaphoreCount(1);
-
-            submitInfo.pWaitSemaphores(stack.longs(((VulkanSemaphore) waitSemaphores[frameIndex]).getHandle()));
-            submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT));
-            submitInfo.pCommandBuffers(stack.pointers(commandBuffers[frameIndex]));
-            submitInfo.pSignalSemaphores(stack.longs(((VulkanSemaphore) finishedSemaphores[frameIndex]).getHandle()));
-
-            if(submissionFences.isPresent())
-                vkQueueSubmit(computeQueue, submitInfo, ((VulkanFence[]) submissionFences.get())[frameIndex].getHandle());
-            else vkQueueSubmit(computeQueue, submitInfo, VK_NULL_HANDLE);
-        }
-    }
-
-    @Override
     public void waitForFinish() {
         vkQueueWaitIdle(computeQueue);
     }

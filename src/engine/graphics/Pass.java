@@ -105,7 +105,6 @@ public abstract class Pass extends Disposable {
         this.finishedSemaphores = finishedSemaphores;
     }
 
-    public abstract void submit(Optional<Fence[]> submissionFences);
     public abstract void waitForFinish();
 
     public Semaphore[] getWaitSemaphores() {

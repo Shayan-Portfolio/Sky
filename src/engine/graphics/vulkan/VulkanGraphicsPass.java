@@ -266,27 +266,6 @@ public class VulkanGraphicsPass extends GraphicsPass {
     }
 
     @Override
-    public void submit(Optional<Fence[]> submissionFences) {
-        try(MemoryStack stack = stackPush()) {
-
-            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
-            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-            submitInfo.waitSemaphoreCount(1);
-
-            submitInfo.pWaitSemaphores(stack.longs(((VulkanSemaphore) waitSemaphores[frameIndex]).getHandle()));
-            submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
-            submitInfo.pCommandBuffers(stack.pointers(commandBuffers[frameIndex]));
-            submitInfo.pSignalSemaphores(stack.longs(((VulkanSemaphore) finishedSemaphores[frameIndex]).getHandle()));
-
-            if(submissionFences.isPresent())
-                vkQueueSubmit(graphicsQueue, submitInfo, ((VulkanFence[]) submissionFences.get())[frameIndex].getHandle());
-            else vkQueueSubmit(graphicsQueue, submitInfo, VK_NULL_HANDLE);
-        }
-
-
-    }
-
-    @Override
     public void waitForFinish() {
         vkQueueWaitIdle(graphicsQueue);
     }

@@ -507,153 +507,162 @@ public class VulkanRenderer extends Renderer {
                     pImageIndex
             );
 
+            int waitDstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            VulkanSemaphore wait = ((VulkanSemaphore[]) swapchainImageAcquireSemaphores)[frameIndex];
+
+            for (Pass value : passes) {
+                VulkanGraphicsPass pass = (VulkanGraphicsPass) value;
+
+                //Insert barriers
+                {
+                    pass.setStartingBarriers(object -> {
+
+                        VkCommandBuffer commandBuffer = (VkCommandBuffer) object;
+
+                        for (Dependency rd : pass.getDependencies()) {
+                            RenderGraphResource rgResource = rd.getResource();
+
+                            assert rgResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
+
+                            Texture[] textures = null;
+                            if (rgResource.get() instanceof Texture[]) {
+                                textures = ((Texture[]) rgResource.get());
+                            }
+
+                            if (textures != null) {
+                                int texturePairs = textures.length / maxFramesInFlight;
+                                for (int i = 0; i < texturePairs; i++) {
+                                    Texture texture = textures[i * maxFramesInFlight + frameIndex];
+                                    VulkanImage image = ((VulkanTexture) texture).getImage();
 
 
+                                    switch (rd.getAccessType()) {
 
-
-            VulkanGraphicsPass graphicsPass = (VulkanGraphicsPass) passes.get(0);
-
-            //Insert barriers
-            {
-                graphicsPass.setStartingBarriers(object -> {
-
-                    VkCommandBuffer commandBuffer = (VkCommandBuffer) object;
-
-                    for(Dependency rd : graphicsPass.getDependencies()) {
-                        RenderGraphResource rgResource = rd.getResource();
-
-                        assert rgResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
-
-                        Texture[] textures = null;
-                        if(rgResource.get() instanceof Texture[]) {
-                            textures = ((Texture[]) rgResource.get());
-                        }
-
-                        if(textures != null) {
-                            int texturePairs = textures.length / maxFramesInFlight;
-                            for (int i = 0; i < texturePairs; i++) {
-                                Texture texture = textures[i * maxFramesInFlight + frameIndex];
-                                VulkanImage image = ((VulkanTexture) texture).getImage();
-
-
-
-                                switch (rd.getAccessType()) {
-
-                                    case AccessTypes.ColorWrite: {
-                                        VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
-                                        {
-                                            imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-                                            imageBarrier.oldLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-                                            imageBarrier.newLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-                                            imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-                                            imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-                                            imageBarrier.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-                                            imageBarrier.image(image.getHandle());
-                                            imageBarrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-                                            imageBarrier.subresourceRange().baseMipLevel(0);
-                                            imageBarrier.subresourceRange().levelCount(1);
-                                            imageBarrier.subresourceRange().baseArrayLayer(0);
-                                            imageBarrier.subresourceRange().layerCount(1);
+                                        case AccessTypes.ColorWrite: {
+                                            VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
+                                            {
+                                                imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+                                                imageBarrier.oldLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+                                                imageBarrier.newLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                                imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+                                                imageBarrier.image(image.getHandle());
+                                                imageBarrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+                                                imageBarrier.subresourceRange().baseMipLevel(0);
+                                                imageBarrier.subresourceRange().levelCount(1);
+                                                imageBarrier.subresourceRange().baseArrayLayer(0);
+                                                imageBarrier.subresourceRange().layerCount(1);
+                                            }
+                                            vkCmdPipelineBarrier(
+                                                    commandBuffer,
+                                                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                    0,
+                                                    null,
+                                                    null,
+                                                    imageBarrier
+                                            );
+                                            break;
                                         }
-                                        vkCmdPipelineBarrier(
-                                                commandBuffer,
-                                                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                0,
-                                                null,
-                                                null,
-                                                imageBarrier
-                                        );
-                                        break;
+
+
                                     }
 
-
                                 }
-
                             }
                         }
-                    }
-                });
-                graphicsPass.setEndingBarriers(object -> {
-                    VkCommandBuffer commandBuffer = (VkCommandBuffer) object;
+                    });
+                    pass.setEndingBarriers(object -> {
+                        VkCommandBuffer commandBuffer = (VkCommandBuffer) object;
 
-                    for(Dependency rd : graphicsPass.getDependencies()) {
-                        RenderGraphResource rgResource = rd.getResource();
+                        for (Dependency rd : pass.getDependencies()) {
+                            RenderGraphResource rgResource = rd.getResource();
 
-                        assert rgResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
+                            assert rgResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
 
-                        Texture[] textures = null;
-                        if(rgResource.get() instanceof Texture[]) {
-                            textures = ((Texture[]) rgResource.get());
-                        }
+                            Texture[] textures = null;
+                            if (rgResource.get() instanceof Texture[]) {
+                                textures = ((Texture[]) rgResource.get());
+                            }
 
-                        if(textures != null) {
-                            int texturePairs = textures.length / maxFramesInFlight;
-                            for (int i = 0; i < texturePairs; i++) {
-                                Texture texture = textures[i * maxFramesInFlight + frameIndex];
-                                VulkanImage image = ((VulkanTexture) texture).getImage();
-                                switch (rd.getAccessType()) {
+                            if (textures != null) {
+                                int texturePairs = textures.length / maxFramesInFlight;
+                                for (int i = 0; i < texturePairs; i++) {
+                                    Texture texture = textures[i * maxFramesInFlight + frameIndex];
+                                    VulkanImage image = ((VulkanTexture) texture).getImage();
+                                    switch (rd.getAccessType()) {
 
 
-                                    case AccessTypes.Present: {
-                                        VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
-                                        {
-                                            imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-                                            imageBarrier.oldLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-                                            imageBarrier.newLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-                                            imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-                                            imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-                                            imageBarrier.srcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-                                            imageBarrier.image(image.getHandle());
-                                            imageBarrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-                                            imageBarrier.subresourceRange().baseMipLevel(0);
-                                            imageBarrier.subresourceRange().levelCount(1);
-                                            imageBarrier.subresourceRange().baseArrayLayer(0);
-                                            imageBarrier.subresourceRange().layerCount(1);
+                                        case AccessTypes.Present: {
+                                            VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
+                                            {
+                                                imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+                                                imageBarrier.oldLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                                imageBarrier.newLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+                                                imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.srcAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+                                                imageBarrier.image(image.getHandle());
+                                                imageBarrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+                                                imageBarrier.subresourceRange().baseMipLevel(0);
+                                                imageBarrier.subresourceRange().levelCount(1);
+                                                imageBarrier.subresourceRange().baseArrayLayer(0);
+                                                imageBarrier.subresourceRange().layerCount(1);
+                                            }
+                                            vkCmdPipelineBarrier(
+                                                    commandBuffer,
+                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                    0,
+                                                    null,
+                                                    null,
+                                                    imageBarrier
+                                            );
+                                            break;
                                         }
-                                        vkCmdPipelineBarrier(
-                                                commandBuffer,
-                                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                0,
-                                                null,
-                                                null,
-                                                imageBarrier
-                                        );
-                                        break;
+
+
                                     }
 
-
                                 }
-
                             }
                         }
-                    }
-                });
+                    });
+                }
+
+
+                pass.startRecording(frameIndex);
+                pass.resolveStartingBarriers();
+                pass.getRecorder().run();
+                pass.resolveEndingBarriers();
+                pass.endRecording();
+
+                {
+                    VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
+                    submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+                    submitInfo.waitSemaphoreCount(1);
+
+                    submitInfo.pWaitSemaphores(stack.longs(wait.getHandle()));
+                    submitInfo.pWaitDstStageMask(stack.ints(waitDstStageMask));
+                    submitInfo.pCommandBuffers(stack.pointers(pass.getCommandBuffers()[frameIndex]));
+                    submitInfo.pSignalSemaphores(stack.longs(((VulkanSemaphore) pass.getFinishedSemaphores()[frameIndex]).getHandle()));
+
+                    vkQueueSubmit(graphicsQueue, submitInfo, pass == passes.getLast() ? ((VulkanFence[]) submissionFences)[frameIndex].getHandle() : VK_NULL_HANDLE);
+
+                    waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                    wait = (VulkanSemaphore) pass.getFinishedSemaphores()[frameIndex];
+                }
             }
 
 
-            graphicsPass.startRecording(frameIndex);
-            graphicsPass.resolveStartingBarriers();
-            graphicsPass.getRecorder().run();
-            graphicsPass.resolveEndingBarriers();
-            graphicsPass.endRecording();
-
-            {
-                VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
-                submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-                submitInfo.waitSemaphoreCount(1);
-
-                submitInfo.pWaitSemaphores(stack.longs(((VulkanSemaphore) swapchainImageAcquireSemaphores[frameIndex]).getHandle()));
-                submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
-                submitInfo.pCommandBuffers(stack.pointers(graphicsPass.getCommandBuffers()[frameIndex]));
-                submitInfo.pSignalSemaphores(stack.longs(((VulkanSemaphore) graphicsPass.getFinishedSemaphores()[frameIndex]).getHandle()));
-
-                vkQueueSubmit(graphicsQueue, submitInfo, ((VulkanFence[]) submissionFences)[frameIndex].getHandle());
-            }
 
 
-            VulkanSemaphore[] finishedSemaphores = (VulkanSemaphore[]) graphicsPass.getFinishedSemaphores();
+
+
+
+
+            VulkanSemaphore[] finishedSemaphores = (VulkanSemaphore[]) passes.getLast().getFinishedSemaphores();
 
             VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack);
             presentInfo.sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);

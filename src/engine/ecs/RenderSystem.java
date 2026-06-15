@@ -362,7 +362,7 @@ public class RenderSystem extends ActorSystem {
         uiIndexBuffers[renderer.getFrameIndex()].get().clear();
         setOrigin(0, 0);
 
-        /*
+
         drawQuad(
                 0,
                 0,
@@ -376,7 +376,7 @@ public class RenderSystem extends ActorSystem {
                 0,
                 -1,
                 new Color(3, 3, 3, 1)
-        );*/
+        );
 
         root.previsitAllActors(actor -> {
             if(actor.has(CameraComponent.class)) camera = actor.getComponent(CameraComponent.class).camera;
