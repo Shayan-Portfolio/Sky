@@ -32,6 +32,7 @@ public class VulkanImage extends Disposable {
     private int currentLayout;
     private int usage;
 
+
     public VulkanImage(Disposable parent, long imageHandle, int currentLayout, int usage, int imageFormat) {
         super(parent);
         this.handle = imageHandle;
@@ -87,7 +88,7 @@ public class VulkanImage extends Disposable {
         }
     }
 
-    public int getCurrentLayout() {
+    public int getLastLayout() {
         return currentLayout;
     }
 
@@ -115,5 +116,6 @@ public class VulkanImage extends Disposable {
             pAllocation.free();
         }
     }
+
 
 }

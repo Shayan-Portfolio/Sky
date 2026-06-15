@@ -96,7 +96,7 @@ public class ForwardPipeline extends RenderPipeline {
 
         tiledLightCullingPass = Pass.newComputePass(graph, "Forward+ Tiled Light Culling", renderer.getMaxFramesInFlight());
         {
-            tiledLightCullingPass.writes("NTiledLightingData", tiledLightingDataBuffers, AccessTypes.DepthRead);
+            tiledLightCullingPass.writes("NTiledLightingData", tiledLightingDataBuffers, AccessTypes.ShaderWrite);
         }
 
 

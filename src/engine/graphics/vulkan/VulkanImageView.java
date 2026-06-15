@@ -13,11 +13,13 @@ import static org.lwjgl.vulkan.VK10.*;
 public class VulkanImageView extends Disposable {
     private VulkanImage image;
     private long handle;
+    private int aspectMask;
 
 
     public VulkanImageView(Disposable parent, VkDevice device, VulkanImage image, int aspectMask, int arrayLayers) {
         super(parent);
         this.image = image;
+        this.aspectMask = aspectMask;
 
         try(MemoryStack stack = MemoryStack.stackPush()) {
             VkImageViewCreateInfo imageViewCreateInfo = VkImageViewCreateInfo.calloc(stack);
@@ -62,4 +64,7 @@ public class VulkanImageView extends Disposable {
         vkDestroyImageView(VulkanRuntime.getCurrentDevice(), handle, null);
     }
 
+    public int getAspectMask() {
+        return aspectMask;
+    }
 }

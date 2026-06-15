@@ -532,10 +532,95 @@ public class VulkanRenderer extends Renderer {
                                 for (int i = 0; i < texturePairs; i++) {
                                     Texture texture = textures[i * maxFramesInFlight + frameIndex];
                                     VulkanImage image = ((VulkanTexture) texture).getImage();
+                                    VulkanImageView imageView = ((VulkanTexture) texture).getImageView();
 
 
                                     switch (rd.getAccessType()) {
 
+                                        case AccessTypes.DepthReadWrite: {
+                                            VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
+                                            {
+                                                imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+                                                imageBarrier.oldLayout(image.getLastLayout());
+                                                imageBarrier.newLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                                                imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstAccessMask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT);
+                                                imageBarrier.image(image.getHandle());
+                                                imageBarrier.subresourceRange().aspectMask(imageView.getAspectMask());
+                                                imageBarrier.subresourceRange().baseMipLevel(0);
+                                                imageBarrier.subresourceRange().levelCount(1);
+                                                imageBarrier.subresourceRange().baseArrayLayer(0);
+                                                imageBarrier.subresourceRange().layerCount(1);
+                                            }
+                                            vkCmdPipelineBarrier(
+                                                    commandBuffer,
+                                                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                    0,
+                                                    null,
+                                                    null,
+                                                    imageBarrier
+                                            );
+                                            image.setCurrentLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                                            break;
+                                        }
+                                        case AccessTypes.ShaderRead: {
+                                            VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
+                                            {
+                                                imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+                                                imageBarrier.oldLayout(image.getLastLayout());
+                                                imageBarrier.newLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                                imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
+                                                imageBarrier.image(image.getHandle());
+                                                imageBarrier.subresourceRange().aspectMask(imageView.getAspectMask());
+                                                imageBarrier.subresourceRange().baseMipLevel(0);
+                                                imageBarrier.subresourceRange().levelCount(1);
+                                                imageBarrier.subresourceRange().baseArrayLayer(0);
+                                                imageBarrier.subresourceRange().layerCount(1);
+                                            }
+                                            vkCmdPipelineBarrier(
+                                                    commandBuffer,
+                                                    imageView.getAspectMask() == VK_IMAGE_ASPECT_COLOR_BIT ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                    pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                    0,
+                                                    null,
+                                                    null,
+                                                    imageBarrier
+                                            );
+                                            image.setCurrentLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                            break;
+                                        }
+                                        case AccessTypes.DepthWrite: {
+                                            VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
+                                            {
+                                                imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+                                                imageBarrier.oldLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+                                                imageBarrier.newLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                                                imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                                imageBarrier.dstAccessMask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+                                                imageBarrier.image(image.getHandle());
+                                                imageBarrier.subresourceRange().aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT);
+                                                imageBarrier.subresourceRange().baseMipLevel(0);
+                                                imageBarrier.subresourceRange().levelCount(1);
+                                                imageBarrier.subresourceRange().baseArrayLayer(0);
+                                                imageBarrier.subresourceRange().layerCount(1);
+                                            }
+                                            vkCmdPipelineBarrier(
+                                                    commandBuffer,
+                                                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                    0,
+                                                    null,
+                                                    null,
+                                                    imageBarrier
+                                            );
+                                            image.setCurrentLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                                            break;
+                                        }
                                         case AccessTypes.ColorWrite: {
                                             VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
                                             {
@@ -561,8 +646,10 @@ public class VulkanRenderer extends Renderer {
                                                     null,
                                                     imageBarrier
                                             );
+                                            image.setCurrentLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
                                             break;
                                         }
+
 
 
                                     }

@@ -61,52 +61,7 @@ public class VulkanUtil {
         throw new SkyRuntimeException("The depth operation for this pipeline is an invalid value [" + depthTestType + "]");
     }
 
-    public static void layoutTransition2(VulkanImage image,
-                                        VkCommandBuffer commandBuffer,
-                                        int newLayout,
-                                        int srcAccessMask,
-                                        int dstAccessMask,
-                                        int aspectMask,
-                                        int srcStageMask,
-                                        int dstStageMask,
-                                        int layerCount) {
 
-        try(MemoryStack stack = stackPush()) {
-            VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
-            {
-                imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-                imageBarrier.oldLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-                imageBarrier.newLayout(newLayout);
-                imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-                imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-                imageBarrier.srcAccessMask(srcAccessMask);
-                imageBarrier.dstAccessMask(dstAccessMask);
-                imageBarrier.image(image.getHandle());
-                imageBarrier.subresourceRange().aspectMask(aspectMask);
-                imageBarrier.subresourceRange().baseMipLevel(0);
-                imageBarrier.subresourceRange().levelCount(1);
-                imageBarrier.subresourceRange().baseArrayLayer(0);
-                imageBarrier.subresourceRange().layerCount(layerCount);
-            }
-
-
-
-
-            vkCmdPipelineBarrier(
-                    commandBuffer,
-                    srcStageMask,
-                    dstStageMask,
-                    0,
-                    null,
-                    null,
-                    imageBarrier
-            );
-
-
-
-            image.setCurrentLayout(newLayout);
-        }
-    }
 
     public static void transitionImageLayout(VulkanImage image,
                                              VkCommandBuffer commandBuffer,
@@ -123,7 +78,7 @@ public class VulkanUtil {
             VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
             {
                 imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-                imageBarrier.oldLayout(image.getCurrentLayout());
+                imageBarrier.oldLayout(image.getLastLayout());
                 imageBarrier.newLayout(newLayout);
                 imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
                 imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
