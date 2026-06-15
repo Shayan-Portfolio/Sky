@@ -17,7 +17,7 @@ public abstract class Renderer extends Disposable {
     protected int maxFramesInFlight;
     protected Surface surface;
     protected RenderTarget swapchainRenderTarget;
-    protected Semaphore[] frameStartSemaphores;
+    protected Semaphore[] swapchainImageAcquireSemaphores;
     protected int frameIndex;
 
 
@@ -40,7 +40,7 @@ public abstract class Renderer extends Disposable {
 
     public abstract void updateRenderer(boolean surfaceInvalidated);
     public Semaphore[] getRenderStartSemaphores() {
-        return frameStartSemaphores;
+        return swapchainImageAcquireSemaphores;
     }
 
 

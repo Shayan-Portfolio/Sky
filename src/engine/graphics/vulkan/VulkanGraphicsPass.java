@@ -291,9 +291,18 @@ public class VulkanGraphicsPass extends GraphicsPass {
         vkQueueWaitIdle(graphicsQueue);
     }
 
+    public VkCommandBuffer[] getCommandBuffers() {
+        return commandBuffers;
+    }
+
     @Override
-    public void resolveBarriers() {
-        barrierCallback.run(commandBuffers[frameIndex]);
+    public void resolveStartingBarriers() {
+        startingBarriers.run(commandBuffers[frameIndex]);
+    }
+
+    @Override
+    public void resolveEndingBarriers() {
+        endingBarriers.run(commandBuffers[frameIndex]);
     }
 
 

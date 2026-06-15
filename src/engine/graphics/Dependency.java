@@ -25,7 +25,7 @@ public class Dependency {
         this.dependency = dependency;
     }
 
-    public int getType() {
+    public int getAccessType() {
         return type;
     }
 }

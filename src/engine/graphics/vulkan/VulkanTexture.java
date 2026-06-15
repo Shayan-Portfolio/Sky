@@ -102,7 +102,7 @@ public class VulkanTexture extends Texture {
 
             if(textureData != null) {
 
-                VulkanUtil.transitionImages(
+                VulkanUtil.transitionImageLayout(
                         image,
                         commandBuffer,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -124,7 +124,7 @@ public class VulkanTexture extends Texture {
                 vkCmdCopyBufferToImage(commandBuffer, ((VulkanBuffer) imageData).getHandle(), image.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageCopies);
 
 
-                VulkanUtil.transitionImages(
+                VulkanUtil.transitionImageLayout(
                         image,
                         commandBuffer,
                         VK_IMAGE_LAYOUT_GENERAL,
@@ -137,7 +137,7 @@ public class VulkanTexture extends Texture {
                 );
             }
             else {
-                VulkanUtil.transitionImages(
+                VulkanUtil.transitionImageLayout(
                         image,
                         commandBuffer,
                         VK_IMAGE_LAYOUT_GENERAL,

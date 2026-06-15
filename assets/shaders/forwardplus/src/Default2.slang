@@ -3,9 +3,11 @@
 #include "../../common/NormalDepthBiasEval.slang"
 #include "../../common/ShadowEval.slang"
 #include "../../common/ACESEval.slang"
+#include "TileLighting.slang"
 
 StructuredBuffer<Scene> scene_desc;
 StructuredBuffer<float4x4> transforms;
+StructuredBuffer<TileLighting> tile_lighting;
 
 
 Texture2D input_shadow_maps[MAX_LIGHTS];
@@ -176,6 +178,8 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
         }
 
     }
+
+
 
 
 

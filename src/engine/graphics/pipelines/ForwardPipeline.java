@@ -1,5 +1,6 @@
 package engine.graphics.pipelines;
 
+import engine.asset.AssetRegistry;
 import engine.ecs.RenderSystem;
 import engine.graphics.*;
 import org.lwjgl.system.MemoryStack;
@@ -21,7 +22,10 @@ public class ForwardPipeline extends RenderPipeline {
     private GraphicsPass depthPass;
     private RenderTarget depthPassRT;
     private GraphicsPass shadowMapPass;
+    private ComputePass tiledLightCullingPass;
+    private ShaderProgram tiledLightingShaderProgram;
     private Texture[] nDepthPrepassTextures;
+    private Buffer[] tiledLightingDataBuffers;
     private Renderer renderer;
 
     private Sampler sampler;
@@ -41,6 +45,29 @@ public class ForwardPipeline extends RenderPipeline {
             depthPassRT.addAttachment(new Attachment(AttachmentTypes.Depth, nDepthPrepassTextures, null));
         }
 
+        //Tiled lighting data
+        {
+
+            tiledLightingShaderProgram = ShaderProgram.newShaderProgram(graph);
+            tiledLightingShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/TiledLightCulling_compute.spv"), ShaderType.ComputeShader);
+            tiledLightingShaderProgram.assemble();
+
+            tiledLightingDataBuffers = new Buffer[renderer.getMaxFramesInFlight()];
+            for (int i = 0; i < tiledLightingDataBuffers.length; i++) {
+                tiledLightingDataBuffers[i] = Buffer.newBuffer(
+                        renderer,
+                        Float.BYTES * 4 * 1000,
+                        Buffer.Usage.ShaderStorageBuffer,
+                        Buffer.Type.GPULocal,
+                        false
+                );
+            }
+
+
+
+
+        }
+
         //Scene pass
         {
             nSceneColorTextures = new Texture[renderer.getMaxFramesInFlight()];
@@ -55,37 +82,45 @@ public class ForwardPipeline extends RenderPipeline {
         sampler = Sampler.newSampler(scenePassRT, Linear, Linear, false);
 
 
-
+        /*
         shadowMapPass = Pass.newGraphicsPass(graph, "Shadow", renderer.getMaxFramesInFlight());
         {
-            shadowMapPass.writes("NShadowTextures", null, DependencyTypes.RenderTargetWriteDepth);
+            shadowMapPass.writes("NShadowTextures", null, AccessTypes.DepthWrite);
         }
 
 
         depthPass = Pass.newGraphicsPass(graph, "Depth", renderer.getMaxFramesInFlight());
         {
-            depthPass.writes("NDepthPrepassTextures", nDepthPrepassTextures, DependencyTypes.RenderTargetWriteDepth);
+            depthPass.writes("NDepthPrepassTextures", nDepthPrepassTextures, AccessTypes.DepthWrite);
         }
+
+        tiledLightCullingPass = Pass.newComputePass(graph, "Forward+ Tiled Light Culling", renderer.getMaxFramesInFlight());
+        {
+            tiledLightCullingPass.writes("NTiledLightingData", tiledLightingDataBuffers, AccessTypes.DepthRead);
+        }
+
 
         scenePass = Pass.newGraphicsPass(graph, "Scene", renderer.getMaxFramesInFlight());
         {
-            scenePass.reads("IShadowTextures", null, DependencyTypes.FragmentShaderReadDepth);
-            scenePass.reads("IDepthPrepassTextures", nDepthPrepassTextures, DependencyTypes.RenderTargetReadDepth);
-            scenePass.writes("NRenderTextures", nSceneColorTextures, DependencyTypes.RenderTargetWrite);
-        }
+            //scenePass.reads("ITiledLightingData", tiledLightingDataBuffers, DependencyTypes.FragmentShaderRead);
+            scenePass.reads("IShadowTextures", null, AccessTypes.ShaderRead);
+            scenePass.reads("IDepthPrepassTextures", nDepthPrepassTextures, AccessTypes.DepthReadWrite);
+            scenePass.writes("NRenderTextures", nSceneColorTextures, AccessTypes.ColorWrite);
+        }*/
 
 
         uiPass = Pass.newGraphicsPass(graph, "UI", renderer.getMaxFramesInFlight());
         {
-            uiPass.reads("IRenderTextures", nSceneColorTextures, DependencyTypes.FragmentShaderRead);
-            uiPass.writes("NSwapchainTextures", null, DependencyTypes.RenderTargetWrite);
-            uiPass.writes("NSwapchainTexturesPresent", null, DependencyTypes.Present);
+            //uiPass.reads("IRenderTextures", nSceneColorTextures, AccessTypes.ShaderRead);
+            uiPass.writes("NSwapchainTextures", null, AccessTypes.ColorWrite);
+            uiPass.writes("NSwapchainTexturesPresent", null, AccessTypes.Present);
         }
 
         graph.addPasses(
-                shadowMapPass,
-                depthPass,
-                scenePass,
+                //shadowMapPass,
+                //depthPass,
+                //tiledLightCullingPass,
+                //scenePass,
                 uiPass
         );
     }
@@ -98,7 +133,7 @@ public class ForwardPipeline extends RenderPipeline {
         Texture[] swapchainTextures = renderer.getSwapchainRenderTarget()
                 .getAttachment(AttachmentTypes.Color0)
                 .getTextures();
-
+        /*
         Texture[] shadowMapTextures = new Texture[scenePack.lights().size()];
 
         List<LightData> lights = scenePack.lights();
@@ -119,6 +154,7 @@ public class ForwardPipeline extends RenderPipeline {
             drawCall.shaderProgram.setSamplers(
                     renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps_sampler", sampler)
             );
+            drawCall.shaderProgram.setBuffers(renderer.getFrameIndex(), new DescriptorUpdate<>("tiled_lighting_data", tiledLightingDataBuffers[renderer.getFrameIndex()]));
         }
 
 
@@ -170,6 +206,19 @@ public class ForwardPipeline extends RenderPipeline {
             depthPass.endRendering();
 
         });
+        tiledLightCullingPass.submit(() -> {
+            tiledLightCullingPass.setShaderProgram(tiledLightingShaderProgram);
+            try (MemoryStack stack = stackPush()) {
+                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
+                pPushConstants.putInt(renderer.getWidth());
+                pPushConstants.putInt(renderer.getHeight());
+                pPushConstants.putInt(64);
+                tiledLightCullingPass.setPushConstants(pPushConstants);
+            }
+            tiledLightCullingPass.dispatch(lights.size(), 1, 1);
+        });
+
+
 
 
         scenePass.bind("IShadowTextures", shadowMapTextures);
@@ -193,7 +242,7 @@ public class ForwardPipeline extends RenderPipeline {
             }
             scenePass.endRendering();
 
-        });
+        });*/
 
         uiPass.bind("NSwapchainTextures", swapchainTextures);
         uiPass.bind("NSwapchainTexturesPresent", swapchainTextures);

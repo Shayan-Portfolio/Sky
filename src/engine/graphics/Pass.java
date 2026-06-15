@@ -14,7 +14,7 @@ public abstract class Pass extends Disposable {
     protected int framesInFlight;
     protected Semaphore[] waitSemaphores;
     protected Semaphore[] finishedSemaphores;
-    protected BarrierCallback barrierCallback;
+    protected BarrierCallback startingBarriers, endingBarriers;
     protected Runnable recorder;
     protected List<Dependency> dependencyList = new ArrayList<>();
     protected String name;
@@ -70,11 +70,11 @@ public abstract class Pass extends Disposable {
     }
 
     public <T> void reads(String name, T resource, int readType) {
-        addDependencies(new Dependency(name, new RenderGraphResource(resource), readType));
+        addDependencies(new Dependency(name, new RenderGraphResource<>(resource), readType));
     }
 
     public <T> void writes(String name, T resource, int writeType) {
-        addDependencies(new Dependency(name, new RenderGraphResource(resource), writeType));
+        addDependencies(new Dependency(name, new RenderGraphResource<>(resource), writeType));
     }
 
     public void clearAll() {
@@ -82,11 +82,14 @@ public abstract class Pass extends Disposable {
     }
 
     public BarrierCallback getBarrierInsertCallback() {
-        return barrierCallback;
+        return startingBarriers;
     }
 
-    public void setBarrierCallback(BarrierCallback barrierCallback) {
-        this.barrierCallback = barrierCallback;
+    public void setStartingBarriers(BarrierCallback startingBarriers) {
+        this.startingBarriers = startingBarriers;
+    }
+    public void setEndingBarriers(BarrierCallback endingBarriers) {
+        this.endingBarriers = endingBarriers;
     }
 
     public void startRecording(int frameIndex) {
@@ -94,8 +97,8 @@ public abstract class Pass extends Disposable {
     }
     public abstract void endRecording();
 
-    public void setWaitSemaphores(Semaphore[] waitSemaphores) {
-        this.waitSemaphores = waitSemaphores;
+    public void setWaitSemaphores(Semaphore[] waitSemaphore) {
+        this.waitSemaphores = waitSemaphore;
     }
 
     public void setFinishedSemaphores(Semaphore[] finishedSemaphores) {
@@ -113,5 +116,6 @@ public abstract class Pass extends Disposable {
         return finishedSemaphores;
     }
 
-    public abstract void resolveBarriers();
+    public abstract void resolveStartingBarriers();
+    public abstract void resolveEndingBarriers();
 }
