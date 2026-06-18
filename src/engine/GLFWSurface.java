@@ -174,10 +174,6 @@ public class GLFWSurface extends Surface {
 
 
             VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = null;
-
-
-
-
             if (validation) {
 
                 PointerBuffer pEnabledLayerNames = stack.mallocPointer(validationLayers.size());
@@ -207,6 +203,19 @@ public class GLFWSurface extends Surface {
                 debugCreateInfo.pfnUserCallback(vkDebugUtilsMessengerCallbackEXT);
 
                 instanceCreateInfo.pNext(debugCreateInfo.address());
+            }
+            if(true) {
+                IntBuffer enables = stack.ints(
+                        EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+                        EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
+                        EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
+                );
+
+                VkValidationFeaturesEXT validationFeatures =
+                        VkValidationFeaturesEXT.calloc(stack)
+                                .sType(EXTValidationFeatures.VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT)
+                                .pEnabledValidationFeatures(enables);
+                instanceCreateInfo.pNext(validationFeatures.address());
             }
 
 

@@ -523,9 +523,20 @@ public class VulkanRenderer extends Renderer {
                             assert rgResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
 
                             Texture[] textures = null;
-                            if (rgResource.get() instanceof Texture[]) {
-                                textures = ((Texture[]) rgResource.get());
+                            Buffer[] buffers = null;
+
+                            switch (rgResource.get()) {
+                                case Buffer[] buffer: {
+                                    buffers = buffer;
+                                    break;
+                                }
+                                case Texture[] texture: {
+                                    textures = texture;
+                                    break;
+                                }
+                                default :
                             }
+
 
                             if (textures != null) {
                                 int texturePairs = textures.length / maxFramesInFlight;
@@ -533,10 +544,7 @@ public class VulkanRenderer extends Renderer {
                                     Texture texture = textures[i * maxFramesInFlight + frameIndex];
                                     VulkanImage image = ((VulkanTexture) texture).getImage();
                                     VulkanImageView imageView = ((VulkanTexture) texture).getImageView();
-
-
                                     switch (rd.getAccessType()) {
-
                                         case AccessTypes.DepthReadWrite: {
                                             VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
                                             {
@@ -649,11 +657,59 @@ public class VulkanRenderer extends Renderer {
                                             image.setCurrentLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
                                             break;
                                         }
-
-
-
                                     }
 
+                                }
+                            }
+                            if (buffers != null) {
+                                int bufferPairs = buffers.length / maxFramesInFlight;
+                                for (int i = 0; i < bufferPairs; i++) {
+                                    VulkanBuffer buffer = (VulkanBuffer) buffers[i * maxFramesInFlight + frameIndex];
+
+                                    switch (rd.getAccessType()) {
+                                        case AccessTypes.ShaderWrite -> {
+                                            VkBufferMemoryBarrier.Buffer bufferBarrier = VkBufferMemoryBarrier.calloc(1, stack);
+                                            bufferBarrier.sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
+                                            bufferBarrier.srcAccessMask(VK_ACCESS_SHADER_READ_BIT);
+                                            bufferBarrier.dstAccessMask(VK_ACCESS_SHADER_WRITE_BIT);
+                                            bufferBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                            bufferBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                            bufferBarrier.buffer(buffer.getHandle());
+                                            bufferBarrier.size(VK_WHOLE_SIZE);
+
+                                            vkCmdPipelineBarrier(
+                                                    commandBuffer,
+                                                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                    0,
+                                                    null,
+                                                    bufferBarrier,
+                                                    null
+                                            );
+                                            break;
+                                        }
+                                        case AccessTypes.ShaderRead -> {
+                                            VkBufferMemoryBarrier.Buffer bufferBarrier = VkBufferMemoryBarrier.calloc(1, stack);
+                                            bufferBarrier.sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER);
+                                            bufferBarrier.srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT);
+                                            bufferBarrier.dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
+                                            bufferBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                            bufferBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+                                            bufferBarrier.buffer(buffer.getHandle());
+                                            bufferBarrier.size(VK_WHOLE_SIZE);
+
+                                            vkCmdPipelineBarrier(
+                                                    commandBuffer,
+                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                    0,
+                                                    null,
+                                                    bufferBarrier,
+                                                    null
+                                            );
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                         }

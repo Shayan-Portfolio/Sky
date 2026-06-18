@@ -7,7 +7,6 @@
 
 StructuredBuffer<Scene> scene_desc;
 StructuredBuffer<float4x4> transforms;
-StructuredBuffer<TileLighting> tile_lighting;
 
 
 Texture2D input_shadow_maps[MAX_LIGHTS];
@@ -73,9 +72,10 @@ struct FSOutput {
 
 Texture2D material[4];
 SamplerState material_sampler;
+RWStructuredBuffer<float4> tile_colors;
 
 [shader("fragment")]
-FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int light_index, uniform int light_count) {
+FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int light_index, uniform int light_count, float2 pixel_pos : SV_Position) {
     FSOutput output;
     float3 output_color = float3(0, 0, 0);
 
@@ -179,7 +179,9 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
 
     }
 
-
+    if (pixel_pos.x < 64 && pixel_pos.y < 64) {
+        output.color0 += tile_colors[0];
+    }
 
 
 

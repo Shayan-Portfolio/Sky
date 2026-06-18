@@ -19,16 +19,8 @@ bool TestConeVsSphere(in float3 origin, in float3 forward, in float size, in flo
 
 
 [numthreads(1, 1, 1)]
-void computeMain(int3 dispatch_ID: SV_DispatchThreadID, int3 group_id: SV_GroupID, uniform int width, uniform int height, uniform int tile_size) {
-    int tile_cols = int(ceil(width / tile_size));
-    int tile_rows = int(ceil(height / tile_size));
+void computeMain(int3 dispatch_ID: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
 
-    //1D = y * width + x
-
-    int index = group_id.x;
-    float2 pos_tile_ss = float2(width, height) * index;
-
-    int data_index = index * tile_cols + index;
-    tiled_lighting_data[data_index] = float4(1.0, 0.0, 0.0, 0.0) * (index / 2);
+    tiled_lighting_data[0] = float4(1.0, 1.0, 0.0, 0.0);
 
 }

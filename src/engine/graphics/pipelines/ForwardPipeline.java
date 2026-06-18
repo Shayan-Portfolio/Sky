@@ -61,6 +61,7 @@ public class ForwardPipeline extends RenderPipeline {
                         Buffer.Type.GPULocal,
                         false
                 );
+                tiledLightingShaderProgram.setBuffers(i, new DescriptorUpdate<>("tiled_lighting_data", tiledLightingDataBuffers[i]));
             }
 
 
@@ -102,7 +103,7 @@ public class ForwardPipeline extends RenderPipeline {
 
         scenePass = Pass.newGraphicsPass(graph, "Scene", renderer.getMaxFramesInFlight());
         {
-            //scenePass.reads("ITiledLightingData", tiledLightingDataBuffers, DependencyTypes.FragmentShaderRead);
+            scenePass.reads("ITiledLightingData", tiledLightingDataBuffers, AccessTypes.ShaderRead);
             scenePass.reads("IShadowTextures", null, AccessTypes.ShaderRead);
             scenePass.reads("IDepthPrepassTextures", nDepthPrepassTextures, AccessTypes.DepthReadWrite);
             scenePass.writes("NRenderTextures", nSceneColorTextures, AccessTypes.ColorWrite);
@@ -154,7 +155,7 @@ public class ForwardPipeline extends RenderPipeline {
             drawCall.shaderProgram.setSamplers(
                     renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps_sampler", sampler)
             );
-            //drawCall.shaderProgram.setBuffers(renderer.getFrameIndex(), new DescriptorUpdate<>("tiled_lighting_data", tiledLightingDataBuffers[renderer.getFrameIndex()]));
+            drawCall.shaderProgram.setBuffers(renderer.getFrameIndex(), new DescriptorUpdate<>("tile_colors", tiledLightingDataBuffers[renderer.getFrameIndex()]));
         }
 
 
@@ -208,14 +209,7 @@ public class ForwardPipeline extends RenderPipeline {
         });
         tiledLightCullingPass.submit(() -> {
             tiledLightCullingPass.setShaderProgram(tiledLightingShaderProgram);
-            try (MemoryStack stack = stackPush()) {
-                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
-                pPushConstants.putInt(renderer.getWidth());
-                pPushConstants.putInt(renderer.getHeight());
-                pPushConstants.putInt(64);
-                tiledLightCullingPass.setPushConstants(pPushConstants);
-            }
-            tiledLightCullingPass.dispatch(lights.size(), 1, 1);
+            tiledLightCullingPass.dispatch(1, 1, 1);
         });
 
 
