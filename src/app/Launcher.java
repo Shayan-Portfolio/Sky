@@ -1,5 +1,6 @@
 package app;
 
+import engine.Time;
 import engine.logging.Logger;
 import engine.Application;
 import engine.Surface;
@@ -31,7 +32,7 @@ public class Launcher {
         });
 
         Application application = ProjectLoader.instantiateApplication(args);
-        Surface surface = Surface.newSurface(application, "SkyEngine", 1920, 1080);
+        Surface surface = Surface.newSwingSurface(application, "SkyEngine", 1920, 1080);
         Session.setSurface(surface);
 
 
@@ -41,6 +42,8 @@ public class Launcher {
 
         while(true){
             boolean success = application.update();
+            Time.deltaTime = (float) (surface.getTime() - application.getStartTime());
+            application.setStartTime((float) surface.getTime());
             if(!success) break;
         }
 
