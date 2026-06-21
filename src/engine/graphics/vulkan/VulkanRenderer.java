@@ -474,7 +474,7 @@ public class VulkanRenderer extends Renderer {
     }
 
     @Override
-    public void updateRenderer(boolean surfaceInvalidated) {
+    public void syncWithSurface(boolean surfaceInvalidated) {
         if (surfaceInvalidated) {
             swapchain.disposeAll();
             this.removeDisposable(swapchain);
@@ -578,7 +578,7 @@ public class VulkanRenderer extends Renderer {
                                             {
                                                 imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
                                                 imageBarrier.oldLayout(image.getLastLayout());
-                                                imageBarrier.newLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                                imageBarrier.newLayout(VK_IMAGE_LAYOUT_GENERAL);
                                                 imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
                                                 imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
                                                 imageBarrier.dstAccessMask(VK_ACCESS_SHADER_READ_BIT);
@@ -598,7 +598,7 @@ public class VulkanRenderer extends Renderer {
                                                     null,
                                                     imageBarrier
                                             );
-                                            image.setCurrentLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                            image.setCurrentLayout(VK_IMAGE_LAYOUT_GENERAL);
                                             break;
                                         }
                                         case AccessTypes.DepthWrite: {

@@ -38,7 +38,7 @@ public abstract class Renderer extends Disposable {
     }
 
 
-    public abstract void updateRenderer(boolean surfaceInvalidated);
+    public abstract void syncWithSurface(boolean surfaceInvalidated);
     public Semaphore[] getRenderStartSemaphores() {
         return swapchainImageAcquireSemaphores;
     }
