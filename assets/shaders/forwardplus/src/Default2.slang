@@ -79,14 +79,15 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
     FSOutput output;
     float3 output_color = float3(0, 0, 0);
 
+    float4 albedo = material[0].Sample(material_sampler, vsOutput.uv_ts);
+    if(albedo.w < 0.1) discard;
     if (render_mode == PBR_MODE) {
+        
 
         float3 normal_ts = material[1].Sample(material_sampler, vsOutput.uv_ts).xyz * 2.0 - 1.0;
         float3 normal_ws = normalize(mul(vsOutput.tbn_ws_inv, normalize(normal_ts)));
 
-        float3 albedo = material[0].Sample(material_sampler, vsOutput.uv_ts).rgb;
-
-        float3 color = vsOutput.color.xyz * albedo;
+        float3 color = vsOutput.color.xyz * albedo.rgb;
 
         float metallic = material[2].Sample(material_sampler, vsOutput.uv_ts).r;
         float roughness = material[3].Sample(material_sampler, vsOutput.uv_ts).r;
@@ -152,7 +153,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
                          normal_ws,
                          metallic,
                          roughness,
-                         albedo
+                         albedo.rgb
                      );
 
                      float distance = length(light_pos_ws - fragment_ws.xyz);
