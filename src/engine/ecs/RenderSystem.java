@@ -400,7 +400,7 @@ public class RenderSystem extends ActorSystem {
                 }
 
                 ByteBuffer transformsData = meshComponent.transformsBuffers[renderer.getFrameIndex()].get();
-                transformComponent.transform().get(0, transformsData);
+                if(!meshComponent.instanced) transformComponent.transform().get(0, transformsData);
                 ByteBuffer sceneDescData = meshComponent.sceneDescBuffers[renderer.getFrameIndex()].get();
                 writeSceneDescToByteBuffer(sceneDescData, camera, scene);
             }

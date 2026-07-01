@@ -32,7 +32,7 @@ public class Launcher {
         });
 
         Application application = ProjectLoader.instantiateApplication(args);
-        Surface surface = Surface.newSwingSurface(application, "SkyEngine", 1920, 1080);
+        Surface surface = Surface.newSurface(application, "SkyEngine", 1920, 1080);
         Session.setSurface(surface);
 
 
