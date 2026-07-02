@@ -4,13 +4,17 @@ import engine.mio.SceneCompiler;
 
 class MioTest {
     public static void main(String[] args) {
-        SceneCompiler.printTokens("""
-                
-                
-                actor MyActor 
-                    add Transform
-                        "key" = vec4(1.0, 2.0, 3.0, 4.0)
-                        
+        SceneCompiler.printTokens(
+                """
+                #This is a comment
+                let MY_VALUE = 32
+                uses "stdlib.mi"
+                actor Foo
+                    add Bar
+                        MyString = "Foo",
+                        MyTypedInt = int(0),
+                        MyWeakInt = 0
+                    
                     end
                 end
                 

@@ -76,10 +76,12 @@ top:
                 {
 
 
-                    if (Character.isDigit(character) || character == '.') {
-                        numeric = true;
-                        token.type = Token.TokenType.Numeric;
-                    } else if (numeric) break;
+                    if(!string) {
+                        if (Character.isDigit(character) || character == '.') {
+                            numeric = true;
+                            token.type = Token.TokenType.Numeric;
+                        } else if (numeric) break;
+                    }
 
                     if (!string) {
                         if (Character.isDigit(character)) {
@@ -130,11 +132,14 @@ top:
             UnknownToken(null),
             EndKeyword("end"),
             AddKeyword("add"),
-            Float1Keyword("float1"),
+            Float1Keyword("float"),
+            Int1Keyword("int"),
+            BoolKeyword("bool"),
             Vec2Keyword("vec2"),
             Vec3Keyword("vec3"),
             Vec4Keyword("vec4"),
             UsesKeyword("uses"),
+            LetKeyword("let"),
             LBracket("["),
             RBracket("]"),
             String(null),
