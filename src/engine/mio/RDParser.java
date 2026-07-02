@@ -2,9 +2,9 @@ package engine.mio;
 
 import engine.logging.SkyRuntimeException;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
+
 
 public class RDParser {
 
@@ -47,7 +47,7 @@ public class RDParser {
         if(token == null) return false;
 
         switch (token.type) {
-            case ActorKeyword: {
+            /*case ActorKeyword: {
                 Analyzer.Token next = expect(analyzer, Analyzer.Token.TokenType.StringLiteral);
                 tokens.push(next);
                 ir.emit(new Instruction(
@@ -65,29 +65,28 @@ public class RDParser {
                 ));
                 break;
             }
+
             case PassKeyword: {
                 break;
             }
 
-            case StringLiteral: {
+             */
+
+            case String: {
                 //Strings can also be preceded by 'actor_keyword'
                 Analyzer.Token next = expect(
-                        analyzer,
-                        Analyzer.Token.TokenType.DataKeyword,
-                        Analyzer.Token.TokenType.Float1Keyword,
-                        Analyzer.Token.TokenType.Float2Keyword,
-                        Analyzer.Token.TokenType.Float3Keyword,
-                        Analyzer.Token.TokenType.Float4Keyword,
-                        Analyzer.Token.TokenType.Euler3Keyword,
-                        Analyzer.Token.TokenType.Quat4Keyword,
-                        Analyzer.Token.TokenType.StringKeyword,
-                        Analyzer.Token.TokenType.BoolKeyword,
-                        Analyzer.Token.TokenType.ArrayKeyword
+                        analyzer
+                        //Analyzer.Token.TokenType.Float1Keyword,
+                        //Analyzer.Token.TokenType.Float2Keyword,
+                        //Analyzer.Token.TokenType.Float3Keyword,
+                        //Analyzer.Token.TokenType.Float4Keyword,
+                        //Analyzer.Token.TokenType.StringKeyword,
+                        //Analyzer.Token.TokenType.BoolKeyword
                 );
 
 
                 switch (next.type) {
-                    case DataKeyword: {
+                    /*case DataKeyword: {
                         ir.emit(new Instruction(
                                 Opcode.AddData,
                                 new Object[]{ token.content.toString() }
@@ -148,6 +147,7 @@ public class RDParser {
                         ));
                         break;
                     }
+                    /*
                     case Float3Keyword, Euler3Keyword: {
                         expect(analyzer, Analyzer.Token.TokenType.LeftParen);
                         Analyzer.Token a1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
@@ -231,6 +231,8 @@ public class RDParser {
                         break;
                     }
 
+                     */
+
                 }
 
                 break;
@@ -241,7 +243,9 @@ public class RDParser {
 
 
 
+
         }
+
 
         return true;
     }

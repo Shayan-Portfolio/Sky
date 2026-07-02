@@ -1,17 +1,15 @@
 package engine.mio;
 
+import java.nio.charset.Charset;
+
 /*
 God help you if you're actually trying to understand this lexer
  */
 public class Analyzer {
     private String source;
     private int index = 0;
-    private int advance;
     public Analyzer(String source) {
-        this.source = source;
-    }
-    public void unexpectedSymbol(char character) {
-        throw new RuntimeException("Unexpected character for token (" + character + ")");
+        this.source = source + Character.MIN_VALUE;
     }
 
     private int line = 1;
@@ -20,8 +18,7 @@ public class Analyzer {
         boolean string = false, numeric = false, comment = false;
         Token token = new Token(line);
 
-        advance = index;
-
+top:
         while (index < source.length()) {
             char character = source.charAt(index);
 
@@ -30,137 +27,119 @@ public class Analyzer {
                 line++;
                 comment = false;
             }
+
             if(!comment) {
-                if (character == '\"') {
-                    if (!string) {
-                        string = true;
-                        token.type = Token.TokenType.StringLiteral;
-                        index++;
-                        continue;
-                    }
-                    else {
-                        string = false;
-                        index++;
-                        break;
+
+
+                //Precheck
+                {
+                    if (!Character.isDigit(character) && character != '.' && numeric) break;
+                    switch (character) {
+                        case '(':
+                            token.type = Token.TokenType.LParen;
+                            index++;
+                            break top;
+                        case ')':
+                            token.type = Token.TokenType.RParen;
+                            index++;
+                            break top;
+                        case '=':
+                            token.type = Token.TokenType.Equals;
+                            index++;
+                            break top;
+                        case ',':
+                            token.type = Token.TokenType.Comma;
+                            index++;
+                            break top;
                     }
 
+                    for (Token.TokenType type : Token.TokenType.values()) {
+                        if (type.value != null && type.value.equals(token.content.toString().strip())) {
+                            token.type = type;
+                            break top;
+                        }
+                    }
                 }
-                if (!string) {
-                    if (Character.isWhitespace(character)) {
-                        index++;
-                        continue;
-                    }
 
-                    if (character == ',' || character == ')' || character == ']') {
-                        if (numeric) {
-                            break;
-                        }
-                    }
-                    token.content.append(character);
-
-                    if (character == '(') {
-                        token.type = Token.TokenType.LeftParen;
-                        index++;
+                if(Character.isWhitespace(character) && !string) {
+                    if(!token.content.toString().isBlank()) {
+                        token.type = Token.TokenType.UnknownToken;
                         break;
                     }
-                    if (character == '[') {
-                        token.type = Token.TokenType.ArrayStart;
-                        index++;
-                        break;
-                    }
-                    //Numeric start
-                    if ((Character.isDigit(character) || character == '-') && !Character.isDigit(source.charAt(index - 1)) && !Character.isLetter(source.charAt(index - 1))) {
-                        if (!numeric) numeric = true;
+                    index++;
+                    continue;
+                }
+
+                token.content.append(character);
+
+                //Expanding
+                {
+
+
+                    if (Character.isDigit(character) || character == '.') {
+                        numeric = true;
                         token.type = Token.TokenType.Numeric;
-                    }
-                    if (character == '.') {
-                        if (numeric) {
-                            if (!token.foundDecimal) token.foundDecimal = true;
-                            else unexpectedSymbol(character);
+                    } else if (numeric) break;
+
+                    if (!string) {
+                        if (Character.isDigit(character)) {
+                            numeric = true;
+                            token.type = Token.TokenType.Numeric;
+                            index++;
+                            continue;
+                        } else {
+                            numeric = false;
                         }
                     }
-                    if (character == ',' || character == ')' || character == ']') {
-                        //if (numeric) {
-                        //    break;
-                        //}
-                        switch (character) {
-                            case ',' -> token.type = Token.TokenType.ArgDelimiter;
-                            case ')' -> token.type = Token.TokenType.RightParen;
-                            case ']' -> token.type = Token.TokenType.ArrayEnd;
-                        }
-
-                        index++;
-                        break;
-
-                    }
-
-
-                    //Match keywords
-                    {
-                        boolean b = false;
-
-                        for (Token.TokenType tokenType : Token.TokenType.values()) {
-                            if (token.content.toString().strip().equals(tokenType.value)) {
-                                token.type = tokenType;
-                                b = true;
-                                break;
-                            }
-                        }
-                        if (b) {
+                    if (character == '\"') {
+                        if (!string) {
+                            string = true;
+                            token.type = Token.TokenType.String;
+                            index++;
+                            continue;
+                        } else {
+                            string = false;
                             index++;
                             break;
                         }
+
                     }
-                }
-                else {
-                    token.content.append(character);
                 }
 
 
             }
 
-
-
-
             index++;
+
         }
 
-        advance = advance - index;
 
         return token.type == null ? null : token;
     }
 
-    public void rewind() {
-        index -= advance;
-    }
+
 
     public class Token {
         public TokenType type;
         public enum TokenType {
-            LeftParen("("),
-            RightParen(")"),
-            ArrayStart("["),
-            ArrayEnd("]"),
-            StringLiteral(null),
-            Numeric(null),
+            LParen("("),
+            RParen(")"),
+            Equals("="),
+            Comma(","),
             ActorKeyword("actor"),
+            UnknownToken(null),
             EndKeyword("end"),
-            DataKeyword("data"),
-            PassKeyword("pass"),
+            AddKeyword("add"),
             Float1Keyword("float1"),
-            StringKeyword("string"),
-            Float2Keyword("float2"),
-            Float3Keyword("float3"),
-            Float4Keyword("float4"),
-            Euler3Keyword("euler3"),
-            ArrayKeyword("array"),
+            Vec2Keyword("vec2"),
+            Vec3Keyword("vec3"),
+            Vec4Keyword("vec4"),
+            UsesKeyword("uses"),
+            LBracket("["),
+            RBracket("]"),
+            String(null),
+            Numeric(null);
 
-            Quat4Keyword("quat4"),
-            ArgDelimiter(","),
-            LateKeyword("late"),
-            TrueKeyword("true"),
-            FalseKeyword("false"),
-            BoolKeyword("bool");
 
             public String value;
 
@@ -169,7 +148,6 @@ public class Analyzer {
             }
         }
         public StringBuilder content = new StringBuilder();
-        public boolean foundDecimal = false;
         public int line;
         public Token(int line) {
             this.line = line;
