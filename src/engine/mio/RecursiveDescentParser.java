@@ -1,7 +1,5 @@
 package engine.mio;
 
-import engine.logging.SkyRuntimeException;
-
 import java.util.Arrays;
 import java.util.Stack;
 
@@ -9,7 +7,7 @@ import java.util.Stack;
 public class RecursiveDescentParser {
 
     public RecursiveDescentParser() {}
-    private SceneBytecode ir = new SceneBytecode();
+
 
     private Analyzer.Token nextProperToken(Analyzer analyzer) {
         Analyzer.Token token;
@@ -34,33 +32,37 @@ public class RecursiveDescentParser {
         throw new ParseException(message + " on line " + token.line);
     }
 
-    public SceneBytecode getEmittedBytecode() {
-        return ir;
-    }
 
-    private Stack<Analyzer.Token> tokens = new Stack<>();
-    public void parseAll(Analyzer analyzer) throws ParseException {
+    private Stack<Analyzer.Token> blocks = new Stack<>();
+    private Stack<ASTNode> ast = new Stack<>();
+    public ASTNode parseAll(Analyzer analyzer) throws ParseException {
+        ASTNode root = new ASTNode();
+        ast.push(root);
         while(true) {
             if(!parseSpecific(analyzer)) break;
         }
-        if(!tokens.isEmpty()) throw new RuntimeException("An actor declaration is missing a matching 'end'");
+        if(!blocks.isEmpty()) throw new RuntimeException("An actor declaration is missing a matching 'end'");
+        return root;
     }
+    private void pushASTNode(ASTNode node) {
+        ast.peek().addChild(node);
+        ast.push(node);
+    }
+
+    private void popASTNode() {
+        ast.pop();
+    }
+
     public boolean parseSpecific(Analyzer analyzer) throws ParseException {
         Analyzer.Token token = nextProperToken(analyzer);
         if(token == null) return false;
 
         switch (token.type) {
 
-            case ActorKeyword: {
+            case ActorKeyword, AddKeyword: {
                 Analyzer.Token next = expect(analyzer, Analyzer.Token.TokenType.IdentifierToken);
-                tokens.push(token);
-
-                break;
-            }
-
-            case AddKeyword: {
-                Analyzer.Token next = expect(analyzer, Analyzer.Token.TokenType.IdentifierToken);
-                tokens.push(token);
+                blocks.push(token);
+                pushASTNode(new ASTNode(token, next));
 
                 break;
             }
@@ -88,26 +90,34 @@ public class RecursiveDescentParser {
                     {
                         switch (n2.type) {
                             case Int1Keyword -> {
-                                Analyzer.Token n3 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                                if(n3.content.toString().contains(".")) error(n3, "Expected an int literal");
+                                Analyzer.Token i1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                if(i1.content.toString().contains(".")) error(i1, "Expected an int literal");
+                                pushASTNode(new ASTNode(token, n2, i1));
+                                popASTNode();
                                 break;
                             }
                             case Float1Keyword -> {
-                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                Analyzer.Token f1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                pushASTNode(new ASTNode(token, n2, f1));
+                                popASTNode();
                                 break;
                             }
                             case Vec2Keyword -> {
-                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                Analyzer.Token f1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
                                 expect(analyzer, Analyzer.Token.TokenType.Comma);
-                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                Analyzer.Token f2 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                pushASTNode(new ASTNode(token, n2, f1, f2));
+                                popASTNode();
                                 break;
                             }
                             case Vec3Keyword -> {
-                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                Analyzer.Token f1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
                                 expect(analyzer, Analyzer.Token.TokenType.Comma);
-                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                Analyzer.Token f2 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
                                 expect(analyzer, Analyzer.Token.TokenType.Comma);
-                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                Analyzer.Token f3 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                pushASTNode(new ASTNode(token, n2, f1, f2, f3));
+                                popASTNode();
                                 break;
                             }
                         }
@@ -115,12 +125,17 @@ public class RecursiveDescentParser {
                     }
                     expect(analyzer, Analyzer.Token.TokenType.RParen);
                 }
+                else {
+                    pushASTNode(new ASTNode(token, n2));
+                    popASTNode();
+                }
 
                 break;
             }
 
             case EndKeyword: {
-                tokens.pop();
+                blocks.pop();
+                popASTNode();
                 break;
             }
 

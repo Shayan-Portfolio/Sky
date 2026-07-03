@@ -9,7 +9,7 @@ class AnalyzerTest {
     public static void main(String[] args) {
         String src = """
                         #This is a comment
-                        MY_VALUE = "This \\"is a value"
+                        MY_VALUE = 0.0.0
                         
                         """;
 
