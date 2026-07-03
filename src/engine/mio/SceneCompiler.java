@@ -6,8 +6,8 @@ public class SceneCompiler {
     public static SceneBytecode compile(String source) {
         Analyzer tokenizer = new Analyzer(source);
 
-        RDParser parser = new RDParser();
-        parser.parseContinuous(tokenizer);
+        RecursiveDescentParser parser = new RecursiveDescentParser();
+        parser.parseAll(tokenizer);
 
         return parser.getEmittedBytecode();
     }

@@ -6,9 +6,9 @@ import java.util.Arrays;
 import java.util.Stack;
 
 
-public class RDParser {
+public class RecursiveDescentParser {
 
-    public RDParser() {}
+    public RecursiveDescentParser() {}
     private SceneBytecode ir = new SceneBytecode();
 
     private Analyzer.Token nextProperToken(Analyzer analyzer) {
@@ -39,7 +39,7 @@ public class RDParser {
     }
 
     private Stack<Analyzer.Token> tokens = new Stack<>();
-    public void parseContinuous(Analyzer analyzer){
+    public void parseAll(Analyzer analyzer){
         while(true) {
             if(!parseSpecific(analyzer)) break;
         }
