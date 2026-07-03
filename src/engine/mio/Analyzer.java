@@ -96,15 +96,25 @@ top:
                         else numeric = false;
                     }
                     if (character == '\"') {
-                        if (!string) {
-                            string = true;
-                            token.type = Token.TokenType.String;
-                            index++;
-                            continue;
-                        } else {
-                            string = false;
-                            index++;
-                            break;
+                        boolean escaped = token.content.length() > 1 && token.content.charAt(token.content.length() - 2) == '\\';
+
+                        if(escaped) {
+                            token.content.deleteCharAt(token.content.length() - 2);
+                        }
+
+                        else {
+
+
+                            if (!string) {
+                                string = true;
+                                token.type = Token.TokenType.String;
+                                index++;
+                                continue;
+                            } else {
+                                string = false;
+                                index++;
+                                break;
+                            }
                         }
 
                     }
