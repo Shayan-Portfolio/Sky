@@ -33,6 +33,14 @@ top:
 
                 //Precheck
                 {
+                    for (Token.TokenType type : Token.TokenType.values()) {
+                        if (type.value != null && type.value.equals(token.content.toString().strip())) {
+                            token.type = type;
+                            break top;
+                        }
+                    }
+
+
                     if (!Character.isDigit(character) && character != '.' && numeric) break;
                     switch (character) {
                         case '(':
@@ -53,12 +61,6 @@ top:
                             break top;
                     }
 
-                    for (Token.TokenType type : Token.TokenType.values()) {
-                        if (type.value != null && type.value.equals(token.content.toString().strip())) {
-                            token.type = type;
-                            break top;
-                        }
-                    }
                 }
 
                 if(Character.isWhitespace(character) && !string) {
