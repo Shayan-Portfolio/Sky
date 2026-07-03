@@ -149,7 +149,7 @@ public class RecursiveDescentParser {
             }
 
             default: {
-                error(token, "Unexpected token '" + token.content + "'");
+                error(token, "Unexpected token " + token.type + " '" + token.content + "'");
             }
 
 
