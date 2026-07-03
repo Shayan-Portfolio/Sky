@@ -59,50 +59,50 @@ public class RecursiveDescentParser {
 
         switch (token.type) {
 
-            case ActorKeyword, AddKeyword: {
-                Analyzer.Token next = expect(analyzer, Analyzer.Token.TokenType.IdentifierToken);
+            case Actor, Add: {
+                Analyzer.Token next = expect(analyzer, Analyzer.Token.TokenType.Identifier);
                 blocks.push(token);
                 pushASTNode(new ASTNode(token, next));
 
                 break;
             }
 
-            case IdentifierToken: {
+            case Identifier: {
                 expect(analyzer, Analyzer.Token.TokenType.Equals);
                 Analyzer.Token n2 = expect(
                         analyzer,
                         Analyzer.Token.TokenType.String,
                         Analyzer.Token.TokenType.Numeric,
-                        Analyzer.Token.TokenType.TrueKeyword,
-                        Analyzer.Token.TokenType.FalseKeyword,
-                        Analyzer.Token.TokenType.Float1Keyword,
-                        Analyzer.Token.TokenType.Int1Keyword,
-                        Analyzer.Token.TokenType.Vec2Keyword,
-                        Analyzer.Token.TokenType.Vec3Keyword
+                        Analyzer.Token.TokenType.True,
+                        Analyzer.Token.TokenType.False,
+                        Analyzer.Token.TokenType.Float,
+                        Analyzer.Token.TokenType.Int,
+                        Analyzer.Token.TokenType.Vec2,
+                        Analyzer.Token.TokenType.Vec3
                 );
 
 
 
 
                 //Strong types
-                if(n2.type != Analyzer.Token.TokenType.Numeric && n2.type != Analyzer.Token.TokenType.String && n2.type != Analyzer.Token.TokenType.FalseKeyword && n2.type != Analyzer.Token.TokenType.TrueKeyword) {
+                if(n2.type != Analyzer.Token.TokenType.Numeric && n2.type != Analyzer.Token.TokenType.String && n2.type != Analyzer.Token.TokenType.False && n2.type != Analyzer.Token.TokenType.True) {
                     expect(analyzer, Analyzer.Token.TokenType.LParen);
                     {
                         switch (n2.type) {
-                            case Int1Keyword -> {
+                            case Int -> {
                                 Analyzer.Token i1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
                                 if(i1.content.toString().contains(".")) error(i1, "Expected an int literal");
                                 pushASTNode(new ASTNode(token, n2, i1));
                                 popASTNode();
                                 break;
                             }
-                            case Float1Keyword -> {
+                            case Float -> {
                                 Analyzer.Token f1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
                                 pushASTNode(new ASTNode(token, n2, f1));
                                 popASTNode();
                                 break;
                             }
-                            case Vec2Keyword -> {
+                            case Vec2 -> {
                                 Analyzer.Token f1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
                                 expect(analyzer, Analyzer.Token.TokenType.Comma);
                                 Analyzer.Token f2 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
@@ -110,7 +110,7 @@ public class RecursiveDescentParser {
                                 popASTNode();
                                 break;
                             }
-                            case Vec3Keyword -> {
+                            case Vec3 -> {
                                 Analyzer.Token f1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
                                 expect(analyzer, Analyzer.Token.TokenType.Comma);
                                 Analyzer.Token f2 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
@@ -133,12 +133,16 @@ public class RecursiveDescentParser {
                 break;
             }
 
-            case EndKeyword: {
+            case End: {
                 blocks.pop();
                 popASTNode();
                 pushASTNode(new ASTNode(token));
                 popASTNode();
                 break;
+            }
+
+            default: {
+                error(token, "Unexpected token '" + token.content + "'");
             }
 
 

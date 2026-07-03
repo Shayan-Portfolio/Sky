@@ -72,7 +72,7 @@ top:
 
                 if(Character.isWhitespace(character) && !string) {
                     if(!token.content.toString().isBlank()) {
-                        token.type = Token.TokenType.IdentifierToken;
+                        token.type = Token.TokenType.Identifier;
                         break;
                     }
                     index++;
@@ -147,17 +147,17 @@ top:
             RParen(")"),
             Equals("="),
             Comma(","),
-            ActorKeyword("actor"),
-            IdentifierToken(null),
-            EndKeyword("end"),
-            AddKeyword("add"),
-            Float1Keyword("float"),
-            Int1Keyword("int"),
-            TrueKeyword("true"),
-            FalseKeyword("false"),
-            Vec2Keyword("vec2"),
-            Vec3Keyword("vec3"),
-            UsesKeyword("uses"),
+            Actor("actor"),
+            Identifier(null),
+            End("end"),
+            Add("add"),
+            Float("float"),
+            Int("int"),
+            True("true"),
+            False("false"),
+            Vec2("vec2"),
+            Vec3("vec3"),
+            Uses("uses"),
             LBracket("["),
             RBracket("]"),
             String(null),

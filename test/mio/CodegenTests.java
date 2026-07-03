@@ -13,11 +13,16 @@ import java.util.zip.DeflaterOutputStream;
 public class CodegenTests {
     public static void main(String[] args) {
         String source = """
+                        uses
+                        #This is Mio, a weakly-typed compiled language for defining an ECS
                         MY_VALUE = "This \\"is a value"
                         actor Foo
                             add Bar
                                 MyString = "Foo"
-                                MyTypedInt = 34
+                                MyTypedInt = int(34)
+                                MyTypedFloat = float(34.0)
+                                MyWeakFloat = 34.0
+                                MyVec3 = vec3(1, 2, 3)
                             end
                         end
                         """;

@@ -5,8 +5,19 @@ import engine.mio.Analyzer;
 class AnalyzerTest {
     public static void main(String[] args) {
         String src = """
-                        #This is a comment
-                        MY_VALUE = 0.0.0
+                MY_VALUE = "This \\"is a value"
+                actor Foo
+                    add Bar
+                        MyString = "Foo"
+                        MyTypedInt = int(34)
+                    end
+                
+                    add Baz
+                        MyFoo = "A"
+                        MyBar = vec3(1, 2, 3)
+                
+                    end
+                end
                         
                         """;
 

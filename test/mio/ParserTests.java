@@ -62,7 +62,7 @@ class ParserTests {
             parser.parseAll(tokenizer);
         }
         catch(ParseException e) {
-            return e.getMessage().equals("Expected any of [Equals] next instead of Int1Keyword (int) on line 11");
+            return e.getMessage().equals("Expected any of [Equals] next instead of Int (int) on line 11");
         }
         return false;
     }
