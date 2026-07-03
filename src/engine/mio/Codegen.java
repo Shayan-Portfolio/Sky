@@ -1,8 +1,9 @@
 package engine.mio;
 
 public class Codegen {
-    public Codegen() {
-
+    private Context context;
+    public Codegen(Context source) {
+        this.context = source;
     }
 
 

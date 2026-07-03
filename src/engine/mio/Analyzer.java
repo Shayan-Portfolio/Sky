@@ -5,9 +5,11 @@ God help you if you're actually trying to understand this lexer
  */
 public class Analyzer {
     private String source;
+    private Context context;
     private int index = 0;
-    public Analyzer(String source) {
-        this.source = source + Character.MIN_VALUE;
+    public Analyzer(Context context) {
+        this.context = context;
+        this.source = context.src() + Character.MIN_VALUE;
     }
 
     private int line = 1;

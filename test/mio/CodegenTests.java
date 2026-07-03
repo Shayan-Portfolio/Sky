@@ -12,7 +12,7 @@ import java.util.zip.DeflaterOutputStream;
 
 public class CodegenTests {
     public static void main(String[] args) {
-        String source = """
+        Context source = new Context("test.scene", """
                         uses
                         #This is Mio, a weakly-typed compiled language for defining an ECS
                         MY_VALUE = "This \\"is a value"
@@ -22,18 +22,19 @@ public class CodegenTests {
                                 MyTypedInt = int(34)
                                 MyTypedFloat = float(34.0)
                                 MyWeakFloat = 34.0
+                                MyBool = false
                                 MyVec3 = vec3(1, 2, 3)
                             end
                         end
-                        """;
+                        """, new DefaultLogStrategy());
 
         Analyzer tokenizer = new Analyzer(source);
 
-        RecursiveDescentParser parser = new RecursiveDescentParser();
+        RecursiveDescentParser parser = new RecursiveDescentParser(source);
 
         try {
             ASTNode node = parser.parseAll(tokenizer);
-            Codegen codegen = new Codegen();
+            Codegen codegen = new Codegen(source);
             BytecodeStream stream = codegen.flatten(node);
 
             {

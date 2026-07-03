@@ -1,8 +1,6 @@
 package mio;
 
-import engine.mio.Analyzer;
-import engine.mio.ParseException;
-import engine.mio.RecursiveDescentParser;
+import engine.mio.*;
 
 class ParserTests {
     public static void main(String[] args) {
@@ -11,7 +9,7 @@ class ParserTests {
     }
 
     private static boolean testMissingParameter() {
-        String source = """
+        Context source = new Context("test.scene", """
                         #This is a comment
                         MY_VALUE = "This is a value"
                         
@@ -24,11 +22,11 @@ class ParserTests {
                                 MyWeakInt = vec2(0, 0)
                             end
                         end
-                        """;
+                        """, new DefaultLogStrategy());
 
         Analyzer tokenizer = new Analyzer(source);
 
-        RecursiveDescentParser parser = new RecursiveDescentParser();
+        RecursiveDescentParser parser = new RecursiveDescentParser(source);
 
         try {
             parser.parseAll(tokenizer);
@@ -39,7 +37,7 @@ class ParserTests {
         return false;
     }
     private static boolean testMissingToken() {
-        String source = """
+        Context source = new Context("test.scene", """
                         #This is a comment
                         MY_VALUE = "This is a value"
                         
@@ -52,11 +50,11 @@ class ParserTests {
                                 MyWeakInt = vec2(0, 0)
                             end
                         end
-                        """;
+                        """, new DefaultLogStrategy());
 
         Analyzer tokenizer = new Analyzer(source);
 
-        RecursiveDescentParser parser = new RecursiveDescentParser();
+        RecursiveDescentParser parser = new RecursiveDescentParser(source);
 
         try {
             parser.parseAll(tokenizer);

@@ -1,10 +1,12 @@
 package mio;
 
 import engine.mio.Analyzer;
+import engine.mio.Context;
+import engine.mio.DefaultLogStrategy;
 
 class AnalyzerTest {
     public static void main(String[] args) {
-        String src = """
+        Context src = new Context("test.scene", """
                 MY_VALUE = "This \\"is a value"
                 actor Foo
                     add Bar
@@ -19,7 +21,7 @@ class AnalyzerTest {
                     end
                 end
                         
-                        """;
+                        """, new DefaultLogStrategy());
 
         Analyzer tokenizer = new Analyzer(src);
         Analyzer.Token t = null;
@@ -32,11 +34,11 @@ class AnalyzerTest {
     }
 
     private static boolean testStringEscape() {
-        String src = """
+        Context src = new Context("test.scene", """
                         #This is a comment
                         MY_VALUE = "This \\"is a value"
                         
-                        """;
+                        """, new DefaultLogStrategy());
 
         Analyzer tokenizer = new Analyzer(src);
         Analyzer.Token t = null;

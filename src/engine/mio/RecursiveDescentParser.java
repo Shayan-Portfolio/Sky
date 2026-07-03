@@ -5,9 +5,11 @@ import java.util.Stack;
 
 
 public class RecursiveDescentParser {
+    private Context context;
 
-    public RecursiveDescentParser() {}
-
+    public RecursiveDescentParser(Context context) {
+        this.context = context;
+    }
 
     private Analyzer.Token nextProperToken(Analyzer analyzer) {
         Analyzer.Token token;
@@ -138,6 +140,11 @@ public class RecursiveDescentParser {
                 popASTNode();
                 pushASTNode(new ASTNode(token));
                 popASTNode();
+                break;
+            }
+
+            case Uses: {
+                context.logStrategy().warning("The uses keyword is not implemented. Ignoring...", token.line, context, this.getClass());
                 break;
             }
 
