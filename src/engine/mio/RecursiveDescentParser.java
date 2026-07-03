@@ -136,6 +136,8 @@ public class RecursiveDescentParser {
             case EndKeyword: {
                 blocks.pop();
                 popASTNode();
+                pushASTNode(new ASTNode(token));
+                popASTNode();
                 break;
             }
 

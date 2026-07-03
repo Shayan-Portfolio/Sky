@@ -9,8 +9,8 @@ import engine.graphics.*;
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
 import engine.mio.Deserializer;
-import engine.mio.SceneBytecode;
-import engine.mio.Instruction;
+import engine.mio.BytecodeStream;
+import engine.mio.Bytecode;
 import engine.physics.Collider;
 import engine.physics.BodyParams;
 import org.joml.Matrix4f;
@@ -35,10 +35,10 @@ public class Scene extends Disposable {
 
         {
             registerDeserializer("MaterialComponent", (iterator, renderer) -> {
-                Instruction baseColor = iterator.next();
-                Instruction normal = iterator.next();
-                Instruction metallic = iterator.next();
-                Instruction roughness = iterator.next();
+                Bytecode baseColor = iterator.next();
+                Bytecode normal = iterator.next();
+                Bytecode metallic = iterator.next();
+                Bytecode roughness = iterator.next();
                 return (new MaterialComponent(new Material(
                         Sampler.newSampler(actor, Texture.Filter.Linear, Texture.Filter.Linear, true),
                         Texture.newColorTextureFromAsset(actor, AssetRegistry.getAsset((String) baseColor.operands()[1]), TextureFormatType.ColorR8G8B8A8),
@@ -48,7 +48,7 @@ public class Scene extends Disposable {
                 )));
             });
             registerDeserializer("ScriptComponent", (iterator, renderer) -> {
-                Instruction script = iterator.next();
+                Bytecode script = iterator.next();
                 Logger.info(Scene.class, "Loading script " + script.operands()[1]);
 
                 try {
@@ -63,9 +63,9 @@ public class Scene extends Disposable {
             });
             registerDeserializer("TransformComponent", (iterator, renderer) -> {
 
-                Instruction translate = iterator.next();
-                Instruction rotateAxis = iterator.next();
-                Instruction rotateDeg = iterator.next();
+                Bytecode translate = iterator.next();
+                Bytecode rotateAxis = iterator.next();
+                Bytecode rotateDeg = iterator.next();
 
                 Vector3f translation = new Vector3f(
                         (float) translate.operands()[1],
@@ -86,8 +86,8 @@ public class Scene extends Disposable {
 
             });
             registerDeserializer("ShaderComponent", (iterator, renderer) -> {
-                Instruction vertexShader = iterator.next();
-                Instruction fragmentShader = iterator.next();
+                Bytecode vertexShader = iterator.next();
+                Bytecode fragmentShader = iterator.next();
 
                 ShaderProgram shaderProgram = ShaderProgram.newShaderProgram(actor);
                 shaderProgram.add(
@@ -104,12 +104,12 @@ public class Scene extends Disposable {
             });
             registerDeserializer("RigidbodyComponent", (iterator, renderer) -> {
 
-                Instruction type = iterator.next();
-                Instruction params = iterator.next();
-                Instruction mass = iterator.next();
-                Instruction interfaceFriction = iterator.next();
-                Instruction interfaceRestitution = iterator.next();
-                Instruction canRotate = iterator.next();
+                Bytecode type = iterator.next();
+                Bytecode params = iterator.next();
+                Bytecode mass = iterator.next();
+                Bytecode interfaceFriction = iterator.next();
+                Bytecode interfaceRestitution = iterator.next();
+                Bytecode canRotate = iterator.next();
 
 
                 Collider collider = null;
@@ -140,10 +140,10 @@ public class Scene extends Disposable {
             });
             registerDeserializer("MeshComponent", (iterator, renderer) -> {
 
-                Instruction type = iterator.next();
-                Instruction params = iterator.next();
-                Instruction maxVertexCount = iterator.next();
-                Instruction maxIndexCount = iterator.next();
+                Bytecode type = iterator.next();
+                Bytecode params = iterator.next();
+                Bytecode maxVertexCount = iterator.next();
+                Bytecode maxIndexCount = iterator.next();
 
                 MeshComponent meshComponent = new MeshComponent(
                         actor,
@@ -196,16 +196,16 @@ public class Scene extends Disposable {
             });
             registerDeserializer("LightComponent", (iterator, renderer) -> {
 
-                Instruction fovDeg = iterator.next();
-                Instruction eye = iterator.next();
-                Instruction center = iterator.next();
-                Instruction up = iterator.next();
-                Instruction aspectRatio = iterator.next();
-                Instruction zNear = iterator.next();
-                Instruction zFar = iterator.next();
-                Instruction zZeroToOne = iterator.next();
-                Instruction invertY = iterator.next();
-                Instruction color = iterator.next();
+                Bytecode fovDeg = iterator.next();
+                Bytecode eye = iterator.next();
+                Bytecode center = iterator.next();
+                Bytecode up = iterator.next();
+                Bytecode aspectRatio = iterator.next();
+                Bytecode zNear = iterator.next();
+                Bytecode zFar = iterator.next();
+                Bytecode zZeroToOne = iterator.next();
+                Bytecode invertY = iterator.next();
+                Bytecode color = iterator.next();
 
 
                 LightComponent lightComponent = new LightComponent(
@@ -275,21 +275,21 @@ public class Scene extends Disposable {
         return actor;
     }
 
-    public void exec(Renderer renderer, SceneBytecode sceneBytecode) {
+    public void exec(Renderer renderer, BytecodeStream bytecodeStream) {
 
-        for (Iterator<Instruction> iterator = sceneBytecode.getList().iterator(); iterator.hasNext(); ) {
-            Instruction instruction = iterator.next();
-            switch (instruction.opcode()) {
+        for (Iterator<Bytecode> iterator = bytecodeStream.getList().iterator(); iterator.hasNext(); ) {
+            Bytecode bytecode = iterator.next();
+            /*switch (bytecode.opcode()) {
                 case PushActor -> {
-                    String actorName = (String) instruction.operands()[0];
+                    String actorName = (String) bytecode.operands()[0];
                     Actor child = new Actor(actorName);
                     if (actor != null) actor.addActor(child);
                     actor = child;
                 }
 
                 case AddData -> {
-                    Deserializer deserializer = deserializers.getOrDefault((String) instruction.operands()[0], null);
-                    if (deserializer == null) throw new SkyRuntimeException("No deserializer for " + instruction.operands()[0]);
+                    Deserializer deserializer = deserializers.getOrDefault((String) bytecode.operands()[0], null);
+                    if (deserializer == null) throw new SkyRuntimeException("No deserializer for " + bytecode.operands()[0]);
                     Object data = deserializer.deserialize(iterator, renderer);
                     actor.add(data);
                 }
@@ -297,7 +297,7 @@ public class Scene extends Disposable {
                 case PopActor -> {
                     actor = actor.getParent();
                 }
-            }
+            }*/
         }
 
 

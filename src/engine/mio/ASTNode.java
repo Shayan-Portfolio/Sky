@@ -11,6 +11,10 @@ public class ASTNode {
         this.tokens = tokens;
     }
 
+    public Analyzer.Token[] getTokens() {
+        return tokens;
+    }
+
     public List<ASTNode> getChildren() {
         return children;
     }

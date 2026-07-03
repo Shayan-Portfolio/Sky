@@ -1,9 +1,6 @@
 package mio;
 
 import engine.mio.Analyzer;
-import engine.mio.ParseException;
-import engine.mio.RecursiveDescentParser;
-import engine.mio.SceneCompiler;
 
 class AnalyzerTest {
     public static void main(String[] args) {
