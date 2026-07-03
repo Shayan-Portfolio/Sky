@@ -19,19 +19,19 @@ public class RecursiveDescentParser {
         return null;
     }
 
-    private Analyzer.Token expect(Analyzer analyzer, Analyzer.Token.TokenType... types) {
+    private Analyzer.Token expect(Analyzer analyzer, Analyzer.Token.TokenType... types) throws ParseException {
         Analyzer.Token token = nextProperToken(analyzer);
         if(token == null) {
-            throw new SkyRuntimeException("Expected any of " + Arrays.asList(types) + " next instead of EOF");
+            throw new ParseException("Expected any of " + Arrays.asList(types) + " next instead of EOF");
         }
 
         for(Analyzer.Token.TokenType type : types) {
             if(token.type.equals(type)) return token;
         }
-        throw new SkyRuntimeException("Expected any of " + Arrays.asList(types) + " next instead of " + token.type + " (" + token.content.toString() + ") on line " + token.line);
+        throw new ParseException("Expected any of " + Arrays.asList(types) + " next instead of " + token.type + " (" + token.content.toString() + ") on line " + token.line);
     }
-    private void error(Analyzer.Token token, String message) {
-        throw new SkyRuntimeException(message + " on line " + token.line);
+    private void error(Analyzer.Token token, String message) throws ParseException {
+        throw new ParseException(message + " on line " + token.line);
     }
 
     public SceneBytecode getEmittedBytecode() {
@@ -39,13 +39,13 @@ public class RecursiveDescentParser {
     }
 
     private Stack<Analyzer.Token> tokens = new Stack<>();
-    public void parseAll(Analyzer analyzer){
+    public void parseAll(Analyzer analyzer) throws ParseException {
         while(true) {
             if(!parseSpecific(analyzer)) break;
         }
         if(!tokens.isEmpty()) throw new RuntimeException("An actor declaration is missing a matching 'end'");
     }
-    public boolean parseSpecific(Analyzer analyzer) {
+    public boolean parseSpecific(Analyzer analyzer) throws ParseException {
         Analyzer.Token token = nextProperToken(analyzer);
         if(token == null) return false;
 
