@@ -1,7 +1,5 @@
 package engine.mio;
 
-import java.nio.charset.Charset;
-
 /*
 God help you if you're actually trying to understand this lexer
  */
@@ -31,8 +29,9 @@ top:
             if(!comment) {
 
 
+
                 //Precheck
-                {
+                if(!string) {
                     for (Token.TokenType type : Token.TokenType.values()) {
                         if (type.value != null && type.value.equals(token.content.toString().strip())) {
                             token.type = type;
@@ -59,13 +58,21 @@ top:
                             token.type = Token.TokenType.Comma;
                             index++;
                             break top;
+                        case '[':
+                            token.type = Token.TokenType.LBracket;
+                            index++;
+                            break top;
+                        case ']':
+                            token.type = Token.TokenType.RBracket;
+                            index++;
+                            break top;
                     }
 
                 }
 
                 if(Character.isWhitespace(character) && !string) {
                     if(!token.content.toString().isBlank()) {
-                        token.type = Token.TokenType.UnknownToken;
+                        token.type = Token.TokenType.IdentifierToken;
                         break;
                     }
                     index++;
@@ -78,22 +85,15 @@ top:
                 {
 
 
-                    if(!string) {
-                        if (Character.isDigit(character) || character == '.') {
-                            numeric = true;
-                            token.type = Token.TokenType.Numeric;
-                        } else if (numeric) break;
-                    }
-
                     if (!string) {
-                        if (Character.isDigit(character)) {
+                        if ((Character.isDigit(character) || character == '.') && !hasLetters(token.content.toString())) {
+
                             numeric = true;
                             token.type = Token.TokenType.Numeric;
                             index++;
                             continue;
-                        } else {
-                            numeric = false;
                         }
+                        else numeric = false;
                     }
                     if (character == '\"') {
                         if (!string) {
@@ -121,6 +121,13 @@ top:
         return token.type == null ? null : token;
     }
 
+    private static boolean hasLetters(String text) {
+        for(char character : text.toCharArray()) {
+            if(Character.isLetter(character)) return true;
+        }
+        return false;
+    }
+
 
 
     public class Token {
@@ -131,17 +138,16 @@ top:
             Equals("="),
             Comma(","),
             ActorKeyword("actor"),
-            UnknownToken(null),
+            IdentifierToken(null),
             EndKeyword("end"),
             AddKeyword("add"),
             Float1Keyword("float"),
             Int1Keyword("int"),
-            BoolKeyword("bool"),
+            TrueKeyword("true"),
+            FalseKeyword("false"),
             Vec2Keyword("vec2"),
             Vec3Keyword("vec3"),
-            Vec4Keyword("vec4"),
             UsesKeyword("uses"),
-            LetKeyword("let"),
             LBracket("["),
             RBracket("]"),
             String(null),

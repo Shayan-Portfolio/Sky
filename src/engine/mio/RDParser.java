@@ -22,13 +22,16 @@ public class RDParser {
     private Analyzer.Token expect(Analyzer analyzer, Analyzer.Token.TokenType... types) {
         Analyzer.Token token = nextProperToken(analyzer);
         if(token == null) {
-            throw new RuntimeException("Expected any of " + Arrays.asList(types) + " next instead of EOF");
+            throw new SkyRuntimeException("Expected any of " + Arrays.asList(types) + " next instead of EOF");
         }
 
         for(Analyzer.Token.TokenType type : types) {
             if(token.type.equals(type)) return token;
         }
         throw new SkyRuntimeException("Expected any of " + Arrays.asList(types) + " next instead of " + token.type + " (" + token.content.toString() + ") on line " + token.line);
+    }
+    private void error(Analyzer.Token token, String message) {
+        throw new SkyRuntimeException(message + " on line " + token.line);
     }
 
     public SceneBytecode getEmittedBytecode() {
@@ -47,196 +50,81 @@ public class RDParser {
         if(token == null) return false;
 
         switch (token.type) {
-            /*case ActorKeyword: {
-                Analyzer.Token next = expect(analyzer, Analyzer.Token.TokenType.StringLiteral);
-                tokens.push(next);
-                ir.emit(new Instruction(
-                        Opcode.PushActor,
-                        new Object[]{ next.content.toString() }
-                ));
-                parseSpecific(analyzer);
-                break;
-            }
-            case EndKeyword: {
-                tokens.pop();
-                ir.emit(new Instruction(
-                        Opcode.PopActor,
-                        new Object[]{}
-                ));
+
+            case ActorKeyword: {
+                Analyzer.Token next = expect(analyzer, Analyzer.Token.TokenType.IdentifierToken);
+                tokens.push(token);
+
                 break;
             }
 
-            case PassKeyword: {
+            case AddKeyword: {
+                Analyzer.Token next = expect(analyzer, Analyzer.Token.TokenType.IdentifierToken);
+                tokens.push(token);
+
                 break;
             }
 
-             */
-
-            case String: {
-                //Strings can also be preceded by 'actor_keyword'
-                Analyzer.Token next = expect(
-                        analyzer
-                        //Analyzer.Token.TokenType.Float1Keyword,
-                        //Analyzer.Token.TokenType.Float2Keyword,
-                        //Analyzer.Token.TokenType.Float3Keyword,
-                        //Analyzer.Token.TokenType.Float4Keyword,
-                        //Analyzer.Token.TokenType.StringKeyword,
-                        //Analyzer.Token.TokenType.BoolKeyword
+            case IdentifierToken: {
+                expect(analyzer, Analyzer.Token.TokenType.Equals);
+                Analyzer.Token n2 = expect(
+                        analyzer,
+                        Analyzer.Token.TokenType.String,
+                        Analyzer.Token.TokenType.Numeric,
+                        Analyzer.Token.TokenType.TrueKeyword,
+                        Analyzer.Token.TokenType.FalseKeyword,
+                        Analyzer.Token.TokenType.Float1Keyword,
+                        Analyzer.Token.TokenType.Int1Keyword,
+                        Analyzer.Token.TokenType.Vec2Keyword,
+                        Analyzer.Token.TokenType.Vec3Keyword
                 );
 
 
-                switch (next.type) {
-                    /*case DataKeyword: {
-                        ir.emit(new Instruction(
-                                Opcode.AddData,
-                                new Object[]{ token.content.toString() }
-                        ));
-                        parseContinuous(analyzer);
-                        break;
-                    }
-                    case BoolKeyword: {
-                        expect(analyzer, Analyzer.Token.TokenType.LeftParen);
-                        Analyzer.Token a1 = expect(analyzer, Analyzer.Token.TokenType.TrueKeyword, Analyzer.Token.TokenType.FalseKeyword);
-                        expect(analyzer, Analyzer.Token.TokenType.RightParen);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter, Analyzer.Token.TokenType.RightParen);
 
-                        ir.emit(new Instruction(
-                                Opcode.AddProperty,
-                                new Object[]{ token.content.toString(), Boolean.parseBoolean(a1.content.toString()) }
-                        ));
 
-                        break;
-                    }
-                    case StringKeyword: {
-                        expect(analyzer, Analyzer.Token.TokenType.LeftParen);
-                        Analyzer.Token a1 = expect(analyzer, Analyzer.Token.TokenType.StringLiteral);
-                        expect(analyzer, Analyzer.Token.TokenType.RightParen);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter, Analyzer.Token.TokenType.RightParen);
-
-                        ir.emit(new Instruction(
-                                Opcode.AddProperty,
-                                new Object[]{ token.content.toString(), a1.content.toString() }
-                        ));
-
-                        break;
-                    }
-                    case Float1Keyword: {
-                        expect(analyzer, Analyzer.Token.TokenType.LeftParen);
-                        Analyzer.Token a1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.RightParen);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter, Analyzer.Token.TokenType.RightParen);
-
-                        ir.emit(new Instruction(
-                                Opcode.AddProperty,
-                                new Object[]{ token.content.toString(), Float.parseFloat(a1.content.toString()) }
-                        ));
-
-                        break;
-                    }
-                    case Float2Keyword: {
-                        expect(analyzer, Analyzer.Token.TokenType.LeftParen);
-                        Analyzer.Token a1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter);
-                        Analyzer.Token a2 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.RightParen);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter, Analyzer.Token.TokenType.RightParen);
-
-                        ir.emit(new Instruction(
-                                Opcode.AddProperty,
-                                new Object[]{ token.content.toString(), Float.parseFloat(a1.content.toString()), Float.parseFloat(a2.content.toString()) }
-                        ));
-                        break;
-                    }
-                    /*
-                    case Float3Keyword, Euler3Keyword: {
-                        expect(analyzer, Analyzer.Token.TokenType.LeftParen);
-                        Analyzer.Token a1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter);
-                        Analyzer.Token a2 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter);
-                        Analyzer.Token a3 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.RightParen);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter, Analyzer.Token.TokenType.RightParen);
-                        ir.emit(new Instruction(
-                                Opcode.AddProperty,
-                                new Object[]{ token.content.toString(), Float.parseFloat(a1.content.toString()), Float.parseFloat(a2.content.toString()), Float.parseFloat(a3.content.toString()) }
-                        ));
-
-                        break;
-                    }
-                    case Float4Keyword, Quat4Keyword: {
-                        expect(analyzer, Analyzer.Token.TokenType.LeftParen);
-                        expect(analyzer, Analyzer.Token.TokenType.LeftParen);
-                        Analyzer.Token a1 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter);
-                        Analyzer.Token a2 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter);
-                        Analyzer.Token a3 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter);
-                        Analyzer.Token a4 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
-                        expect(analyzer, Analyzer.Token.TokenType.RightParen);
-                        expect(analyzer, Analyzer.Token.TokenType.ArgDelimiter, Analyzer.Token.TokenType.RightParen);
-                        ir.emit(new Instruction(
-                                Opcode.AddProperty,
-                                new Object[]{ token.content.toString(), Float.parseFloat(a1.content.toString()), Float.parseFloat(a2.content.toString()), Float.parseFloat(a3.content.toString()), Float.parseFloat(a4.content.toString()) }
-                        ));
-                        break;
-                    }
-                    case ArrayKeyword: {
-                        expect(analyzer, Analyzer.Token.TokenType.ArrayStart);
-                        int arraySize = 0;
-
-                        ArrayList<Object> array = new ArrayList<>();
-                        array.add(next.content.toString());
-                        Analyzer.Token last = null;
-                        while(true) {
-                            Analyzer.Token t = expect(
-                                    analyzer,
-                                    Analyzer.Token.TokenType.Numeric,
-                                    Analyzer.Token.TokenType.TrueKeyword,
-                                    Analyzer.Token.TokenType.FalseKeyword,
-                                    Analyzer.Token.TokenType.StringLiteral,
-                                    Analyzer.Token.TokenType.ArgDelimiter,
-                                    Analyzer.Token.TokenType.ArrayEnd
-                            );
-
-                            if(t.type == Analyzer.Token.TokenType.ArrayEnd){
+                //Strong types
+                if(n2.type != Analyzer.Token.TokenType.Numeric && n2.type != Analyzer.Token.TokenType.String && n2.type != Analyzer.Token.TokenType.FalseKeyword && n2.type != Analyzer.Token.TokenType.TrueKeyword) {
+                    expect(analyzer, Analyzer.Token.TokenType.LParen);
+                    {
+                        switch (n2.type) {
+                            case Int1Keyword -> {
+                                Analyzer.Token n3 = expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                if(n3.content.toString().contains(".")) error(n3, "Expected an int literal");
                                 break;
                             }
-                            else if(t.type != Analyzer.Token.TokenType.ArgDelimiter) {
-                                if(last != null && last.type != t.type) {
-                                    throw new RuntimeException("Expected type " + last.type + " at index " + arraySize + " in the array instead of " + t.type);
-                                }
-
-                                last = t;
-                                arraySize++;
-
-                                switch (t.type) {
-                                    case Numeric -> array.add(Float.parseFloat(t.content.toString()));
-                                    case TrueKeyword -> array.add(true);
-                                    case FalseKeyword -> array.add(false);
-                                    case StringLiteral -> array.add(t.content.toString());
-                                }
+                            case Float1Keyword -> {
+                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                break;
                             }
-
+                            case Vec2Keyword -> {
+                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                expect(analyzer, Analyzer.Token.TokenType.Comma);
+                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                break;
+                            }
+                            case Vec3Keyword -> {
+                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                expect(analyzer, Analyzer.Token.TokenType.Comma);
+                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                expect(analyzer, Analyzer.Token.TokenType.Comma);
+                                expect(analyzer, Analyzer.Token.TokenType.Numeric);
+                                break;
+                            }
                         }
 
-                        ir.emit(new Instruction(
-                                Opcode.AddProperty,
-                                array.toArray()
-                        ));
-
-
-
-                        break;
                     }
-
-                     */
-
+                    expect(analyzer, Analyzer.Token.TokenType.RParen);
                 }
 
                 break;
             }
+
+            case EndKeyword: {
+                tokens.pop();
+                break;
+            }
+
+
 
 
 
