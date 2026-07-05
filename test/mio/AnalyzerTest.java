@@ -49,7 +49,7 @@ class AnalyzerTest {
             tokenContents[index++] = t.content.toString();
         }
 
-        return tokenContents[0].equals("MY_VALUE") && tokenContents[1].equals("") && tokenContents[2].equals("\"This \"is a value\"");
+        return tokenContents[0].equals("MY_VALUE") && tokenContents[1].equals("") && tokenContents[2].equals("This \"is a value");
     }
 
 

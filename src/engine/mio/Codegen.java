@@ -15,6 +15,25 @@ public class Codegen {
         return stream;
     }
 
+    private Object toNativeOperandType(Analyzer.Token token) {
+        switch (token.type) {
+            case String : {
+                return token.content.toString();
+            }
+            case Numeric: {
+                return Float.parseFloat(token.content.toString());
+            }
+            case True: {
+                return true;
+            }
+            case False: {
+                return false;
+            }
+
+        }
+        return null;
+    }
+
     private void visit(ASTNode node, BytecodeStream stream) {
         for(ASTNode child : node.getChildren()) {
             Analyzer.Token[] tokens = child.getTokens();
@@ -25,8 +44,7 @@ public class Codegen {
                 String type = tokens[1].type.toString();
 
                 if(tokens.length == 2) {
-                    String weakValue = tokens[1].content.toString();
-                    operands = new Object[] { name, type, weakValue };
+                    operands = new Object[] { name, type, toNativeOperandType(tokens[1]) };
                 }
                 else {
 
@@ -35,12 +53,12 @@ public class Codegen {
                         operands[0] = name;
                         operands[1] = type;
                         for (int i = 2; i < tokens.length; i++) {
-                            operands[i] = tokens[i].content.toString();
+                            operands[i] = toNativeOperandType(tokens[i]);
                         }
                     }
                 }
 
-                
+
                 stream.emit(new Bytecode(Opcodes.DeclConstant, operands));
             }
 
@@ -55,7 +73,12 @@ public class Codegen {
                 visit(child, stream);
             }
             if(tokens[0].type == Analyzer.Token.TokenType.End) {
-                stream.emit(new Bytecode(Opcodes.End, new Object[] {}));
+                boolean endingActor = node.getChildren()
+                        .getFirst()
+                        .getTokens()[0]
+                        .type == Analyzer.Token.TokenType.Actor;
+
+                stream.emit(new Bytecode(endingActor ? Opcodes.EndActor : Opcodes.EndAdd, new Object[] {}));
             }
 
 

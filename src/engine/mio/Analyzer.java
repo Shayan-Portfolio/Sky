@@ -115,6 +115,12 @@ top:
                             } else {
                                 string = false;
                                 index++;
+
+                                token.content.deleteCharAt(token.content.length() - 1);
+                                token.content.deleteCharAt(0);
+
+
+
                                 break;
                             }
                         }

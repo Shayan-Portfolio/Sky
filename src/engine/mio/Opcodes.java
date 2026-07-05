@@ -4,5 +4,6 @@ public enum Opcodes {
     DeclConstant,
     BeginActor,
     BeginAdd,
-    End
+    EndAdd,
+    EndActor
 }
