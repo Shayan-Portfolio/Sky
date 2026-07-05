@@ -15,7 +15,7 @@ import com.bulletphysics.linearmath.Transform;
 import engine.SystemState;
 import engine.Time;
 import engine.physics.Physics;
-import engine.physics.MathUtil;
+import engine.util.MathUtil;
 import org.joml.Quaternionf;
 
 import javax.vecmath.Matrix4f;
@@ -48,91 +48,84 @@ public class BulletSystem extends ActorSystem {
     @Override
     public void run(Actor root) {
         if(SystemState.running) {
-            float frameTime = Math.min(Time.deltaTime(), 0.25f);
-            accumulator += frameTime;
-            while (accumulator >= timestep) {
+            root.previsitAllActors(actor -> {
+                if(actor.has(RigidBodyComponent.class)) {
+                    RigidBodyComponent rigidBodyComponent = actor.getComponent(RigidBodyComponent.class);
+                    TransformComponent transformComponent = actor.getComponent(TransformComponent.class);
 
-                root.previsitAllActors(actor -> {
-                    if(actor.has(RigidBodyComponent.class)) {
-                        RigidBodyComponent rigidBodyComponent = actor.getComponent(RigidBodyComponent.class);
-                        TransformComponent transformComponent = actor.getComponent(TransformComponent.class);
+                    if(!rigidBodyComponent.active) {
 
-                        if(!rigidBodyComponent.active) {
+                        org.joml.Vector3f pos = new org.joml.Vector3f(
+                                transformComponent.transform().m30(),
+                                transformComponent.transform().m31(),
+                                transformComponent.transform().m32()
+                        );
 
-                            org.joml.Vector3f pos = new org.joml.Vector3f(
-                                    transformComponent.transform().m30(),
-                                    transformComponent.transform().m31(),
-                                    transformComponent.transform().m32()
-                            );
-
-                            Quaternionf rotation = new Quaternionf();
-                            {
-                                transformComponent.transform().getNormalizedRotation(rotation);
-                            }
-
-
-
-                            rigidBodyComponent.motionState = new DefaultMotionState(new Transform(new Matrix4f(
-                                    MathUtil.quat4(rotation),
-                                    MathUtil.vec3(pos),
-                                    1.0f
-                            )));
-
-                            Vector3f inertia = new Vector3f(0, 0, 0);
-                            rigidBodyComponent.collider.getCollisionShape().calculateLocalInertia(rigidBodyComponent.mass, inertia);
-                            rigidBodyComponent.constructionInfo = new RigidBodyConstructionInfo(
-                                    rigidBodyComponent.mass,
-                                    rigidBodyComponent.motionState,
-                                    rigidBodyComponent.collider.getCollisionShape(),
-                                    inertia
-                            );
-
-                            rigidBodyComponent.constructionInfo.friction = rigidBodyComponent.mat.friction;
-
-
-                            rigidBodyComponent.rigidBody = new RigidBody(rigidBodyComponent.constructionInfo);
-                            rigidBodyComponent.rigidBody.setUserPointer(actor);
-                            rigidBodyComponent.rigidBody.setAngularFactor(rigidBodyComponent.rotate ? 1f : 0f);
-
-                            dynamicsWorld.addRigidBody(rigidBodyComponent.rigidBody);
-
-
-                            rigidBodyComponent.active = true;
-                        }
-                        else {
-                            transformVM.setIdentity();
-                            rigidBodyComponent.rigidBody.getWorldTransform(transformVM);
-
-                            posVM.setIdentity();
-                            transformVM.getMatrix(posVM);
-                            transformVM.getRotation(rotVM);
-
-                            MathUtil.copy(rotVM, rotJML);
-
-                            float x = posVM.m03;
-                            float y = posVM.m13;
-                            float z = posVM.m23;
-
-                            transformComponent
-                                    .transform()
-                                    .identity()
-                                    .translate(x, y, z)
-                                    .rotate(rotJML);
-
+                        Quaternionf rotation = new Quaternionf();
+                        {
+                            transformComponent.transform().getNormalizedRotation(rotation);
                         }
 
+
+
+                        rigidBodyComponent.motionState = new DefaultMotionState(new Transform(new Matrix4f(
+                                MathUtil.quat4(rotation),
+                                MathUtil.vec3(pos),
+                                1.0f
+                        )));
+
+                        Vector3f inertia = new Vector3f(0, 0, 0);
+                        rigidBodyComponent.collider.getCollisionShape().calculateLocalInertia(rigidBodyComponent.mass, inertia);
+                        rigidBodyComponent.constructionInfo = new RigidBodyConstructionInfo(
+                                rigidBodyComponent.mass,
+                                rigidBodyComponent.motionState,
+                                rigidBodyComponent.collider.getCollisionShape(),
+                                inertia
+                        );
+                        rigidBodyComponent.constructionInfo.friction = rigidBodyComponent.mat.friction();
+                        rigidBodyComponent.constructionInfo.restitution = rigidBodyComponent.mat.restitution();
+
+
+
+                        rigidBodyComponent.rigidBody = new RigidBody(rigidBodyComponent.constructionInfo);
+                        rigidBodyComponent.rigidBody.setUserPointer(actor);
+                        rigidBodyComponent.rigidBody.setAngularFactor(rigidBodyComponent.rotate ? 1f : 0f);
+
+                        dynamicsWorld.addRigidBody(rigidBodyComponent.rigidBody);
+
+
+                        rigidBodyComponent.active = true;
+                    }
+                    else {
+                        transformVM.setIdentity();
+                        rigidBodyComponent.rigidBody.getWorldTransform(transformVM);
+
+                        posVM.setIdentity();
+                        transformVM.getMatrix(posVM);
+                        transformVM.getRotation(rotVM);
+
+                        MathUtil.copy(rotVM, rotJML);
+
+                        float x = posVM.m03;
+                        float y = posVM.m13;
+                        float z = posVM.m23;
+
+                        transformComponent
+                                .transform()
+                                .identity()
+                                .translate(x, y, z)
+                                .rotate(rotJML);
 
                     }
-                    if(actor.has(ScriptComponent.class)) actor.getComponent(ScriptComponent.class).script().fixedUpdate(actor, timestep);
 
 
-                });
+                }
+                if(actor.has(ScriptComponent.class)) actor.getComponent(ScriptComponent.class).script().fixedUpdate(actor, timestep);
 
 
+            });
+            dynamicsWorld.stepSimulation(Time.deltaTime(), 20, timestep);
 
-                dynamicsWorld.stepSimulation(timestep, 4, timestep);
-                accumulator -= timestep;
-            }
         }
 
     }

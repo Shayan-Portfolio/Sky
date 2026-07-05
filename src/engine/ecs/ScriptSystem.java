@@ -19,6 +19,7 @@ public class ScriptSystem extends ActorSystem {
                     ScriptComponent scriptComponent = actor.getComponent(ScriptComponent.class);
                     if (!scriptComponent.script().initialized) {
                         scriptComponent.script().init(actor);
+                        scriptComponent.script().initialized = true;
                     }
 
                     scriptComponent.script().update(actor, root);

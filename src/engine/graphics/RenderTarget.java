@@ -5,7 +5,7 @@ import java.util.List;
 
 public class RenderTarget extends Disposable {
 
-    private ArrayList<RenderTargetAttachment> attachments;
+    private ArrayList<Attachment> attachments;
 
 
 
@@ -15,29 +15,29 @@ public class RenderTarget extends Disposable {
         attachments = new ArrayList<>();
     }
 
-    public void addAttachment(RenderTargetAttachment attachment) {
+    public void addAttachment(Attachment attachment) {
         attachments.add(attachment);
     }
 
-    public List<RenderTargetAttachment> getAttachments() {
+    public List<Attachment> getAttachments() {
         return attachments;
     }
 
-    public RenderTargetAttachment getAttachmentByIndex(int index) {
+    public Attachment getAttachmentByIndex(int index) {
         return attachments.get(index);
     }
 
     public int getAttachmentCountExcludingDepth() {
         int attachmentCount = 0;
-        for(RenderTargetAttachment renderTargetAttachment : getAttachments()) {
-            if((renderTargetAttachment.getFlags() & RenderTargetAttachmentTypes.Depth) == 0)
+        for(Attachment attachment : getAttachments()) {
+            if((attachment.getFlags() & AttachmentTypes.Depth) == 0)
                 attachmentCount++;
         }
         return attachmentCount;
     }
 
-    public RenderTargetAttachment getAttachment(long mask) {
-        for(RenderTargetAttachment attachment : attachments) {
+    public Attachment getAttachment(long mask) {
+        for(Attachment attachment : attachments) {
             if((attachment.getFlags() & mask) != 0) return attachment;
         }
 

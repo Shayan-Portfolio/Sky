@@ -32,6 +32,7 @@ public class VulkanImage extends Disposable {
     private int currentLayout;
     private int usage;
 
+
     public VulkanImage(Disposable parent, long imageHandle, int currentLayout, int usage, int imageFormat) {
         super(parent);
         this.handle = imageHandle;
@@ -40,7 +41,7 @@ public class VulkanImage extends Disposable {
         this.format = imageFormat;
     }
 
-    public VulkanImage(Disposable parent, VulkanAllocator allocator, int width, int height, int format, int usage, int tiling){
+    public VulkanImage(Disposable parent, VulkanAllocator allocator, int arrayLayers, int width, int height, int format, int usage, int tiling){
         super(parent);
         this.format = format;
         this.allocator = allocator;
@@ -49,21 +50,27 @@ public class VulkanImage extends Disposable {
 
         try(MemoryStack stack = MemoryStack.stackPush()) {
 
-
-            extent = VkExtent3D.calloc(stack).set(width, height, 1);
+            if(arrayLayers == 6) {
+                extent = VkExtent3D.calloc(stack).set(width, width, 1);
+            }
+            else
+                extent = VkExtent3D.calloc(stack).set(width, height, 1);
 
             imageCreateInfo = VkImageCreateInfo.calloc(stack);
             imageCreateInfo.sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
             imageCreateInfo.imageType(VK_IMAGE_TYPE_2D);
             imageCreateInfo.extent(extent);
             imageCreateInfo.mipLevels(1);
-            imageCreateInfo.arrayLayers(1);
+            imageCreateInfo.arrayLayers(arrayLayers);
             imageCreateInfo.format(format);
             imageCreateInfo.tiling(tiling);
             imageCreateInfo.usage(usage);
             imageCreateInfo.initialLayout(currentLayout);
             imageCreateInfo.samples(VK_SAMPLE_COUNT_1_BIT);
             imageCreateInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
+            if(arrayLayers == 6)
+                imageCreateInfo.flags(VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
+
 
 
             allocationCreateInfo = VmaAllocationCreateInfo.calloc(stack);
@@ -81,7 +88,7 @@ public class VulkanImage extends Disposable {
         }
     }
 
-    public int getCurrentLayout() {
+    public int getLastLayout() {
         return currentLayout;
     }
 
@@ -109,5 +116,6 @@ public class VulkanImage extends Disposable {
             pAllocation.free();
         }
     }
+
 
 }

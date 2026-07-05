@@ -1,7 +1,6 @@
 package engine.graphics.vulkan;
 
-import engine.Logger;
-import engine.SkyRuntimeException;
+import engine.logging.SkyRuntimeException;
 import engine.graphics.Buffer;
 import engine.graphics.Disposable;
 import org.lwjgl.PointerBuffer;

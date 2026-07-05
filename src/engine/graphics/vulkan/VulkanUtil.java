@@ -1,11 +1,13 @@
 package engine.graphics.vulkan;
 
-import engine.SkyRuntimeException;
+import engine.logging.SkyRuntimeException;
 import engine.graphics.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.vulkan.EXTDebugUtils.VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+import static org.lwjgl.vulkan.EXTDebugUtils.vkSetDebugUtilsObjectNameEXT;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class VulkanUtil {
@@ -59,22 +61,24 @@ public class VulkanUtil {
         throw new SkyRuntimeException("The depth operation for this pipeline is an invalid value [" + depthTestType + "]");
     }
 
-    public static void transitionImages(VulkanImage image,
-                                        VkCommandBuffer commandBuffer,
-                                        int newLayout,
-                                        int srcAccessMask,
-                                        int dstAccessMask,
-                                        int aspectMask,
-                                        int srcStageMask,
-                                        int dstStageMask) {
-        if(image.getCurrentLayout() == newLayout) return;
+
+
+    public static void transitionImageLayout(VulkanImage image,
+                                             VkCommandBuffer commandBuffer,
+                                             int newLayout,
+                                             int srcAccessMask,
+                                             int dstAccessMask,
+                                             int aspectMask,
+                                             int srcStageMask,
+                                             int dstStageMask,
+                                             int layerCount) {
 
 
         try(MemoryStack stack = stackPush()) {
             VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
             {
                 imageBarrier.sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
-                imageBarrier.oldLayout(image.getCurrentLayout());
+                imageBarrier.oldLayout(image.getLastLayout());
                 imageBarrier.newLayout(newLayout);
                 imageBarrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
                 imageBarrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
@@ -85,12 +89,9 @@ public class VulkanUtil {
                 imageBarrier.subresourceRange().baseMipLevel(0);
                 imageBarrier.subresourceRange().levelCount(1);
                 imageBarrier.subresourceRange().baseArrayLayer(0);
-                imageBarrier.subresourceRange().layerCount(1);
+                imageBarrier.subresourceRange().layerCount(layerCount);
             }
 
-            if(image.getFormat() == VK_FORMAT_D32_SFLOAT && aspectMask == VK_IMAGE_ASPECT_COLOR_BIT) {
-                System.out.println();
-            }
 
 
 
@@ -107,6 +108,17 @@ public class VulkanUtil {
 
 
             image.setCurrentLayout(newLayout);
+        }
+    }
+
+    public static void nameObject(String name, int type, long handle, MemoryStack stack) {
+        if(VulkanRuntime.hasValidation()){
+            VkDebugUtilsObjectNameInfoEXT debugUtilsObjectNameInfoEXT = VkDebugUtilsObjectNameInfoEXT.calloc(stack);
+            debugUtilsObjectNameInfoEXT.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT);
+            debugUtilsObjectNameInfoEXT.objectType(type);
+            debugUtilsObjectNameInfoEXT.pObjectName(stack.UTF8(name));
+            debugUtilsObjectNameInfoEXT.objectHandle(handle);
+            vkSetDebugUtilsObjectNameEXT(VulkanRuntime.getCurrentDevice(), debugUtilsObjectNameInfoEXT);
         }
     }
 

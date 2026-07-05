@@ -5,6 +5,7 @@ public class AudioReceiver {
     private static AudioReceiver instance;
     private float x, y, z;
     private float vx, vy, vz;
+    private float ox, oy, oz;
 
 
     private AudioReceiver() {}
@@ -26,8 +27,14 @@ public class AudioReceiver {
         this.vx = vx;
         this.vy = vy;
         this.vz = vz;
-
         alListener3f(AL_VELOCITY, vx, vy, vz);
+    }
+
+    public void setOrientation(float ox, float oy, float oz) {
+        this.ox = ox;
+        this.oy = oy;
+        this.oz = oz;
+        alListenerfv(AL_ORIENTATION, new float[]{ox, oy, oz, 0, 1, 0});
     }
 
 }

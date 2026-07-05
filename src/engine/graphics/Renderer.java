@@ -1,10 +1,12 @@
 package engine.graphics;
 
-import engine.Logger;
+import engine.logging.Logger;
 import engine.Surface;
 import engine.graphics.vulkan.VulkanRenderContext;
 import engine.graphics.vulkan.VulkanRenderer;
 import org.lwjgl.vulkan.VkInstance;
+
+import java.util.List;
 
 public abstract class Renderer extends Disposable {
 
@@ -15,7 +17,7 @@ public abstract class Renderer extends Disposable {
     protected int maxFramesInFlight;
     protected Surface surface;
     protected RenderTarget swapchainRenderTarget;
-    protected Semaphore[] frameStartSemaphores;
+    protected Semaphore[] swapchainImageAcquireSemaphores;
     protected int frameIndex;
 
 
@@ -36,10 +38,9 @@ public abstract class Renderer extends Disposable {
     }
 
 
-    public abstract void updateRenderer(boolean surfaceInvalidated);
-    public abstract void render(RenderGraph renderGraph);
+    public abstract void syncWithSurface(boolean surfaceInvalidated);
     public Semaphore[] getRenderStartSemaphores() {
-        return frameStartSemaphores;
+        return swapchainImageAcquireSemaphores;
     }
 
 
@@ -85,4 +86,5 @@ public abstract class Renderer extends Disposable {
     }
     public RenderTarget getSwapchainRenderTarget() { return swapchainRenderTarget; }
 
+    public abstract void submit(List<Pass> passes);
 }

@@ -4,9 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import engine.FileSystem;
-import engine.Logger;
-import engine.ExceptionUtil;
-import engine.SkyRuntimeException;
+import engine.logging.Logger;
+import engine.logging.SkyRuntimeException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.stb.STBImage;
@@ -76,6 +75,7 @@ public class AssetPackage {
                                             channelsInFile,
                                             4
                                     );
+                                    Logger.info(AssetPackage.class, STBImage.stbi_failure_reason());
                                     int size = texture.remaining();
                                     byte[] bytes = new byte[texture.remaining()];
 
@@ -98,6 +98,20 @@ public class AssetPackage {
                                             FileSystem.readBytes(assetPath)
                                     );
                                 }
+                                else if (assetFilePath.endsWith("wav")) {
+                                    asset = new Asset<byte[]>(
+                                            assetPackage,
+                                            identifier,
+                                            FileSystem.readBytes(assetPath)
+                                    );
+                                }
+                                else if (assetFilePath.endsWith("bin")) {
+                                    asset = new Asset<byte[]>(
+                                            assetPackage,
+                                            identifier,
+                                            FileSystem.readBytes(assetPath)
+                                    );
+                                }
                                 else if (assetFilePath.endsWith("json")) {
                                     asset = new Asset<String>(
                                             assetPackage,
@@ -105,7 +119,14 @@ public class AssetPackage {
                                             FileSystem.readString(assetPath)
                                     );
                                 }
-                                else if (assetFilePath.endsWith("mio")) {
+                                else if (assetFilePath.endsWith("gltf")) {
+                                    asset = new Asset<String>(
+                                            assetPackage,
+                                            identifier,
+                                            FileSystem.readString(assetPath)
+                                    );
+                                }
+                                else if (assetFilePath.endsWith("scene")) {
                                     asset = new Asset<String>(
                                             assetPackage,
                                             identifier,

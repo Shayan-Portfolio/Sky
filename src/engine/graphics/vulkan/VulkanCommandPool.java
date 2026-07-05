@@ -1,6 +1,6 @@
 package engine.graphics.vulkan;
 
-import engine.SkyRuntimeException;
+import engine.logging.SkyRuntimeException;
 import engine.graphics.Disposable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;

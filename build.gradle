@@ -20,6 +20,13 @@ sourceSets {
         java {
             srcDirs = ['src']
         }
+        
+        
+    }
+    test {
+        java {
+            srcDirs = ['test']
+        }
     }
 }
 
@@ -45,6 +52,7 @@ project.ext.kryoVersion = "5.6.2"
 project.ext.gsonVersion = "2.13.2"
 project.ext.jbulletVersion = "1.0.3"
 project.ext.vecmathVersion = "1.5.2"
+project.ext.flatlafVersion = "3.7.1"
 
 switch (OperatingSystem.current()) {
     case OperatingSystem.LINUX:
@@ -75,7 +83,6 @@ dependencies {
     {
         implementation "com.esotericsoftware:kryo:$kryoVersion"
         implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-        implementation "org.lwjgl:lwjgl-assimp"
         implementation "org.lwjgl:lwjgl"
         implementation "org.lwjgl:lwjgl-glfw"
         implementation "org.lwjgl:lwjgl-stb"
@@ -89,6 +96,7 @@ dependencies {
         implementation "org.lwjgl:lwjgl-openal"
         implementation "com.github.stephengold:jbullet:$jbulletVersion"
         implementation "javax.vecmath:vecmath:$vecmathVersion"
+        implementation "com.formdev:flatlaf:$flatlafVersion"
 
 
     }
@@ -103,7 +111,6 @@ dependencies {
         if (lwjglNatives == "natives-macos" || lwjglNatives == "natives-macos-arm64")
             runtimeOnly "org.lwjgl:lwjgl-vulkan::$lwjglNatives"
 
-        runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
         runtimeOnly "org.lwjgl:lwjgl-spvc::$lwjglNatives"
         implementation "org.lwjgl:lwjgl-openal::$lwjglNatives"
 

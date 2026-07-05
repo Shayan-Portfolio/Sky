@@ -11,7 +11,7 @@ public class VulkanRuntime {
     private static VkQueue computeQueue;
     private static VkPhysicalDeviceProperties physicalDeviceProperties;
     private static int computeFamilyIndex;
-
+    private static boolean validation = false;
 
     public static VkDevice getCurrentDevice() {
         return currentDevice;
@@ -27,6 +27,14 @@ public class VulkanRuntime {
 
     public static void setCurrentPhysicalDevice(VkPhysicalDevice currentPhysicalDevice) {
         VulkanRuntime.currentPhysicalDevice = currentPhysicalDevice;
+    }
+
+    public static boolean hasValidation() {
+        return validation;
+    }
+
+    public static void setValidation(boolean validation) {
+        VulkanRuntime.validation = validation;
     }
 
     public static int getGraphicsFamilyIndex() {

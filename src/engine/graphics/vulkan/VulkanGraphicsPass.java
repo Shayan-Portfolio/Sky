@@ -1,6 +1,6 @@
 package engine.graphics.vulkan;
 
-import engine.SkyRuntimeException;
+import engine.logging.SkyRuntimeException;
 import engine.graphics.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -53,6 +53,7 @@ public class VulkanGraphicsPass extends GraphicsPass {
                 }
 
                 commandBuffers[i] = new VkCommandBuffer(pCommandBuffers.get(i), device);
+                VulkanUtil.nameObject(name, VK_OBJECT_TYPE_COMMAND_BUFFER, pCommandBuffers.get(i), stack);
             }
         }
 
@@ -91,6 +92,18 @@ public class VulkanGraphicsPass extends GraphicsPass {
         pPushConstants.rewind();
         long pipelineLayoutHandle = ((VulkanShaderProgram) shaderProgram).getPipeline().getLayoutHandle();
         vkCmdPushConstants(commandBuffers[frameIndex], pipelineLayoutHandle, VK_SHADER_STAGE_ALL, 0, pPushConstants);
+    }
+
+    @Override
+    public void drawInstanced(int indexCount, int instanceCount) {
+        vkCmdDrawIndexed(
+                commandBuffers[frameIndex],
+                indexCount,
+                instanceCount,
+                0,
+                0,
+                0
+        );
     }
 
     @Override
@@ -176,7 +189,7 @@ public class VulkanGraphicsPass extends GraphicsPass {
 
             VkClearValue depthClearValue = VkClearValue.calloc(stack);
             depthClearValue.depthStencil().set(1.0f, 0);
-            RenderTargetAttachment depthAttachment = renderTarget.getAttachment(RenderTargetAttachmentTypes.Depth);
+            Attachment depthAttachment = renderTarget.getAttachment(AttachmentTypes.Depth);
 
 
 
@@ -253,34 +266,22 @@ public class VulkanGraphicsPass extends GraphicsPass {
     }
 
     @Override
-    public void submit(Optional<Fence[]> submissionFences) {
-        try(MemoryStack stack = stackPush()) {
-
-            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
-            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-            submitInfo.waitSemaphoreCount(1);
-
-            submitInfo.pWaitSemaphores(stack.longs(((VulkanSemaphore) waitSemaphores[frameIndex]).getHandle()));
-            submitInfo.pWaitDstStageMask(stack.ints(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
-            submitInfo.pCommandBuffers(stack.pointers(commandBuffers[frameIndex]));
-            submitInfo.pSignalSemaphores(stack.longs(((VulkanSemaphore) finishedSemaphores[frameIndex]).getHandle()));
-
-            if(submissionFences.isPresent())
-                vkQueueSubmit(graphicsQueue, submitInfo, ((VulkanFence[]) submissionFences.get())[frameIndex].getHandle());
-            else vkQueueSubmit(graphicsQueue, submitInfo, VK_NULL_HANDLE);
-        }
-
-
-    }
-
-    @Override
     public void waitForFinish() {
         vkQueueWaitIdle(graphicsQueue);
     }
 
+    public VkCommandBuffer[] getCommandBuffers() {
+        return commandBuffers;
+    }
+
     @Override
-    public void resolveBarriers() {
-        barrierCallback.run(commandBuffers[frameIndex]);
+    public void resolveStartingBarriers() {
+        startingBarriers.run(commandBuffers[frameIndex]);
+    }
+
+    @Override
+    public void resolveEndingBarriers() {
+        endingBarriers.run(commandBuffers[frameIndex]);
     }
 
 

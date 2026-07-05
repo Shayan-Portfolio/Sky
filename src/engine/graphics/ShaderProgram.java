@@ -1,7 +1,7 @@
 package engine.graphics;
 
-import engine.Pair;
-import engine.SkyRuntimeException;
+import engine.util.Pair;
+import engine.logging.SkyRuntimeException;
 import engine.asset.Asset;
 import engine.graphics.vulkan.VulkanShaderProgram;
 

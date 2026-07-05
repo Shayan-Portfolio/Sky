@@ -48,7 +48,7 @@ public class LineLayoutEngine extends LayoutEngine {
     }
 
     @Override
-    public void updateChildren(GfxPlatform platform, int x, int y, int w, int h) {
+    public void updateChildren(UIPainter platform, int x, int y, int w, int h) {
         if(line == Line.Horizontal) {
             int dx = x, dy = y;
             for(Widget child : widget.getWidgets()) {

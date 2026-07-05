@@ -2,6 +2,7 @@ package engine.graphics;
 
 import engine.graphics.vulkan.VulkanComputePass;
 import engine.graphics.vulkan.VulkanGraphicsPass;
+import engine.logging.SkyRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,8 +14,8 @@ public abstract class Pass extends Disposable {
     protected int framesInFlight;
     protected Semaphore[] waitSemaphores;
     protected Semaphore[] finishedSemaphores;
-    protected BarrierCallback barrierCallback;
-    protected PassExecuteCallback passExecuteCallback;
+    protected BarrierCallback startingBarriers, endingBarriers;
+    protected Runnable recorder;
     protected List<Dependency> dependencyList = new ArrayList<>();
     protected String name;
 
@@ -46,11 +47,13 @@ public abstract class Pass extends Disposable {
         return null;
     }
 
-    public Dependency getDependency(String name) {
+    public <T> void bind(String name, T resource) {
+        Dependency dependency = null;
         for(Dependency rd : dependencyList) {
-            if(rd.getName().equals(name)) return rd;
+            if(rd.getName().equals(name)) dependency = rd;
         }
-        return null;
+        if(dependency == null) throw new SkyRuntimeException("Unable to find dependency " + name);
+        else dependency.setResource(new RenderGraphResource(resource));
     }
 
     public String getName() {
@@ -58,20 +61,35 @@ public abstract class Pass extends Disposable {
     }
 
 
-    public PassExecuteCallback getPassExecuteCallback() {
-        return passExecuteCallback;
+    public Runnable getRecorder() {
+        return recorder;
     }
 
-    public void setPassExecuteCallback(PassExecuteCallback passExecuteCallback) {
-        this.passExecuteCallback = passExecuteCallback;
+    public void submit(Runnable recorder) {
+        this.recorder = recorder;
+    }
+
+    public <T> void reads(String name, T resource, int readType) {
+        addDependencies(new Dependency(name, new RenderGraphResource<>(resource), readType));
+    }
+
+    public <T> void writes(String name, T resource, int writeType) {
+        addDependencies(new Dependency(name, new RenderGraphResource<>(resource), writeType));
+    }
+
+    public void clearAll() {
+        dependencyList.clear();
     }
 
     public BarrierCallback getBarrierInsertCallback() {
-        return barrierCallback;
+        return startingBarriers;
     }
 
-    public void setBarrierCallback(BarrierCallback barrierCallback) {
-        this.barrierCallback = barrierCallback;
+    public void setStartingBarriers(BarrierCallback startingBarriers) {
+        this.startingBarriers = startingBarriers;
+    }
+    public void setEndingBarriers(BarrierCallback endingBarriers) {
+        this.endingBarriers = endingBarriers;
     }
 
     public void startRecording(int frameIndex) {
@@ -79,15 +97,14 @@ public abstract class Pass extends Disposable {
     }
     public abstract void endRecording();
 
-    public void setWaitSemaphores(Semaphore[] waitSemaphores) {
-        this.waitSemaphores = waitSemaphores;
+    public void setWaitSemaphores(Semaphore[] waitSemaphore) {
+        this.waitSemaphores = waitSemaphore;
     }
 
     public void setFinishedSemaphores(Semaphore[] finishedSemaphores) {
         this.finishedSemaphores = finishedSemaphores;
     }
 
-    public abstract void submit(Optional<Fence[]> submissionFences);
     public abstract void waitForFinish();
 
     public Semaphore[] getWaitSemaphores() {
@@ -98,5 +115,6 @@ public abstract class Pass extends Disposable {
         return finishedSemaphores;
     }
 
-    public abstract void resolveBarriers();
+    public abstract void resolveStartingBarriers();
+    public abstract void resolveEndingBarriers();
 }

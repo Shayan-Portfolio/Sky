@@ -1,20 +1,18 @@
 package app;
 
-import engine.Logger;
+import engine.Time;
+import engine.logging.Logger;
 import engine.Application;
 import engine.Surface;
-import engine.Time;
+import engine.bridge.ProjectLoader;
 import engine.graphics.Session;
+import engine.logging.SkyRuntimeException;
 import org.lwjgl.system.Configuration;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Path;
 import java.util.List;
 
 
@@ -22,27 +20,19 @@ public class Launcher {
 
 
     public void initLogging() {
-        Logger.setFileTarget(new File("engine.log"));
+        //Logger.setFileTarget(new File("engine.log"));
+        Logger.setConsoleTarget(System.out);
     }
 
 
     public void launch(String[] args) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException, MalformedURLException {
         System.setProperty("org.lwjgl.system.stackSize", "128");
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            throw new SkyRuntimeException(e);
+        });
 
-        Application application;
-        {
-            Path path = Path.of(args[0]);
-            URL url = path.toUri().toURL();
-
-            System.out.println(url);
-            ClassLoader classLoader = new URLClassLoader(new URL[]{url});
-
-            Class clazz = classLoader.loadClass(args[1]);
-            Constructor constructor = clazz.getConstructor();
-            Object appImpl = constructor.newInstance();
-            application = (Application) appImpl;
-        }
-        Surface surface = Surface.newSurface(application, "SkySOFT Engine", 1920, 1080);
+        Application application = ProjectLoader.instantiateApplication(args);
+        Surface surface = Surface.newSurface(application, "SkyEngine", 1920, 1080);
         Session.setSurface(surface);
 
 
@@ -52,16 +42,14 @@ public class Launcher {
 
         while(true){
             boolean success = application.update();
+            Time.deltaTime = (float) (surface.getTime() - application.getStartTime());
+            application.setStartTime((float) surface.getTime());
             if(!success) break;
         }
 
 
-        application.closing();
         application.close();
-
-
-
-
+        surface.disposeAll();
     }
 
     private boolean isRunningInDebug() {

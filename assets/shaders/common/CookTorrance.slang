@@ -1,5 +1,5 @@
 #pragma once
-#define PI 3.14159265f
+#include "Constants.slang"
 namespace CT {
 
 float3 fresnel(float cosTheta, float3 F0) {

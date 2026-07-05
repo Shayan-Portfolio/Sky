@@ -1,7 +1,7 @@
 package engine.asset;
 
-import engine.Logger;
-import engine.SkyRuntimeException;
+import engine.logging.Logger;
+import engine.logging.SkyRuntimeException;
 
 import java.util.HashMap;
 

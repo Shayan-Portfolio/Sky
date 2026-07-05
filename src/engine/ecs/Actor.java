@@ -1,8 +1,9 @@
 package engine.ecs;
 
-import engine.Logger;
+import engine.graphics.Disposable;
+import engine.logging.Logger;
 
-public class Actor {
+public class Actor extends Disposable {
     private Object[] components = new Object[64];
     private long mask = 0L;
     private Actor[] children = new Actor[128];
@@ -11,6 +12,7 @@ public class Actor {
     private Actor parent;
 
     public Actor(String name) {
+        super(null);
         this.name = name;
     }
 
@@ -26,24 +28,20 @@ public class Actor {
         Logger.info(Actor.class, "Trying to load class: " + clazz.getSimpleName());
     }
 
-
+    public Actor getParent() {
+        return parent;
+    }
 
     public Actor addActor(Actor... actor) {
         for(Actor a : actor) {
-            a.setParent(this);
+            addDisposable(a);
+            a.parent = this;
             children[nextChildIndex++] = a;
         }
 
         return this;
     }
 
-    private void setParent(Actor actor) {
-        this.parent = actor;
-    }
-
-    public Actor getParent() {
-        return parent;
-    }
 
     public void previsitAllActors(ActorPreVisitor visitor) {
         visitor.visit(this);
@@ -101,4 +99,8 @@ public class Actor {
         return 64 - Long.numberOfTrailingZeros(getMask(clazz)) - 1;
     }
 
+    @Override
+    public void dispose() {
+
+    }
 }

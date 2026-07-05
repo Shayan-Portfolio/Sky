@@ -1,23 +1,18 @@
 package engine.graphics;
 
+import engine.logging.SkyRuntimeException;
+
 import java.util.*;
 
 public class RenderGraph extends Disposable {
 
     private List<Pass> passes = new ArrayList<>();
-    private Pass targetPass;
 
     public RenderGraph(Disposable parent) {
         super(parent);
     }
 
-    public void setTargetPass(Pass targetPass) {
-        this.targetPass = targetPass;
-    }
 
-    public Pass getTargetPass() {
-        return targetPass;
-    }
 
     public void addPasses(Pass... passes) {
         this.passes.addAll(Arrays.asList(passes));
@@ -32,10 +27,10 @@ public class RenderGraph extends Disposable {
 
     }
 
-    public List<Pass> walk(Pass targetPass) {
+    public List<Pass> compile(Pass sink) {
         LinkedList<Pass> passes = new LinkedList<>();
-        tracePasses(passes, targetPass);
-        passes.add(targetPass);
+        tracePasses(passes, sink);
+        passes.add(sink);
 
         return passes;
     }
@@ -47,11 +42,13 @@ public class RenderGraph extends Disposable {
         for(Pass otherPass : passes) {
             if(otherPass != thisPass) {
                 for (Dependency otherDependency : otherPass.getDependencies()) {
-                    if((otherDependency.getType() & DependencyTypes.RenderTargetWrite) != 0 ||
-                            (otherDependency.getType() & DependencyTypes.RenderTargetDepthWrite) != 0 ||
-                        (otherDependency.getType() & DependencyTypes.FragmentShaderWrite) != 0 ||
-                        (otherDependency.getType() & DependencyTypes.ComputeShaderWrite) != 0) {
-                        if(otherDependency.getResource() == dependency.getResource()) {
+                    if((otherDependency.getAccessType() & AccessTypes.ColorWrite) != 0 ||
+                            (otherDependency.getAccessType() & AccessTypes.DepthWrite) != 0 ||
+                        (otherDependency.getAccessType() & AccessTypes.ShaderWrite) != 0 ||
+                        (otherDependency.getAccessType() & AccessTypes.ColorReadWrite) != 0 ||
+                            (otherDependency.getAccessType() & AccessTypes.DepthReadWrite) != 0 ||
+                            (otherDependency.getAccessType() & AccessTypes.ShaderReadWrite) != 0) {
+                        if(otherDependency.getResource().get() == dependency.getResource().get()) {
                             return otherPass;
                         }
                     }
@@ -66,12 +63,15 @@ public class RenderGraph extends Disposable {
     private void tracePasses(LinkedList<Pass> passes, Pass thisPass) {
         for(Dependency dependency : thisPass.getDependencies()) {
 
-            if((dependency.getType() & DependencyTypes.RenderTargetRead) != 0 ||
-                    (dependency.getType() & DependencyTypes.FragmentShaderRead) != 0 ||
-                    (dependency.getType() & DependencyTypes.ComputeShaderRead) != 0 ||
-                    (dependency.getType() & DependencyTypes.ComputeShaderReadDepth) != 0) {
+            if((dependency.getAccessType() & AccessTypes.ColorRead) != 0 ||
+                    (dependency.getAccessType() & AccessTypes.ColorReadWrite) != 0 ||
+                    (dependency.getAccessType() & AccessTypes.ShaderReadWrite) != 0 ||
+                    (dependency.getAccessType() & AccessTypes.ShaderRead) != 0 ||
+                    (dependency.getAccessType() & AccessTypes.DepthRead) != 0 ||
+                    (dependency.getAccessType() & AccessTypes.DepthReadWrite) != 0) {
 
                 Pass writer = getWriter(thisPass, dependency);
+                if(writer == null) throw new SkyRuntimeException("No writer for " + dependency.getName());
 
                 if(!passes.contains(writer)) {
                     tracePasses(passes, writer);

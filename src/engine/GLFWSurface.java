@@ -1,5 +1,6 @@
 package engine;
 import static java.util.stream.Collectors.toSet;
+import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported;
@@ -14,16 +15,18 @@ import engine.graphics.Disposable;
 import engine.graphics.RenderAPI;
 import engine.graphics.RendererSettings;
 import engine.graphics.vulkan.VulkanRenderer;
+import engine.input.SurfaceCharCallback;
+import engine.input.SurfaceKeyCallback;
+import engine.logging.Logger;
+import engine.logging.SkyRuntimeException;
 import org.joml.Vector2f;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.glfw.GLFWCharCallbackI;
-import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -33,12 +36,16 @@ public class GLFWSurface extends Surface {
     private long handle;
     private Cursor cursor;
     private GLFWErrorCallback errorCallback;
+    private GLFWKeyCallbackI keyCallbackI;
+    private GLFWCharCallbackI charCallbackI;
+
+
 
     @Override
     public void requestRenderAPI(RenderAPI api, RendererSettings settings) {
         if(api == RenderAPI.Vulkan) {
             try (MemoryStack stack = stackPush()) {
-                vkInstance = createInstance(title, settings.validation ? List.of("VK_LAYER_KHRONOS_validation") : null);
+                vkInstance = createInstance(title, settings.validation ? List.of("VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2") : null);
                 LongBuffer pSurface = stack.mallocLong(1);
                 glfwCreateWindowSurface(vkInstance, handle,
                         null, pSurface);
@@ -49,6 +56,7 @@ public class GLFWSurface extends Surface {
 
     public GLFWSurface(Disposable parent, String title, int width, int height, boolean resizable) {
         super(parent, title, width, height, resizable);
+
 
 
         if (!glfwInit()) {
@@ -62,16 +70,21 @@ public class GLFWSurface extends Surface {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         handle = glfwCreateWindow(width, height, title, NULL, NULL);
 
-        glfwSetKeyCallback(handle, (window, key, scancode, action, mods) -> {
+        keyCallbackI = (window, key, scancode, action, mods) -> {
             for(SurfaceKeyCallback callback : surfaceKeyCallbacks) {
                 if(action == GLFW_PRESS || action == GLFW_REPEAT) callback.keyClick(key, mods);
             }
-        });
-        glfwSetCharCallback(handle, (window, codepoint) -> {
+        };
+
+        charCallbackI = (window, codepoint) -> {
             for(SurfaceCharCallback callback : surfaceCharCallbacks) {
                 callback.keyClick(Character.toChars(codepoint)[0]);
             }
-        });
+        };
+
+
+        glfwSetKeyCallback(handle, keyCallbackI);
+        glfwSetCharCallback(handle, charCallbackI);
 
     }
 
@@ -161,10 +174,6 @@ public class GLFWSurface extends Surface {
 
 
             VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = null;
-
-
-
-
             if (validation) {
 
                 PointerBuffer pEnabledLayerNames = stack.mallocPointer(validationLayers.size());
@@ -194,6 +203,19 @@ public class GLFWSurface extends Surface {
                 debugCreateInfo.pfnUserCallback(vkDebugUtilsMessengerCallbackEXT);
 
                 instanceCreateInfo.pNext(debugCreateInfo.address());
+            }
+            if(true) {
+                IntBuffer enables = stack.ints(
+                        EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+                        EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
+                        EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
+                );
+
+                VkValidationFeaturesEXT validationFeatures =
+                        VkValidationFeaturesEXT.calloc(stack)
+                                .sType(EXTValidationFeatures.VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT)
+                                .pEnabledValidationFeatures(enables);
+                instanceCreateInfo.pNext(validationFeatures.address());
             }
 
 
@@ -345,15 +367,23 @@ public class GLFWSurface extends Surface {
     }
 
     @Override
+    public boolean isMouseCaptured() {
+        int mode = glfwGetInputMode(handle, GLFW_CURSOR);
+        return mode == GLFW_CURSOR_DISABLED;
+    }
+
+    @Override
     public boolean shouldClose() {
         return glfwWindowShouldClose(handle);
     }
 
     @Override
     public void dispose() {
+
         if(vkDebugUtilsMessengerCallbackEXT != null) vkDebugUtilsMessengerCallbackEXT.free();
-        errorCallback.free();
+        glfwFreeCallbacks(handle);
         glfwDestroyWindow(handle);
+        errorCallback.free();
         glfwTerminate();
     }
 

@@ -16,11 +16,16 @@ public class MeshComponent {
     public Buffer vertexBuffer;
     public Buffer indexBuffer;
     public boolean finalized;
+    public boolean visible = true;
+    private MeshData meshData;
+    public boolean instanced = false;
+    public int instanceCount = 1;
 
-    public MeshComponent(Disposable parent, Renderer renderer, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
+    public MeshComponent(Disposable parent, Renderer renderer, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
         this.maxVertexCount = maxVertexCount;
         this.maxIndexCount = maxIndexCount;
         this.shaderProgram = shaderProgram;
+        this.instanceCount = instanceCount;
 
         vertexBuffer = Buffer.newBuffer(
                 parent,
@@ -43,7 +48,7 @@ public class MeshComponent {
         for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
             transformsBuffers[i] = Buffer.newBuffer(
                     parent,
-                    SizeUtil.MATRIX_SIZE_BYTES,
+                    SizeUtil.MATRIX_SIZE_BYTES * instanceCount,
                     Buffer.Usage.ShaderStorageBuffer,
                     Buffer.Type.CPUGPUShared,
                     false
@@ -60,20 +65,31 @@ public class MeshComponent {
     }
 
 
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
 
     public void setMeshData(MeshData meshData) {
+        this.meshData = meshData;
         ByteBuffer vertexBufferData = vertexBuffer.get();
         vertexBufferData.clear();
 
         ByteBuffer indexBufferData = indexBuffer.get();
         indexBufferData.clear();
 
-        new MeshDataWriter(0).upload(meshData, shaderProgram, vertexBufferData, indexBufferData, 0);
+        MeshDataWriter.upload(meshData, shaderProgram, vertexBufferData, indexBufferData, 0);
+
 
         this.vertexCount = meshData.getVertexCount();
         this.indexCount = meshData.getIndexCount();
         finalized = true;
     }
 
-
+    public MeshData getMeshData() {
+        return meshData;
+    }
 }

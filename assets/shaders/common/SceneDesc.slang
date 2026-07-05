@@ -1,6 +1,5 @@
 #pragma once
 #define MAX_LIGHTS 10
-#define MAX_TRANSFORMS 10
 
 public struct Camera {
     float4x4 view;
@@ -21,10 +20,12 @@ public struct Light {
     float attenuationConstant;
     float attenuationLinear;
     float attenuationQuadratic;
+    float shadowTestOffsetBias;
 
     float3 color;
 
     float shadowNormalOffsetBias;
+
 }
 
 public struct Scene {

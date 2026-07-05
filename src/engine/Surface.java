@@ -3,6 +3,8 @@ package engine;
 import engine.graphics.Disposable;
 import engine.graphics.RenderAPI;
 import engine.graphics.RendererSettings;
+import engine.input.SurfaceCharCallback;
+import engine.input.SurfaceKeyCallback;
 import org.joml.Vector2f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
@@ -69,13 +71,14 @@ public abstract class Surface extends Disposable {
     public abstract boolean getMouseReleased(int button);
     public abstract Vector2f getMousePos();
     public abstract void setCursor(Cursor cursor);
+    public abstract boolean isMouseCaptured();
 
 
     public static Surface newSurface(Disposable parent, String title, int width, int height) {
         return newSurface(parent, title, width, height, true);
     }
     public static Surface newSwingSurface(Disposable parent, String title, int width, int height) {
-        return new SwingSurface(parent, title, width, height, true);
+        return new EditorSurface(parent, title, width, height, true);
     }
     public static Surface newSurface(Disposable parent, String title, int width, int height, boolean resizable) {
         return new GLFWSurface(parent, title, width, height, resizable);

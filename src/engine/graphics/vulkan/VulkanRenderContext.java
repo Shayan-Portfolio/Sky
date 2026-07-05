@@ -1,7 +1,7 @@
 package engine.graphics.vulkan;
 
-import engine.Logger;
-import engine.SkyRuntimeException;
+import engine.logging.Logger;
+import engine.logging.SkyRuntimeException;
 import engine.Surface;
 import engine.graphics.RenderAPI;
 import engine.graphics.RenderContext;

@@ -1,6 +1,5 @@
 package engine.gameui;
 
-import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
 
 ;
@@ -16,7 +15,7 @@ public class Text extends Widget {
 
     @Override
     public int getRequiredWidth() {
-        return (int) font.getStringWidth(value.string.toString()) + (2 * padding);
+        return (int) font.getStringWidth(value.string.toString()) + (4 * padding);
     }
 
     public TextValue getText() {
@@ -25,13 +24,14 @@ public class Text extends Widget {
 
     @Override
     public int getRequiredHeight() {
-        return (int) font.getStringHeight(value.string.toString()) + (2 * padding);
+        return (int) font.getStringHeight(value.string.toString()) + (4 * padding);
     }
 
     @Override
-    public void update(GfxPlatform platform, int x, int y, int w, int h) {
+    public void update(UIPainter platform, int x, int y, int w, int h) {
 
-        platform.drawString(x + padding, y + padding, value.string.toString(), font, null, platform.getTheme().textColor);
+
+        platform.drawString(x + (2 * padding), y + (2 * padding), value.string.toString(), font, null, platform.getTheme().textColor);
         updateChildren(platform, x + padding, y + padding, w - padding * 2, h - padding * 2);
     }
 }

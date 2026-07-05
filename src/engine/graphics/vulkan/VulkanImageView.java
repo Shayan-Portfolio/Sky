@@ -1,6 +1,6 @@
 package engine.graphics.vulkan;
 
-import engine.SkyRuntimeException;
+import engine.logging.SkyRuntimeException;
 import engine.graphics.Disposable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkDevice;
@@ -13,11 +13,13 @@ import static org.lwjgl.vulkan.VK10.*;
 public class VulkanImageView extends Disposable {
     private VulkanImage image;
     private long handle;
+    private int aspectMask;
 
 
-    public VulkanImageView(Disposable parent, VkDevice device, VulkanImage image, int aspectMask) {
+    public VulkanImageView(Disposable parent, VkDevice device, VulkanImage image, int aspectMask, int arrayLayers) {
         super(parent);
         this.image = image;
+        this.aspectMask = aspectMask;
 
         try(MemoryStack stack = MemoryStack.stackPush()) {
             VkImageViewCreateInfo imageViewCreateInfo = VkImageViewCreateInfo.calloc(stack);
@@ -25,7 +27,10 @@ public class VulkanImageView extends Disposable {
 
             imageViewCreateInfo.sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
             imageViewCreateInfo.image(image.getHandle());
-            imageViewCreateInfo.viewType(VK_IMAGE_VIEW_TYPE_2D);
+            int viewType = VK_IMAGE_VIEW_TYPE_2D;
+            if(arrayLayers == 6) viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+
+            imageViewCreateInfo.viewType(viewType);
             imageViewCreateInfo.format(image.getFormat());
 
             imageViewCreateInfo.components().r(VK_COMPONENT_SWIZZLE_IDENTITY);
@@ -37,7 +42,7 @@ public class VulkanImageView extends Disposable {
             imageViewCreateInfo.subresourceRange().baseMipLevel(0);
             imageViewCreateInfo.subresourceRange().levelCount(1);
             imageViewCreateInfo.subresourceRange().baseArrayLayer(0);
-            imageViewCreateInfo.subresourceRange().layerCount(1);
+            imageViewCreateInfo.subresourceRange().layerCount(arrayLayers);
 
             if (vkCreateImageView(device, imageViewCreateInfo, null, pImageView) != VK_SUCCESS) {
                 throw new SkyRuntimeException("Failed to create image views");
@@ -59,4 +64,7 @@ public class VulkanImageView extends Disposable {
         vkDestroyImageView(VulkanRuntime.getCurrentDevice(), handle, null);
     }
 
+    public int getAspectMask() {
+        return aspectMask;
+    }
 }

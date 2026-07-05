@@ -21,6 +21,8 @@ public struct CookTorranceEval {
                         F0
                     );
 
+
+
         float NDF = CT::distribution(
                         normal_ws, 
                         halfway_dir_ws, 

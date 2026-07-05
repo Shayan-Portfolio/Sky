@@ -1,7 +1,6 @@
 package engine.graphics;
 
-import engine.Logger;
-import engine.SkyRuntimeException;
+import engine.logging.SkyRuntimeException;
 import engine.graphics.vulkan.VulkanBuffer;
 
 import java.nio.ByteBuffer;

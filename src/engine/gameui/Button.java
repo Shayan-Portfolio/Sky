@@ -1,9 +1,10 @@
 package engine.gameui;
 
-import engine.Input;
-import engine.graphics.Color;
+import engine.graphics.Session;
+import engine.input.Input;
 import engine.graphics.Rect2D;
 import engine.graphics.text.MsdfFont;
+import org.joml.Vector2f;
 
 public class Button extends Widget {
     private TextValue value;
@@ -26,13 +27,16 @@ public class Button extends Widget {
     }
 
     @Override
-    public void update(GfxPlatform platform, int x, int y, int w, int h) {
-        if(Rect2D.contains(platform.getMouseX(), platform.getMouseY(), x + padding, y + padding, w - padding * 2, h - padding * 2)){
+    public void update(UIPainter platform, int x, int y, int w, int h) {
+        Vector2f mousePos = Session.getSurface().getMousePos();
+
+        if(Rect2D.contains(mousePos.x, mousePos.y, x + padding, y + padding, w - padding * 2, h - padding * 2)){
             platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonHoverColor);
 
-            boolean inputPressed = platform.isMousePressed(Input.MOUSE_BUTTON_1);
+            boolean inputPressed = Session.getSurface().getMousePressed(Input.MOUSE_BUTTON_1);
             if(pressed) {
                 platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonClickColor);
+
             }
             else {
                 platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonHoverColor);
