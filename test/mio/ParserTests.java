@@ -32,7 +32,7 @@ class ParserTests {
             parser.parseAll(tokenizer);
         }
         catch(ParseException e) {
-            return e.getMessage().equals("Expected any of [Numeric] next instead of RParen () on line 11");
+            return e.getMessage().equals("Expected any of [Numeric] next instead of RParen () on line 9");
         }
         return false;
     }
@@ -60,7 +60,7 @@ class ParserTests {
             parser.parseAll(tokenizer);
         }
         catch(ParseException e) {
-            return e.getMessage().equals("Expected any of [Equals] next instead of Int (int) on line 11");
+            return e.getMessage().equals("Expected any of [Equals] next instead of Int (int) on line 9");
         }
         return false;
     }

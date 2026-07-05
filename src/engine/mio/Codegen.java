@@ -16,22 +16,13 @@ public class Codegen {
     }
 
     private Object toNativeOperandType(Analyzer.Token token) {
-        switch (token.type) {
-            case String : {
-                return token.content.toString();
-            }
-            case Numeric: {
-                return Float.parseFloat(token.content.toString());
-            }
-            case True: {
-                return true;
-            }
-            case False: {
-                return false;
-            }
-
-        }
-        return null;
+        return switch (token.type) {
+            case String -> token.content.toString();
+            case Numeric, Float -> Float.parseFloat(token.content.toString());
+            case True -> true;
+            case False -> false;
+            default -> null;
+        };
     }
 
     private void visit(ASTNode node, BytecodeStream stream) {

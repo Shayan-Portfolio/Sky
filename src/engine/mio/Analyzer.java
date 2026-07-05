@@ -26,6 +26,8 @@ top:
             if(character == '\n') {
                 line++;
                 comment = false;
+                index++;
+                continue;
             }
 
             if(!comment) {

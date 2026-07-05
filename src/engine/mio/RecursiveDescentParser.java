@@ -22,16 +22,16 @@ public class RecursiveDescentParser {
     private Analyzer.Token expect(Analyzer analyzer, Analyzer.Token.TokenType... types) throws ParseException {
         Analyzer.Token token = nextProperToken(analyzer);
         if(token == null) {
-            throw new ParseException("Expected any of " + Arrays.asList(types) + " next instead of EOF");
+            throw new ParseException("Expected any of " + Arrays.asList(types) + " next instead of EOF", -1);
         }
 
         for(Analyzer.Token.TokenType type : types) {
             if(token.type.equals(type)) return token;
         }
-        throw new ParseException("Expected any of " + Arrays.asList(types) + " next instead of " + token.type + " (" + token.content.toString() + ") on line " + token.line);
+        throw new ParseException("Expected any of " + Arrays.asList(types) + " next instead of " + token.type + " (" + token.content.toString() + ") on line " + token.line, token.line);
     }
     private void error(Analyzer.Token token, String message) throws ParseException {
-        throw new ParseException(message + " on line " + token.line);
+        throw new ParseException(message + " on line " + token.line, token.line);
     }
 
 
