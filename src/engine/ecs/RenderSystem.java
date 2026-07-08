@@ -1,6 +1,6 @@
 package engine.ecs;
 
-import engine.Surface;
+import engine.wsi.Surface;
 import engine.asset.AssetRegistry;
 import engine.gameui.UIPainter;
 import engine.gameui.Loop;

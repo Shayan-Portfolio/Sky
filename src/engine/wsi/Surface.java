@@ -1,4 +1,4 @@
-package engine;
+package engine.wsi;
 
 import engine.graphics.Disposable;
 import engine.graphics.RenderAPI;

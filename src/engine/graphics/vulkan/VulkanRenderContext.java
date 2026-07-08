@@ -2,7 +2,7 @@ package engine.graphics.vulkan;
 
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
-import engine.Surface;
+import engine.wsi.Surface;
 import engine.graphics.RenderAPI;
 import engine.graphics.RenderContext;
 

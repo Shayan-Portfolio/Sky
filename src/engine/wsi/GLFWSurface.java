@@ -1,4 +1,4 @@
-package engine;
+package engine.wsi;
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;

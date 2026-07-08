@@ -1,7 +1,7 @@
 package engine.graphics;
 
 import engine.logging.Logger;
-import engine.Surface;
+import engine.wsi.Surface;
 import engine.graphics.vulkan.VulkanRenderContext;
 import engine.graphics.vulkan.VulkanRenderer;
 import org.lwjgl.vulkan.VkInstance;

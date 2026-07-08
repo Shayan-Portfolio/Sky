@@ -2,7 +2,7 @@ package engine.graphics.vulkan;
 
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
-import engine.Surface;
+import engine.wsi.Surface;
 import engine.graphics.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;

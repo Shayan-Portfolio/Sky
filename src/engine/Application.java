@@ -1,6 +1,7 @@
 package engine;
 
 import engine.graphics.Disposable;
+import engine.wsi.Surface;
 
 public abstract class Application extends Disposable {
     protected Surface surface;

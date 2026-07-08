@@ -3,13 +3,12 @@ package app;
 import engine.Time;
 import engine.logging.Logger;
 import engine.Application;
-import engine.Surface;
+import engine.wsi.Surface;
 import engine.bridge.ProjectLoader;
 import engine.graphics.Session;
 import engine.logging.SkyRuntimeException;
 import org.lwjgl.system.Configuration;
 
-import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;

@@ -1,6 +1,6 @@
 package engine.graphics;
 
-import engine.Surface;
+import engine.wsi.Surface;
 
 public class Session {
     private static boolean isDiscrete;

@@ -1,4 +1,4 @@
-package engine;
+package engine.wsi;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import engine.graphics.Disposable;
