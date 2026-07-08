@@ -180,7 +180,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
 
     }
 
-    if (pixel_pos.x < 64 && pixel_pos.y < 64) {
+    if (pixel_pos.x > 1920 / 2 && pixel_pos.y > 1080 / 2) {
         output.color0 += tile_colors[0];
     }
 

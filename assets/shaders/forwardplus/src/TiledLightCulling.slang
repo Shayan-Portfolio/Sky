@@ -21,6 +21,6 @@ bool TestConeVsSphere(in float3 origin, in float3 forward, in float size, in flo
 [numthreads(1, 1, 1)]
 void computeMain(int3 dispatch_ID: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
 
-    tiled_lighting_data[0] = float4(1.0, 1.0, 0.0, 0.0);
+    tiled_lighting_data[0] = float4(1.0, 0.0, 0.0, 0.0);
 
 }
