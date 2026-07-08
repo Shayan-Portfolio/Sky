@@ -1,12 +1,12 @@
 package engine.gameui;
 
+import engine.Application;
 import engine.input.Input;
 import engine.input.SurfaceCharCallback;
 import engine.input.SurfaceKeyCallback;
 import engine.Time;
 import engine.graphics.Color;
 import engine.graphics.Rect2D;
-import engine.graphics.Session;
 import engine.graphics.text.MsdfFont;
 import org.joml.Vector2f;
 
@@ -42,7 +42,7 @@ public class TextField extends Widget {
 
 
                 if(key == Input.KEY_V && (modifiers & Input.MOD_CONTROL) != 0) {
-                    value.string.append(Session.getSurface().getClipboardString());
+                    value.string.append(Application.get().getSurface().getClipboardString());
                 }
             }
         };
@@ -61,8 +61,8 @@ public class TextField extends Widget {
 
 
 
-        Session.getSurface().addKeyCallback(surfaceKeyCallback);
-        Session.getSurface().addCharCallback(surfaceCharCallback);
+        Application.get().getSurface().addKeyCallback(surfaceKeyCallback);
+        Application.get().getSurface().addCharCallback(surfaceCharCallback);
     }
 
     public int getColumns() {
@@ -98,8 +98,8 @@ public class TextField extends Widget {
     @Override
     public void update(UIPainter platform, int x, int y, int w, int h) {
         String visibleString = getVisibleString();
-        Vector2f mousePos = Session.getSurface().getMousePos();
-        if(Session.getSurface().getMousePressed(Input.MOUSE_BUTTON_1)) {
+        Vector2f mousePos = Application.get().getSurface().getMousePos();
+        if(Application.get().getSurface().getMousePressed(Input.MOUSE_BUTTON_1)) {
             focused = Rect2D.contains(mousePos.x, mousePos.y, x + padding, y + padding, w - padding * 2, h - padding * 2);
 
             if(focused) {

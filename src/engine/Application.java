@@ -7,6 +7,16 @@ public abstract class Application extends Disposable {
     protected Surface surface;
     protected float startTime;
 
+    protected static Application instance;
+
+    public static Application get() {
+        return instance;
+    }
+
+    public static void set(Application instance) {
+        Application.instance = instance;
+    }
+
     public Application() {
         super(null);
     }
@@ -18,6 +28,10 @@ public abstract class Application extends Disposable {
 
     public void close(){
         //disposeAll();
+    }
+
+    public Surface getSurface() {
+        return surface;
     }
 
     public float getStartTime() {

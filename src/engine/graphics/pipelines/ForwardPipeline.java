@@ -3,6 +3,7 @@ package engine.graphics.pipelines;
 import engine.asset.AssetRegistry;
 import engine.ecs.RenderSystem;
 import engine.graphics.*;
+import engine.util.MathUtil;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
@@ -128,17 +129,17 @@ public class ForwardPipeline extends RenderPipeline {
     }
 
     @Override
-    public List<Pass> buildFrame(ScenePack scenePack) {
+    public List<Pass> buildFrame(SceneRenderData sceneRenderData) {
 
-        scenePack.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[renderer.getFrameIndex()]).arrayIndex(0));
-        scenePack.uiShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
+        sceneRenderData.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[renderer.getFrameIndex()]).arrayIndex(0));
+        sceneRenderData.uiShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
         Texture[] swapchainTextures = renderer.getSwapchainRenderTarget()
                 .getAttachment(AttachmentTypes.Color0)
                 .getTextures();
 
-        Texture[] shadowMapTextures = new Texture[scenePack.lights().size()];
+        Texture[] shadowMapTextures = new Texture[sceneRenderData.lights().size()];
 
-        List<LightData> lights = scenePack.lights();
+        List<LightData> lights = sceneRenderData.lights();
         for (int i = 0; i < lights.size(); i++) {
             LightData lightData = lights.get(i);
             shadowMapTextures[i] = lightData.renderTarget
@@ -146,9 +147,9 @@ public class ForwardPipeline extends RenderPipeline {
                     .getTextures()[renderer.getFrameIndex()];
         }
 
-        List<RenderSystem.IndexedDrawCall> drawCalls = scenePack.drawCalls();
+        List<RenderSystem.IndexedDrawCall> drawCalls = sceneRenderData.drawCalls();
         for (RenderSystem.IndexedDrawCall drawCall : drawCalls) {
-            for (int j = 0; j < scenePack.lights().size(); j++) {
+            for (int j = 0; j < sceneRenderData.lights().size(); j++) {
                 drawCall.shaderProgram.setTextures(
                         renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps", shadowMapTextures[j]).arrayIndex(j)
                 );
@@ -163,20 +164,20 @@ public class ForwardPipeline extends RenderPipeline {
 
         shadowMapPass.bind("NShadowTextures", shadowMapTextures);
         shadowMapPass.submit(() -> {
-            List<LightData> lightDataList = scenePack.lights();
+            List<LightData> lightDataList = sceneRenderData.lights();
             for (int i = 0; i < lightDataList.size(); i++) {
                 LightData lightData = lightDataList.get(i);
                 shadowMapPass.startRendering(lightData.renderTarget, 0, 1024, 1024, true, Color.BLACK);
                 shadowMapPass.setCullMode(CullMode.Front);
 
-                for (RenderSystem.IndexedDrawCall drawCall : scenePack.drawCalls()) {
+                for (RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
                     shadowMapPass.setShaderProgram(drawCall.shaderProgram);
                     shadowMapPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
                         ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
                         pPushConstants.putInt(ShadowMapMode);
                         pPushConstants.putInt(i);
-                        pPushConstants.putInt(scenePack.lights().size());
+                        pPushConstants.putInt(sceneRenderData.lights().size());
                         shadowMapPass.setPushConstants(pPushConstants);
                     }
                     if(drawCall.instanced) shadowMapPass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
@@ -190,7 +191,7 @@ public class ForwardPipeline extends RenderPipeline {
         depthPass.submit(() -> {
             depthPass.startRendering(depthPassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
             {
-                for(RenderSystem.IndexedDrawCall drawCall : scenePack.drawCalls()) {
+                for(RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
                     depthPass.setCullMode(CullMode.Back);
                     depthPass.setShaderProgram(drawCall.shaderProgram);
                     depthPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
@@ -198,7 +199,7 @@ public class ForwardPipeline extends RenderPipeline {
                         ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
                         pPushConstants.putInt(DepthPrepassMode);
                         pPushConstants.putInt(-1);
-                        pPushConstants.putInt(scenePack.lights().size());
+                        pPushConstants.putInt(sceneRenderData.lights().size());
                         depthPass.setPushConstants(pPushConstants);
                     }
                     if(drawCall.instanced) depthPass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
@@ -221,7 +222,7 @@ public class ForwardPipeline extends RenderPipeline {
         scenePass.submit(() -> {
             scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
             {
-                for(RenderSystem.IndexedDrawCall drawCall : scenePack.drawCalls()) {
+                for(RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
                     scenePass.setCullMode(CullMode.Back);
                     scenePass.setShaderProgram(drawCall.shaderProgram);
                     scenePass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
@@ -229,7 +230,7 @@ public class ForwardPipeline extends RenderPipeline {
                         ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
                         pPushConstants.putInt(PbrMode);
                         pPushConstants.putInt(-1);
-                        pPushConstants.putInt(scenePack.lights().size());
+                        pPushConstants.putInt(sceneRenderData.lights().size());
                         scenePass.setPushConstants(pPushConstants);
                     }
                     if(drawCall.instanced) scenePass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
@@ -245,16 +246,16 @@ public class ForwardPipeline extends RenderPipeline {
         uiPass.submit(() -> {
             uiPass.startRendering(renderer.getSwapchainRenderTarget(), 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
             {
-                uiPass.setDrawBuffers(scenePack.uiVertexBuffer(), scenePack.uiIndexBuffer());
+                uiPass.setDrawBuffers(sceneRenderData.uiVertexBuffer(), sceneRenderData.uiIndexBuffer());
                 uiPass.setCullMode(CullMode.Back);
-                uiPass.setShaderProgram(scenePack.uiShaderProgram());
+                uiPass.setShaderProgram(sceneRenderData.uiShaderProgram());
                 try (MemoryStack stack = stackPush()) {
-                    ByteBuffer pPushConstants = stack.calloc(SizeUtil.MATRIX_SIZE_BYTES * 2);
-                    scenePack.uiCamera().getView().get(pPushConstants);
-                    scenePack.uiCamera().getProj().get(SizeUtil.MATRIX_SIZE_BYTES, pPushConstants);
+                    ByteBuffer pPushConstants = stack.calloc(MathUtil.MATRIX_SIZE_BYTES * 2);
+                    sceneRenderData.uiCamera().getView().get(pPushConstants);
+                    sceneRenderData.uiCamera().getProj().get(MathUtil.MATRIX_SIZE_BYTES, pPushConstants);
                     uiPass.setPushConstants(pPushConstants);
                 }
-                uiPass.drawIndexed(scenePack.uiQuadCount() * 6);
+                uiPass.drawIndexed(sceneRenderData.uiQuadCount() * 6);
             }
             uiPass.endRendering();
         });

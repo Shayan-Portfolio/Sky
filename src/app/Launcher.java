@@ -5,7 +5,6 @@ import engine.logging.Logger;
 import engine.Application;
 import engine.wsi.Surface;
 import engine.bridge.ProjectLoader;
-import engine.graphics.Session;
 import engine.logging.SkyRuntimeException;
 import org.lwjgl.system.Configuration;
 
@@ -31,8 +30,9 @@ public class Launcher {
         });
 
         Application application = ProjectLoader.instantiateApplication(args);
+        Application.set(application);
         Surface surface = Surface.newSurface(application, "SkyEngine", 1920, 1080);
-        Session.setSurface(surface);
+
 
 
         application.launch(args, surface);

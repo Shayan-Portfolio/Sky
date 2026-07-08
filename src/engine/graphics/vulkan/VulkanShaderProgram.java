@@ -516,7 +516,7 @@ public class VulkanShaderProgram extends ShaderProgram {
                                 if(spvcReflectedResource.nameString().endsWith("SW"))
                                     attachmentTextureFormatTypes.add(i, TextureFormatType.ColorR8G8B8A8);
                                 else
-                                    attachmentTextureFormatTypes.add(i, Session.isDiscrete() ? TextureFormatType.ColorR32G32B32A32 : TextureFormatType.ColorR16G16B16A16);
+                                    attachmentTextureFormatTypes.add(i, TextureFormatType.ColorR16G16B16A16);
                             }
                         }
                     }

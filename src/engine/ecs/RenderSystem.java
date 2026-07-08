@@ -1,5 +1,6 @@
 package engine.ecs;
 
+import engine.util.MathUtil;
 import engine.wsi.Surface;
 import engine.asset.AssetRegistry;
 import engine.gameui.UIPainter;
@@ -441,7 +442,7 @@ public class RenderSystem extends ActorSystem {
             }
         });
 
-        List<Pass> passes = renderPipeline.buildFrame(new ScenePack(
+        List<Pass> passes = renderPipeline.buildFrame(new SceneRenderData(
                 camera,
                 indexedDrawCalls,
                 lights,
@@ -554,32 +555,32 @@ public class RenderSystem extends ActorSystem {
         sceneDescData.clear();
 
         camera.getView().get(sceneDescData);
-        sceneDescData.position(sceneDescData.position() + SizeUtil.MATRIX_SIZE_BYTES);
+        sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
         camera.getProj().get(sceneDescData);
-        sceneDescData.position(sceneDescData.position() + SizeUtil.MATRIX_SIZE_BYTES);
+        sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
         camera.getInvView().get(sceneDescData);
-        sceneDescData.position(sceneDescData.position() + SizeUtil.MATRIX_SIZE_BYTES);
+        sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
         camera.getInvProj().get(sceneDescData);
-        sceneDescData.position(sceneDescData.position() + SizeUtil.MATRIX_SIZE_BYTES);
+        sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
         scene.getRootActor().previsitAllActors(actor -> {
             if(actor.has(LightComponent.class)) {
                 LightComponent lightComponent = actor.getComponent(LightComponent.class);
 
                 lightComponent.data.view.get(sceneDescData);
-                sceneDescData.position(sceneDescData.position() + SizeUtil.MATRIX_SIZE_BYTES);
+                sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
                 lightComponent.data.proj.get(sceneDescData);
-                sceneDescData.position(sceneDescData.position() + SizeUtil.MATRIX_SIZE_BYTES);
+                sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
                 lightComponent.data.invView.get(sceneDescData);
-                sceneDescData.position(sceneDescData.position() + SizeUtil.MATRIX_SIZE_BYTES);
+                sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
                 lightComponent.data.invProj.get(sceneDescData);
-                sceneDescData.position(sceneDescData.position() + SizeUtil.MATRIX_SIZE_BYTES);
+                sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
                 sceneDescData.putFloat(lightComponent.data.attenuationConstant);
                 sceneDescData.putFloat(lightComponent.data.attenuationLinear);
@@ -589,7 +590,7 @@ public class RenderSystem extends ActorSystem {
                 sceneDescData.putFloat(lightComponent.data.color.g);
                 sceneDescData.putFloat(lightComponent.data.color.b);
                 sceneDescData.putFloat(lightComponent.data.color.a);
-                sceneDescData.position(sceneDescData.position() + SizeUtil.VEC3_SIZE_BYTES);
+                sceneDescData.position(sceneDescData.position() + MathUtil.VEC3_SIZE_BYTES);
                 sceneDescData.putFloat(lightComponent.data.shadowNormalOffsetBias);
             }
         });

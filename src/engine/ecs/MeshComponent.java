@@ -1,6 +1,7 @@
 package engine.ecs;
 
 import engine.graphics.*;
+import engine.util.MathUtil;
 
 import java.nio.ByteBuffer;
 
@@ -48,7 +49,7 @@ public class MeshComponent {
         for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
             transformsBuffers[i] = Buffer.newBuffer(
                     parent,
-                    SizeUtil.MATRIX_SIZE_BYTES * instanceCount,
+                    MathUtil.MATRIX_SIZE_BYTES * instanceCount,
                     Buffer.Usage.ShaderStorageBuffer,
                     Buffer.Type.CPUGPUShared,
                     false

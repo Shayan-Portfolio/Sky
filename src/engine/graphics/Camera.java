@@ -1,11 +1,12 @@
 package engine.graphics;
 
+import engine.util.MathUtil;
 import org.joml.Matrix4f;
 
 public class Camera {
     private Matrix4f proj, view;
     private boolean invertY;
-    public static final int SIZE = SizeUtil.MATRIX_SIZE_BYTES * 2;
+    public static final int SIZE = MathUtil.MATRIX_SIZE_BYTES * 2;
     private Matrix4f invProj = new Matrix4f(), invView = new Matrix4f();
 
     public Camera(Matrix4f view, Matrix4f proj, boolean invertY) {

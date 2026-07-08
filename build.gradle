@@ -7,7 +7,7 @@ plugins {
     id 'application'
 }
 
-group 'sky.soft'
+group 'sky'
 version '0.0.1'
 
 repositories {

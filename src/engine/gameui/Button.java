@@ -1,6 +1,6 @@
 package engine.gameui;
 
-import engine.graphics.Session;
+import engine.Application;
 import engine.input.Input;
 import engine.graphics.Rect2D;
 import engine.graphics.text.MsdfFont;
@@ -28,12 +28,12 @@ public class Button extends Widget {
 
     @Override
     public void update(UIPainter platform, int x, int y, int w, int h) {
-        Vector2f mousePos = Session.getSurface().getMousePos();
+        Vector2f mousePos = Application.get().getSurface().getMousePos();
 
         if(Rect2D.contains(mousePos.x, mousePos.y, x + padding, y + padding, w - padding * 2, h - padding * 2)){
             platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonHoverColor);
 
-            boolean inputPressed = Session.getSurface().getMousePressed(Input.MOUSE_BUTTON_1);
+            boolean inputPressed = Application.get().getSurface().getMousePressed(Input.MOUSE_BUTTON_1);
             if(pressed) {
                 platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonClickColor);
 

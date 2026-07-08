@@ -8,6 +8,8 @@ import org.joml.Vector4f;
 import javax.vecmath.Quat4f;
 
 public class MathUtil {
+    public static final int MATRIX_SIZE_BYTES = 4 * 4 * Float.BYTES;
+    public static final int VEC3_SIZE_BYTES = 3 * Float.BYTES;
     private MathUtil() {}
 
     public static void copy(Vector3f src, javax.vecmath.Vector3f dst) {
