@@ -50,6 +50,7 @@ public class VulkanComputePass extends ComputePass {
                 }
 
                 commandBuffers[i] = new VkCommandBuffer(pCommandBuffers.get(i), device);
+                VulkanUtil.nameObject(name, VK_OBJECT_TYPE_COMMAND_BUFFER, pCommandBuffers.get(i), stack);
             }
         }
     }
@@ -124,5 +125,7 @@ public class VulkanComputePass extends ComputePass {
 
 
     @Override
-    public void dispose() {}
+    public void dispose() {
+        vkDeviceWaitIdle(VulkanRuntime.getCurrentDevice());
+    }
 }

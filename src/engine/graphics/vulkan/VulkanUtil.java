@@ -2,6 +2,7 @@ package engine.graphics.vulkan;
 
 import engine.logging.SkyRuntimeException;
 import engine.graphics.*;
+import engine.util.NamingUtil;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -111,15 +112,17 @@ public class VulkanUtil {
         }
     }
 
-    public static void nameObject(String name, int type, long handle, MemoryStack stack) {
+    public static String nameObject(String name, int type, long handle, MemoryStack stack) {
+        String n = "\n(Resource Name) " + name + "\n\n" + NamingUtil.getCallStack() + "\n";
         if(VulkanRuntime.hasValidation()){
             VkDebugUtilsObjectNameInfoEXT debugUtilsObjectNameInfoEXT = VkDebugUtilsObjectNameInfoEXT.calloc(stack);
             debugUtilsObjectNameInfoEXT.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT);
             debugUtilsObjectNameInfoEXT.objectType(type);
-            debugUtilsObjectNameInfoEXT.pObjectName(stack.UTF8(name));
+            debugUtilsObjectNameInfoEXT.pObjectName(stack.UTF8(n));
             debugUtilsObjectNameInfoEXT.objectHandle(handle);
             vkSetDebugUtilsObjectNameEXT(VulkanRuntime.getCurrentDevice(), debugUtilsObjectNameInfoEXT);
         }
+        return n;
     }
 
     public static int getVulkanShaderStage(ShaderType shaderType) {

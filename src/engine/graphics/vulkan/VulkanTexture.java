@@ -87,6 +87,7 @@ public class VulkanTexture extends Texture {
             }
 
             commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), VulkanRuntime.getCurrentDevice());
+            VulkanUtil.nameObject("Texture CB", VK_OBJECT_TYPE_COMMAND_BUFFER, pCommandBuffers.get(0), stack);
 
             fence = new VulkanFence(this, VulkanRuntime.getCurrentDevice(), 0);
 

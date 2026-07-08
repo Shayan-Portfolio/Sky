@@ -82,6 +82,7 @@ public class VulkanBuffer extends Buffer {
                 }
 
                 commandBuffer = new VkCommandBuffer(pCommandBuffers.get(0), VulkanRuntime.getCurrentDevice());
+                VulkanUtil.nameObject("Buffer CB", VK_OBJECT_TYPE_COMMAND_BUFFER, pCommandBuffers.get(0), stack);
 
                 copyFence = new VulkanFence(this, VulkanRuntime.getCurrentDevice(), 0);
             }

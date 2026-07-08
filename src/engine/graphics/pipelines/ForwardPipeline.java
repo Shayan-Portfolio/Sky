@@ -37,11 +37,12 @@ public class ForwardPipeline extends RenderPipeline {
 
         //Depth prepass
         {
+            depthPassRT = new RenderTarget(renderer);
             nDepthPrepassTextures = new Texture[renderer.getMaxFramesInFlight()];
             for (int i = 0; i < nDepthPrepassTextures.length; i++) {
                 nDepthPrepassTextures[i] = Texture.newDepthTexture(depthPassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.Depth32);
             }
-            depthPassRT = new RenderTarget(renderer);
+
             depthPassRT.addAttachment(new Attachment(AttachmentTypes.Depth, nDepthPrepassTextures, null));
         }
 
@@ -71,11 +72,11 @@ public class ForwardPipeline extends RenderPipeline {
 
         //Scene pass
         {
+            scenePassRT = new RenderTarget(renderer);
             nSceneColorTextures = new Texture[renderer.getMaxFramesInFlight()];
             for (int i = 0; i < nSceneColorTextures.length; i++) {
                 nSceneColorTextures[i] = Texture.newColorTexture(scenePassRT, renderer.getWidth(), renderer.getHeight(), TextureFormatType.ColorR16G16B16A16);
             }
-            scenePassRT = new RenderTarget(renderer);
             scenePassRT.addAttachment(new Attachment(AttachmentTypes.Color0, nSceneColorTextures, null));
             scenePassRT.addAttachment(new Attachment(AttachmentTypes.Depth, nDepthPrepassTextures, null));
         }
@@ -207,6 +208,7 @@ public class ForwardPipeline extends RenderPipeline {
             depthPass.endRendering();
 
         });
+
         tiledLightCullingPass.submit(() -> {
             tiledLightCullingPass.setShaderProgram(tiledLightingShaderProgram);
             tiledLightCullingPass.dispatch(1, 1, 1);
