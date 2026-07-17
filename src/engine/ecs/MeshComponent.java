@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 @ComponentArray(mask = 1 << 0)
 public class MeshComponent {
     public Buffer[] transformsBuffers;
-    public Buffer[] sceneDescBuffers;
     public ShaderProgram shaderProgram;
     public int maxVertexCount;
     public int maxIndexCount;
@@ -44,20 +43,11 @@ public class MeshComponent {
         );
 
         transformsBuffers = new Buffer[renderer.getMaxFramesInFlight()];
-        sceneDescBuffers = new Buffer[renderer.getMaxFramesInFlight()];
 
         for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
             transformsBuffers[i] = Buffer.newBuffer(
                     parent,
                     MathUtil.MATRIX_SIZE_BYTES * instanceCount,
-                    Buffer.Usage.ShaderStorageBuffer,
-                    Buffer.Type.CPUGPUShared,
-                    false
-            );
-
-            sceneDescBuffers[i] = Buffer.newBuffer(
-                    parent,
-                    shaderProgram.getDescriptorByName("scene_desc").getSizeBytes(),
                     Buffer.Usage.ShaderStorageBuffer,
                     Buffer.Type.CPUGPUShared,
                     false

@@ -1,6 +1,7 @@
 package engine.graphics.pipelines;
 
 import engine.asset.AssetRegistry;
+import engine.ecs.LightComponent;
 import engine.ecs.RenderSystem;
 import engine.graphics.*;
 import engine.util.MathUtil;
@@ -23,14 +24,16 @@ public class ForwardPipeline extends RenderPipeline {
     private GraphicsPass depthPass;
     private RenderTarget depthPassRT;
     private GraphicsPass shadowMapPass;
-    private ComputePass tiledLightCullingPass;
+    private ComputePass tilingPass;
     private ShaderProgram tiledLightingShaderProgram;
     private Texture[] nDepthPrepassTextures;
-    private Buffer[] tiledLightingDataBuffers;
+    private Buffer[] tileDataBuffers;
+    private Buffer[] sceneBuffers;
     private Renderer renderer;
 
     private Sampler sampler;
     private static final int PbrMode = 0, ShadowMapMode = 1, DepthPrepassMode = 2;
+    private int TileSize = 64;
     @Override
     public void init(Renderer renderer) {
         this.renderer = renderer;
@@ -51,24 +54,38 @@ public class ForwardPipeline extends RenderPipeline {
         {
 
             tiledLightingShaderProgram = ShaderProgram.newShaderProgram(graph);
-            tiledLightingShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/TiledLightCulling_compute.spv"), ShaderType.ComputeShader);
+            tiledLightingShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/TileLightCull_compute.spv"), ShaderType.ComputeShader);
             tiledLightingShaderProgram.assemble();
 
-            tiledLightingDataBuffers = new Buffer[renderer.getMaxFramesInFlight()];
-            for (int i = 0; i < tiledLightingDataBuffers.length; i++) {
-                tiledLightingDataBuffers[i] = Buffer.newBuffer(
+            tileDataBuffers = new Buffer[renderer.getMaxFramesInFlight()];
+            for (int i = 0; i < tileDataBuffers.length; i++) {
+                tileDataBuffers[i] = Buffer.newBuffer(
                         renderer,
-                        Float.BYTES * 4 * 1000,
+                        Float.BYTES * 4 * 1200,
                         Buffer.Usage.ShaderStorageBuffer,
                         Buffer.Type.GPULocal,
                         false
                 );
-                tiledLightingShaderProgram.setBuffers(i, new DescriptorUpdate<>("tiled_lighting_data", tiledLightingDataBuffers[i]));
+                tiledLightingShaderProgram.setBuffers(i, new DescriptorUpdate<>("tiled_lighting_data", tileDataBuffers[i]));
             }
 
 
 
 
+        }
+
+        //Scene Data Buffers
+        {
+            sceneBuffers = new Buffer[renderer.getMaxFramesInFlight()];
+            for (int i = 0; i < sceneBuffers.length; i++) {
+                sceneBuffers[i] = Buffer.newBuffer(
+                        renderer,
+                        3136,
+                        Buffer.Usage.ShaderStorageBuffer,
+                        Buffer.Type.GPULocal,
+                        false
+                );
+            }
         }
 
         //Scene pass
@@ -97,15 +114,15 @@ public class ForwardPipeline extends RenderPipeline {
             depthPass.writes("NDepthPrepassTextures", nDepthPrepassTextures, AccessTypes.DepthWrite);
         }
 
-        tiledLightCullingPass = Pass.newComputePass(graph, "Forward+ Tiled Light Culling", renderer.getMaxFramesInFlight());
+        tilingPass = Pass.newComputePass(graph, "Forward+ Tiled Light Culling", renderer.getMaxFramesInFlight());
         {
-            tiledLightCullingPass.writes("NTiledLightingData", tiledLightingDataBuffers, AccessTypes.ShaderWrite);
+            tilingPass.writes("NTiledLightingData", tileDataBuffers, AccessTypes.ShaderWrite);
         }
 
 
         scenePass = Pass.newGraphicsPass(graph, "Scene", renderer.getMaxFramesInFlight());
         {
-            scenePass.reads("ITiledLightingData", tiledLightingDataBuffers, AccessTypes.ShaderRead);
+            scenePass.reads("ITiledLightingData", tileDataBuffers, AccessTypes.ShaderRead);
             scenePass.reads("IShadowTextures", null, AccessTypes.ShaderRead);
             scenePass.reads("IDepthPrepassTextures", nDepthPrepassTextures, AccessTypes.DepthReadWrite);
             scenePass.writes("NRenderTextures", nSceneColorTextures, AccessTypes.ColorWrite);
@@ -122,7 +139,7 @@ public class ForwardPipeline extends RenderPipeline {
         graph.addPasses(
                 shadowMapPass,
                 depthPass,
-                tiledLightCullingPass,
+                tilingPass,
                 scenePass,
                 uiPass
         );
@@ -130,6 +147,7 @@ public class ForwardPipeline extends RenderPipeline {
 
     @Override
     public List<Pass> buildFrame(SceneRenderData sceneRenderData) {
+
 
         sceneRenderData.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[renderer.getFrameIndex()]).arrayIndex(0));
         sceneRenderData.uiShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
@@ -157,10 +175,76 @@ public class ForwardPipeline extends RenderPipeline {
             drawCall.shaderProgram.setSamplers(
                     renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps_sampler", sampler)
             );
-            drawCall.shaderProgram.setBuffers(renderer.getFrameIndex(), new DescriptorUpdate<>("tile_colors", tiledLightingDataBuffers[renderer.getFrameIndex()]));
+            drawCall.shaderProgram.setBuffers(renderer.getFrameIndex(), new DescriptorUpdate<>("tile_colors", tileDataBuffers[renderer.getFrameIndex()]));
+            drawCall.shaderProgram.setBuffers(
+                    renderer.getFrameIndex(),
+                    new DescriptorUpdate<>("scene_desc", sceneBuffers[renderer.getFrameIndex()]),
+                    new DescriptorUpdate<>("transforms", drawCall.transformsBuffers[renderer.getFrameIndex()])
+            );
+
+            Sampler sampler = drawCall.material.getSampler();
+
+            List<Texture> textures = drawCall.material.getTextures();
+            for (int i = 0; i < textures.size(); i++) {
+                Texture texture = textures.get(i);
+                drawCall.shaderProgram.setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("material", texture).arrayIndex(i));
+                drawCall.shaderProgram.setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("material_sampler", sampler));
+
+            }
+        }
+
+        Camera camera = sceneRenderData.sceneCamera();
+        Buffer sceneBuffer = sceneBuffers[renderer.getFrameIndex()];
+        ByteBuffer sceneBufferData = sceneBuffer.get();
+        {
+            sceneBufferData.clear();
+
+            camera.getView().get(sceneBufferData);
+            sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
+
+            camera.getProj().get(sceneBufferData);
+            sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
+
+            camera.getInvView().get(sceneBufferData);
+            sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
+
+            camera.getInvProj().get(sceneBufferData);
+            sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
+
+
+
+            for(LightData data : sceneRenderData.lights()) {
+                data.view.get(sceneBufferData);
+                sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
+                data.proj.get(sceneBufferData);
+                sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
+                data.invView.get(sceneBufferData);
+                sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
+                data.invProj.get(sceneBufferData);
+                sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
+
+                sceneBufferData.putFloat(data.attenuationConstant);
+                sceneBufferData.putFloat(data.attenuationLinear);
+                sceneBufferData.putFloat(data.attenuationQuadratic);
+                sceneBufferData.putFloat(data.shadowTestOffsetBias);
+                sceneBufferData.putFloat(data.color.r);
+                sceneBufferData.putFloat(data.color.g);
+                sceneBufferData.putFloat(data.color.b);
+                sceneBufferData.putFloat(data.color.a);
+                sceneBufferData.position(sceneBufferData.position() + MathUtil.VEC3_SIZE_BYTES);
+                sceneBufferData.putFloat(data.shadowNormalOffsetBias);
+            }
+
+
         }
 
 
+
+
+
+
+        int tilesW = (int) Math.ceil((double) renderer.getWidth() / TileSize);
+        int tilesH = (int) Math.ceil((double) renderer.getHeight() / TileSize);
 
         shadowMapPass.bind("NShadowTextures", shadowMapTextures);
         shadowMapPass.submit(() -> {
@@ -196,10 +280,13 @@ public class ForwardPipeline extends RenderPipeline {
                     depthPass.setShaderProgram(drawCall.shaderProgram);
                     depthPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
-                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
+                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
                         pPushConstants.putInt(DepthPrepassMode);
                         pPushConstants.putInt(-1);
                         pPushConstants.putInt(sceneRenderData.lights().size());
+                        pPushConstants.putInt(tilesW);
+                        pPushConstants.putInt(tilesH);
+                        pPushConstants.putInt(TileSize);
                         depthPass.setPushConstants(pPushConstants);
                     }
                     if(drawCall.instanced) depthPass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
@@ -210,9 +297,20 @@ public class ForwardPipeline extends RenderPipeline {
 
         });
 
-        tiledLightCullingPass.submit(() -> {
-            tiledLightCullingPass.setShaderProgram(tiledLightingShaderProgram);
-            tiledLightCullingPass.dispatch(1, 1, 1);
+        tilingPass.submit(() -> {
+            tilingPass.setShaderProgram(tiledLightingShaderProgram);
+
+            try (MemoryStack stack = stackPush()) {
+                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 2);
+                pPushConstants.putInt(tilesW);
+                pPushConstants.putInt(tilesH);
+                tilingPass.setPushConstants(pPushConstants);
+            }
+            tilingPass.dispatch(
+                    tilesW,
+                    tilesH,
+                    1
+            );
         });
 
 
@@ -227,10 +325,13 @@ public class ForwardPipeline extends RenderPipeline {
                     scenePass.setShaderProgram(drawCall.shaderProgram);
                     scenePass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
-                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
+                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
                         pPushConstants.putInt(PbrMode);
                         pPushConstants.putInt(-1);
                         pPushConstants.putInt(sceneRenderData.lights().size());
+                        pPushConstants.putInt(tilesW);
+                        pPushConstants.putInt(tilesH);
+                        pPushConstants.putInt(TileSize);
                         scenePass.setPushConstants(pPushConstants);
                     }
                     if(drawCall.instanced) scenePass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);

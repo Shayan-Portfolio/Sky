@@ -3,7 +3,7 @@
 #include "../../common/NormalDepthBiasEval.slang"
 #include "../../common/ShadowEval.slang"
 #include "../../common/ACESEval.slang"
-#include "TileLighting.slang"
+#include "TileLightData.slang"
 
 StructuredBuffer<Scene> scene_desc;
 StructuredBuffer<float4x4> transforms;
@@ -75,7 +75,7 @@ SamplerState material_sampler;
 RWStructuredBuffer<float4> tile_colors;
 
 [shader("fragment")]
-FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int light_index, uniform int light_count, float2 pixel_pos : SV_Position) {
+FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int light_index, uniform int light_count, float2 pixel_pos : SV_Position, uniform int tiles_w, uniform int tiles_h, uniform int tile_size) {
     FSOutput output;
     float3 output_color = float3(0, 0, 0);
 
@@ -178,11 +178,18 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
              output.color0 = float4(ACESFilm(output_color), 1.0);
         }
 
+        //Forward+
+        {
+            int2 tile_pos = int2(pixel_pos.xy) / tile_size;
+
+            int index = tile_pos.y * tiles_w + tile_pos.x;
+
+            output.color0 += tile_colors[index];
+        }
     }
 
-    if (pixel_pos.x > 1920 / 2 && pixel_pos.y > 1080 / 2) {
-        output.color0 += tile_colors[0];
-    }
+    
+
 
 
 

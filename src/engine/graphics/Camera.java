@@ -2,22 +2,82 @@ package engine.graphics;
 
 import engine.util.MathUtil;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class Camera {
     private Matrix4f proj, view;
     private boolean invertY;
-    public static final int SIZE = MathUtil.MATRIX_SIZE_BYTES * 2;
     private Matrix4f invProj = new Matrix4f(), invView = new Matrix4f();
+    private float zNear, zFar, fovY;
 
-    public Camera(Matrix4f view, Matrix4f proj, boolean invertY) {
-        setView(view);
-        setProj(proj);
 
-        this.invertY = invertY;
+    public static Camera newPerspectiveCamera(Vector3f pos,
+                                           Vector3f lookAt,
+                                           Vector3f up,
+                                           float fovY,
+                                           float zNear,
+                                           float zFar,
+                                           float aspectRatio,
+                                           boolean zeroToOne,
+                                           boolean invertY) {
 
-        if(invertY){
-            this.proj.m11(this.proj.m11() * -1);
-        }
+        Camera camera = new Camera();
+        camera.setView(new Matrix4f().lookAt(pos, lookAt, up));
+        camera.setProj(new Matrix4f().perspective(fovY, aspectRatio, zNear, zFar, zeroToOne));
+        camera.invertY = invertY;
+        if(camera.invertY) camera.proj.m11(camera.proj.m11() * -1);
+        camera.zNear = zNear;
+        camera.zFar = zFar;
+        camera.fovY = fovY;
+
+        return camera;
+    }
+
+
+
+    public static Camera newOrthoCamera(int width,
+                                            int height,
+                                            float zNear,
+                                            float zFar,
+                                            boolean zZeroToOne,
+                                            boolean invertY) {
+
+        Camera camera = new Camera();
+        camera.setView(new Matrix4f().identity());
+        camera.setProj(
+                new Matrix4f().ortho(0,
+                        width,
+                        0,
+                        height,
+                        zNear,
+                        zFar,
+                        zZeroToOne
+                )
+        );
+        camera.invertY = invertY;
+        if(camera.invertY) camera.proj.m11(camera.proj.m11() * -1);
+        camera.zNear = zNear;
+        camera.zFar = zFar;
+        camera.fovY = -1;
+
+        return camera;
+    }
+
+
+    public boolean isInvertY() {
+        return invertY;
+    }
+
+    public float getzNear() {
+        return zNear;
+    }
+
+    public float getzFar() {
+        return zFar;
+    }
+
+    public float getFovY() {
+        return fovY;
     }
 
     public Matrix4f getProj() {

@@ -49,8 +49,9 @@ public class RenderSystem extends ActorSystem {
         public boolean instanced;
         public int instanceCount;
         public int indexCount;
+        public Buffer[] transformsBuffers;
 
-        public IndexedDrawCall(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount) {
+        public IndexedDrawCall(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount, Buffer[] transformsBuffers) {
             this.vertexBuffer = vertexBuffer;
             this.indexBuffer = indexBuffer;
             this.material = material;
@@ -59,6 +60,7 @@ public class RenderSystem extends ActorSystem {
             this.instanced = instanced;
             this.instanceCount = instanceCount;
             this.indexCount = indexCount;
+            this.transformsBuffers = transformsBuffers;
         }
     }
 
@@ -68,12 +70,15 @@ public class RenderSystem extends ActorSystem {
         this.scene = scene;
 
 
-
-        uiCamera = new Camera(
-                new Matrix4f().identity(),
-                new Matrix4f().ortho(0, renderer.getWidth(), 0, renderer.getHeight(), 0, 1, true),
+        uiCamera = Camera.newOrthoCamera(
+                renderer.getWidth(),
+                renderer.getHeight(),
+                0,
+                1,
+                true,
                 false
         );
+
 
         uiShaderProgram = ShaderProgram.newShaderProgram(renderer);
         uiShaderProgram.setDepthTestType(DepthTestType.Always);
@@ -396,21 +401,13 @@ public class RenderSystem extends ActorSystem {
                             meshComponent.visible,
                             meshComponent.instanced,
                             meshComponent.instanceCount,
-                            meshComponent.indexCount
+                            meshComponent.indexCount,
+                            meshComponent.transformsBuffers
                     ));
                 }
 
                 ByteBuffer transformsData = meshComponent.transformsBuffers[renderer.getFrameIndex()].get();
                 if(!meshComponent.instanced) transformComponent.transform().get(0, transformsData);
-                ByteBuffer sceneDescData = meshComponent.sceneDescBuffers[renderer.getFrameIndex()].get();
-                writeSceneDescToByteBuffer(sceneDescData, camera, scene);
-            }
-            if(actor.has(ShaderComponent.class)) {
-                ShaderComponent shaderComponent = actor.getComponent(ShaderComponent.class);
-                if (actor.has(MeshComponent.class)) {
-                    setMaterialData(renderer.getFrameIndex(), shaderComponent.shaderProgram(), actor.getComponent(MaterialComponent.class));
-                    setSceneDescAndTransformData(renderer.getFrameIndex(), actor.getComponent(MeshComponent.class));
-                }
             }
             if(actor.has(LightComponent.class)) {
                 lights.add(actor.getComponent(LightComponent.class).data);
@@ -599,27 +596,7 @@ public class RenderSystem extends ActorSystem {
 
 
     }
-    private void setSceneDescAndTransformData(int frameIndex, MeshComponent meshComponent) {
-        meshComponent.shaderProgram.setBuffers(
-                frameIndex,
-                new DescriptorUpdate<>("scene_desc", meshComponent.sceneDescBuffers[frameIndex]),
-                new DescriptorUpdate<>("transforms", meshComponent.transformsBuffers[frameIndex])
-        );
-    }
-    private void setMaterialData(int frameIndex, ShaderProgram shaderProgram, MaterialComponent materialComponent) {
-        Sampler sampler = materialComponent.material.getSampler();
 
-        List<Texture> textures = materialComponent.material.getTextures();
-        for (int i = 0; i < textures.size(); i++) {
-            Texture texture = textures.get(i);
-
-            shaderProgram.setTextures(frameIndex, new DescriptorUpdate<>("material", texture).arrayIndex(i));
-            shaderProgram.setSamplers(frameIndex, new DescriptorUpdate<>("material_sampler", sampler));
-
-        }
-
-
-    }
 
     @Override
     public void dispose() {
