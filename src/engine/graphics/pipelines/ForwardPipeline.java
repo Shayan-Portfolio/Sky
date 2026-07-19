@@ -257,7 +257,7 @@ public class ForwardPipeline extends RenderPipeline {
             for (int i = 0; i < lightDataList.size(); i++) {
                 LightData lightData = lightDataList.get(i);
                 shadowMapPass.startRendering(lightData.renderTarget, 0, 1024, 1024, true, Color.BLACK);
-                shadowMapPass.setCullMode(CullMode.Front);
+                shadowMapPass.setCullMode(CullMode.None);
 
                 for (RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
                     shadowMapPass.setShaderProgram(drawCall.shaderProgram);

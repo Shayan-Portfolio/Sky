@@ -12,7 +12,7 @@ public class LightData {
     public float attenuationQuadratic = 0.0002f;
     public Color color = Color.WHITE;
     public float shadowNormalOffsetBias = 0.0001f;
-    public float shadowTestOffsetBias = 0.00001f;
+    public float shadowTestOffsetBias = 0.0001f;
 
     public LightData(Matrix4f view, Matrix4f proj, boolean invertY, Color color) {
         this.view = view;

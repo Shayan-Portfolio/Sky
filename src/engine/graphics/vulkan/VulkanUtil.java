@@ -183,6 +183,7 @@ public class VulkanUtil {
         switch (cullMode) {
             case Front: return VK_CULL_MODE_FRONT_BIT;
             case Back: return VK_CULL_MODE_BACK_BIT;
+            case None: return VK_CULL_MODE_NONE;
         }
 
         return -1;
