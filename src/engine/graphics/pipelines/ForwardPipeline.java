@@ -211,6 +211,11 @@ public class ForwardPipeline extends RenderPipeline {
             camera.getInvProj().get(sceneBufferData);
             sceneBufferData.position(sceneBufferData.position() + MathUtil.MATRIX_SIZE_BYTES);
 
+            sceneBufferData.putFloat(camera.getzNear());
+            sceneBufferData.putFloat(camera.getzFar());
+
+            sceneBufferData.putFloat(camera.getFovY());
+            sceneBufferData.putFloat(-1);
 
 
             for(LightData data : sceneRenderData.lights()) {
@@ -301,9 +306,10 @@ public class ForwardPipeline extends RenderPipeline {
             tilingPass.setShaderProgram(tiledLightingShaderProgram);
 
             try (MemoryStack stack = stackPush()) {
-                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 2);
+                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
                 pPushConstants.putInt(tilesW);
                 pPushConstants.putInt(tilesH);
+                pPushConstants.putInt(TileSize);
                 tilingPass.setPushConstants(pPushConstants);
             }
             tilingPass.dispatch(
@@ -325,13 +331,15 @@ public class ForwardPipeline extends RenderPipeline {
                     scenePass.setShaderProgram(drawCall.shaderProgram);
                     scenePass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
-                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
+                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 8);
                         pPushConstants.putInt(PbrMode);
                         pPushConstants.putInt(-1);
                         pPushConstants.putInt(sceneRenderData.lights().size());
                         pPushConstants.putInt(tilesW);
                         pPushConstants.putInt(tilesH);
                         pPushConstants.putInt(TileSize);
+                        pPushConstants.putInt(renderer.getWidth());
+                        pPushConstants.putInt(renderer.getHeight());
                         scenePass.setPushConstants(pPushConstants);
                     }
                     if(drawCall.instanced) scenePass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);

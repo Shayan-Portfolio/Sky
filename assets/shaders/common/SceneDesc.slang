@@ -7,6 +7,11 @@ public struct Camera {
 
     float4x4 invView;
     float4x4 invProj;
+
+    float zNear;
+    float zFar;
+
+    float fovY;
 }
 
 public struct Light {
