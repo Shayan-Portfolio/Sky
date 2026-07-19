@@ -68,6 +68,50 @@ public class VulkanTexture extends Texture {
             imageData.unmap();
         }
 
+        if(textureData != null) {
+            for (Asset<TextureData> faceAsset : textureData) {
+                faceAsset.addListener(() -> {
+                    this.width = faceAsset.getObject().width;
+                    this.height = faceAsset.getObject().height;
+
+                    vkDeviceWaitIdle(VulkanRuntime.getCurrentDevice());
+                    vkResetCommandPool(VulkanRuntime.getCurrentDevice(), commandPool.getHandle(), VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT );
+
+                    {
+                        imageData.dispose();
+                        image.dispose();
+                        imageView.dispose();
+                        removeDisposable(imageData);
+                        removeDisposable(image);
+                        removeDisposable(imageView);
+                    }
+
+
+                    imageData = Buffer.newBuffer(this, getWidth() * getHeight() * 4 * arrayLayers, Buffer.Usage.ImageBackingBuffer, Buffer.Type.CPUGPUShared, false);
+
+                    image = new VulkanImage(
+                            this,
+                            VulkanAllocator.getAllocator(),
+                            arrayLayers,
+                            getWidth(),
+                            getHeight(),
+                            imageFormat,
+                            usage,
+                            tiling
+                    );
+                    imageView = new VulkanImageView(image, VulkanRuntime.getCurrentDevice(), image, aspectMask, arrayLayers);
+
+                    ByteBuffer bytes = imageData.map();
+                    bytes.clear();
+                    for (Asset<TextureData> Q : textureData) {
+                        bytes.put(Q.getObject().data);
+                    }
+                    imageData.unmap();
+                    writeImage(textureData, arrayLayers, aspectMask);
+                });
+            }
+        }
+
 
         try (MemoryStack stack = stackPush()) {
 
@@ -91,8 +135,16 @@ public class VulkanTexture extends Texture {
 
             fence = new VulkanFence(this, VulkanRuntime.getCurrentDevice(), 0);
 
+            writeImage(textureData, arrayLayers, aspectMask);
+        }
 
+
+    }
+
+    private void writeImage(List<Asset<TextureData>> textureData, int arrayLayers, int aspectMask) {
+        try(MemoryStack stack = stackPush()) {
             vkResetFences(VulkanRuntime.getCurrentDevice(), fence.getHandle());
+
 
             VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
             beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
@@ -165,8 +217,6 @@ public class VulkanTexture extends Texture {
 
             vkWaitForFences(VulkanRuntime.getCurrentDevice(), fence.getHandle(), true, VulkanUtil.UINT64_MAX);
         }
-
-
     }
 
     private static TextureFormatType toTextureFormatType(int vulkanImageFormatEnum) {

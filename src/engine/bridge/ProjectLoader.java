@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import engine.Application;
-import engine.FileSystem;
+import engine.vfs.FileSystem;
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
 

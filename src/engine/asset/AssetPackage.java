@@ -3,7 +3,7 @@ package engine.asset;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import engine.FileSystem;
+import engine.vfs.FileSystem;
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +42,10 @@ public class AssetPackage {
         return path.replace("\\", "/");
     }
 
+    private static String useNativeSlash(String path) {
+        return path.replace("/", File.separator);
+    }
+
     public static AssetPackage openLocal(String namespace, Path path) {
         HashMap<String, Asset> assetMap = new HashMap<>();
         AssetPackage assetPackage = new AssetPackage(namespace, assetMap);
@@ -56,90 +60,8 @@ public class AssetPackage {
                         String assetFilePath = assetPath.toString();
                         String identifier = useForwardSlash(assetFilePath);
 
-                        try (MemoryStack stack = stackPush()) {
-                            Asset asset = null;
-
-                            {
-                                if (assetFilePath.endsWith("png") ||
-                                        assetFilePath.endsWith("jpg") ||
-                                        assetFilePath.endsWith("jpeg")) {
-
-
-                                    IntBuffer w = stack.callocInt(1);
-                                    IntBuffer h = stack.callocInt(1);
-                                    IntBuffer channelsInFile = stack.callocInt(1);
-                                    ByteBuffer texture = STBImage.stbi_load(
-                                            assetFilePath,
-                                            w,
-                                            h,
-                                            channelsInFile,
-                                            4
-                                    );
-                                    Logger.info(AssetPackage.class, STBImage.stbi_failure_reason());
-                                    int size = texture.remaining();
-                                    byte[] bytes = new byte[texture.remaining()];
-
-                                    texture.limit(size);
-                                    texture.get(bytes);
-                                    texture.limit(texture.capacity()).rewind();
-
-                                    asset = new Asset<TextureData>(
-                                            assetPackage,
-                                            identifier,
-                                            new TextureData(bytes, w.get(0), h.get(0))
-                                    );
-
-                                    MemoryUtil.memFree(texture);
-                                }
-                                else if (assetFilePath.endsWith("spv")) {
-                                    asset = new Asset<byte[]>(
-                                            assetPackage,
-                                            identifier,
-                                            FileSystem.readBytes(assetPath)
-                                    );
-                                }
-                                else if (assetFilePath.endsWith("wav")) {
-                                    asset = new Asset<byte[]>(
-                                            assetPackage,
-                                            identifier,
-                                            FileSystem.readBytes(assetPath)
-                                    );
-                                }
-                                else if (assetFilePath.endsWith("bin")) {
-                                    asset = new Asset<byte[]>(
-                                            assetPackage,
-                                            identifier,
-                                            FileSystem.readBytes(assetPath)
-                                    );
-                                }
-                                else if (assetFilePath.endsWith("json")) {
-                                    asset = new Asset<String>(
-                                            assetPackage,
-                                            identifier,
-                                            FileSystem.readString(assetPath)
-                                    );
-                                }
-                                else if (assetFilePath.endsWith("gltf")) {
-                                    asset = new Asset<String>(
-                                            assetPackage,
-                                            identifier,
-                                            FileSystem.readString(assetPath)
-                                    );
-                                }
-                                else if (assetFilePath.endsWith("scene")) {
-                                    asset = new Asset<String>(
-                                            assetPackage,
-                                            identifier,
-                                            FileSystem.readString(assetPath)
-                                    );
-                                }
-
-                                assetMap.put(identifier, asset);
-                                Logger.info(AssetPackage.class, "Loading asset " + identifier + " into namespace " + namespace);
-                            }
-
-
-                        }
+                        Object asset = loadRes(identifier, assetPath, namespace);
+                        assetMap.put(identifier, new Asset(assetPackage, identifier, asset));
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -169,6 +91,52 @@ public class AssetPackage {
         }
 
         return assetPackage;
+    }
+
+    public static Object loadRes(String identifier, Path assetPath, String namespace) {
+        String assetFilePath = useNativeSlash(assetPath.toString());
+        Object object = null;
+        try(MemoryStack stack = stackPush()) {
+            {
+                if (assetFilePath.endsWith("png") ||
+                        assetFilePath.endsWith("jpg") ||
+                        assetFilePath.endsWith("jpeg")) {
+
+
+                    IntBuffer w = stack.callocInt(1);
+                    IntBuffer h = stack.callocInt(1);
+                    IntBuffer channelsInFile = stack.callocInt(1);
+                    ByteBuffer texture = STBImage.stbi_load(
+                            assetFilePath,
+                            w,
+                            h,
+                            channelsInFile,
+                            4
+                    );
+                    Logger.info(AssetPackage.class, STBImage.stbi_failure_reason());
+                    int size = texture.remaining();
+                    byte[] bytes = new byte[texture.remaining()];
+
+                    texture.limit(size);
+                    texture.get(bytes);
+                    texture.limit(texture.capacity()).rewind();
+
+                    object = new TextureData(bytes, w.get(0), h.get(0));
+                    MemoryUtil.memFree(texture);
+                } else if (assetFilePath.endsWith("spv")) {
+                    object = FileSystem.readBytes(assetPath);
+                } else if (assetFilePath.endsWith("wav") || assetFilePath.endsWith("bin")) {
+                    object = FileSystem.readBytes(assetPath);
+
+                } else if (assetFilePath.endsWith("json") || assetFilePath.endsWith("gltf") || assetFilePath.endsWith("scene")) {
+                    object = FileSystem.readString(assetPath);
+                }
+
+                //assetMap.put(identifier, asset);
+                Logger.info(AssetPackage.class, "Loading asset " + identifier + " into namespace " + namespace);
+            }
+        }
+        return object;
     }
 
     public static AssetPackage openPackage(String namespace, Path path) {
@@ -216,7 +184,7 @@ public class AssetPackage {
         return kryo;
     }
 
-    protected HashMap<String, Asset> getAssetMap() {
+    public HashMap<String, Asset> getAssetMap() {
         return assetMap;
     }
     protected <T> Asset<T> getAsset(String assetIdentifier) {

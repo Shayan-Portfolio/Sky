@@ -42,4 +42,7 @@ public class AssetRegistry {
         assetPackageRegistry.put(assetPackage.getNamespace(), assetPackage);
     }
 
+    public static HashMap<String, AssetPackage> getPackageRegistry() {
+        return assetPackageRegistry;
+    }
 }
