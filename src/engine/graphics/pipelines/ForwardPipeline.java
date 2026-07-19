@@ -306,10 +306,12 @@ public class ForwardPipeline extends RenderPipeline {
             tilingPass.setShaderProgram(tiledLightingShaderProgram);
 
             try (MemoryStack stack = stackPush()) {
-                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 3);
+                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 5);
                 pPushConstants.putInt(tilesW);
                 pPushConstants.putInt(tilesH);
                 pPushConstants.putInt(TileSize);
+                pPushConstants.putInt(renderer.getWidth());
+                pPushConstants.putInt(renderer.getHeight());
                 tilingPass.setPushConstants(pPushConstants);
             }
             tilingPass.dispatch(
@@ -331,15 +333,13 @@ public class ForwardPipeline extends RenderPipeline {
                     scenePass.setShaderProgram(drawCall.shaderProgram);
                     scenePass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
-                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 8);
+                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
                         pPushConstants.putInt(PbrMode);
                         pPushConstants.putInt(-1);
                         pPushConstants.putInt(sceneRenderData.lights().size());
                         pPushConstants.putInt(tilesW);
                         pPushConstants.putInt(tilesH);
                         pPushConstants.putInt(TileSize);
-                        pPushConstants.putInt(renderer.getWidth());
-                        pPushConstants.putInt(renderer.getHeight());
                         scenePass.setPushConstants(pPushConstants);
                     }
                     if(drawCall.instanced) scenePass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
