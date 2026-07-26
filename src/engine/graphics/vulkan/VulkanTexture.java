@@ -78,12 +78,10 @@ public class VulkanTexture extends Texture {
                     vkResetCommandPool(VulkanRuntime.getCurrentDevice(), commandPool.getHandle(), VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT );
 
                     {
-                        imageData.dispose();
-                        image.dispose();
-                        imageView.dispose();
-                        removeDisposable(imageData);
+                        image.disposeAll();
+                        imageData.disposeAll();
                         removeDisposable(image);
-                        removeDisposable(imageView);
+                        removeDisposable(imageData);
                     }
 
 

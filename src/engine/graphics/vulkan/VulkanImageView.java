@@ -49,6 +49,7 @@ public class VulkanImageView extends Disposable {
             }
 
             handle = pImageView.get(0);
+            VulkanUtil.nameObject("Image View", VK_OBJECT_TYPE_IMAGE_VIEW, handle, stack);
         }
 
 

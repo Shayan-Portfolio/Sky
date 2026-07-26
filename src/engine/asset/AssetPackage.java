@@ -113,7 +113,7 @@ public class AssetPackage {
                             channelsInFile,
                             4
                     );
-                    Logger.info(AssetPackage.class, STBImage.stbi_failure_reason());
+                    Logger.info(AssetPackage.class, "STBImage says \"" + STBImage.stbi_failure_reason() + "\" for " + identifier);
                     int size = texture.remaining();
                     byte[] bytes = new byte[texture.remaining()];
 

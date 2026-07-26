@@ -1,5 +1,8 @@
 package engine.vfs;
 
+import engine.logging.Logger;
+import engine.logging.SkyRuntimeException;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -8,17 +11,18 @@ import java.util.Queue;
 
 public class FileWatcher {
     private Thread thread;
-    private final Queue<Path> queue = new java.util.LinkedList<>();
+    private final Queue<FileEvent> queue = new java.util.LinkedList<>();
+    private WatchService watcher;
 
 
-    public FileWatcher(Path dir) {
+    public FileWatcher(Path dir, int delay) {
 
         thread = new Thread(() -> {
 
             HashMap<WatchKey, Path> map = new HashMap<>();
 
             try {
-                WatchService watcher = FileSystems.getDefault().newWatchService();
+                watcher = FileSystems.getDefault().newWatchService();
 
                 Files.walkFileTree(dir, new SimpleFileVisitor<>() {
                     @Override
@@ -31,6 +35,7 @@ public class FileWatcher {
 
 
                 while (true) {
+                    if(Thread.interrupted()) break;
                     WatchKey key = watcher.take();
 
                     for (WatchEvent<?> event : key.pollEvents()) {
@@ -39,9 +44,12 @@ public class FileWatcher {
                         Path filename = ev.context();
                         Path full = map.get(key).resolve(filename);
 
+                        Logger.info(FileWatcher.class, "Waiting " + delay + "ms for " + full);
+                        Thread.sleep(delay);
+
                         if(!Files.isDirectory(full)) {
                             synchronized (queue) {
-                                queue.add(full);
+                                queue.add(new FileEvent(full, kind));
                             }
                         }
                     }
@@ -50,15 +58,16 @@ public class FileWatcher {
 
                 }
             }
-            catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+            catch (InterruptedException _) {}
+            catch (IOException e) {
+                throw new SkyRuntimeException(e);
             }
 
         });
         thread.setName("FileSystem Thread");
     }
 
-    public Queue<Path> getQueue() {
+    public Queue<FileEvent> getQueueNonSync() {
         return queue;
     }
 
@@ -71,4 +80,8 @@ public class FileWatcher {
     }
 
 
+    public void stop() {
+        thread.interrupt();
+
+    }
 }

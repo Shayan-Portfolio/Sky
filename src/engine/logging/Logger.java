@@ -51,13 +51,12 @@ public class Logger {
 
     private static String timeStr(){
 
-        return new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(Calendar.getInstance().getTime());
+        return new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
     }
 
     private static synchronized String logGeneric(String ansiColor, String source, String type, String message){
-
         if(target == LogTarget.Console)
-            writer.println(ansiColor + " (" + timeStr() + " " + source + " " + type + ") " + message + ANSI_RESET);
+            writer.println(ansiColor + "[" + Thread.currentThread().getName() + "|" + timeStr() + "] " + source + " " + type + ": " + message + ANSI_RESET);
         else
             writer.println(" (" + timeStr() + " " + source + " " + type + ") " + message);
 
