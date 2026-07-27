@@ -1,5 +1,6 @@
 package engine.graphics.vulkan;
 
+import engine.asset.AssetListener;
 import engine.logging.Logger;
 import engine.util.Pair;
 import engine.logging.SkyRuntimeException;
@@ -374,6 +375,57 @@ public class VulkanShaderProgram extends ShaderProgram {
     }
     @Override
     public void add(Asset<byte[]> bytecode, ShaderType shaderType) {
+        load(bytecode, shaderType);
+        bytecode.addListener(() -> {
+
+            vkDeviceWaitIdle(VulkanRuntime.getCurrentDevice());
+            disposeAll();
+            try(MemoryStack stack = stackPush()) {
+                PointerBuffer pContext = stack.callocPointer(1);
+                spvc_context_create(pContext);
+                context = pContext.get(0);
+
+
+                spvcErrorCallback = new SpvcErrorCallback() {
+                    @Override
+                    public void invoke(long l, long l1) {
+                        String str = spvc_context_get_last_error_string(context);
+                        Logger.error(VulkanShaderProgram.class, str);
+                    }
+                };
+                spvc_context_set_error_callback(context, spvcErrorCallback, 0);
+
+
+            }
+
+
+            descriptorSetLayoutHandles.clear();
+            descriptorSetHandles.clear();
+            descriptorPoolHandles.clear();
+            shaderModuleHandles.clear();
+            //shaders.clear();
+            descriptorSetsSpec.clear();
+            vertexAttributes.clear();
+            attachmentTextureFormatTypes.clear();
+            pushConstantsSizeBytes = 0;
+            stageCount = 0;
+
+            for(ShaderType s : shaders.keySet()) {
+                load(bytecode, s);
+            }
+
+            assemble();
+
+
+
+
+
+
+
+
+        });
+    }
+    private void load(Asset<byte[]> bytecode, ShaderType shaderType) {
         shaders.put(shaderType, bytecode.getObject());
         try(MemoryStack stack = stackPush()) {
 

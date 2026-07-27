@@ -198,6 +198,8 @@ public class ForwardPipeline extends RenderPipeline {
                 new DescriptorUpdate<>("scene_desc", sceneBuffers[renderer.getFrameIndex()])
         );
 
+        tiledLightingShaderProgram.setBuffers(renderer.getFrameIndex(), new DescriptorUpdate<>("tiled_lighting_data", tileDataBuffers[renderer.getFrameIndex()]));
+
         Camera camera = sceneRenderData.sceneCamera();
         Buffer sceneBuffer = sceneBuffers[renderer.getFrameIndex()];
         ByteBuffer sceneBufferData = sceneBuffer.get();
