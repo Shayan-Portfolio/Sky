@@ -193,6 +193,11 @@ public class ForwardPipeline extends RenderPipeline {
             }
         }
 
+        tiledLightingShaderProgram.setBuffers(
+                renderer.getFrameIndex(),
+                new DescriptorUpdate<>("scene_desc", sceneBuffers[renderer.getFrameIndex()])
+        );
+
         Camera camera = sceneRenderData.sceneCamera();
         Buffer sceneBuffer = sceneBuffers[renderer.getFrameIndex()];
         ByteBuffer sceneBufferData = sceneBuffer.get();
@@ -326,7 +331,7 @@ public class ForwardPipeline extends RenderPipeline {
 
         scenePass.bind("IShadowTextures", shadowMapTextures);
         scenePass.submit(() -> {
-            scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
+            scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.WHITE);
             {
                 for(RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
                     scenePass.setCullMode(CullMode.Back);
