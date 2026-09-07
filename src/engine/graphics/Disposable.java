@@ -10,6 +10,7 @@ import java.util.List;
 public abstract class Disposable {
     public Disposable disposer;
     public List<Disposable> childrenToDispose = new ArrayList<>();
+    public boolean disposed = false;
 
     public Disposable(Disposable parent){
         this.disposer = parent;
@@ -42,6 +43,7 @@ public abstract class Disposable {
         return childrenToDispose;
     }
 
+
     public void disposeAll(){
         disposeRecursive(this);
     }
@@ -50,11 +52,18 @@ public abstract class Disposable {
 
         String string = (getDepthString(disposable)+ " " + disposable.getClass().getSimpleName());
         System.out.println(string);
-        for(Disposable child : disposable.childrenToDispose) {
+        for (Iterator<Disposable> iterator = disposable.childrenToDispose.iterator(); iterator.hasNext(); ) {
+            Disposable child = iterator.next();
             disposeRecursive(child);
+            iterator.remove();
         }
 
+        if(disposable.disposed)
+            throw new SkyRuntimeException("Attempted to dispose " + getClass().getSimpleName() + " again");
+
         disposable.dispose();
+        disposable.disposed = true;
+
     }
 
 

@@ -379,7 +379,13 @@ public class VulkanShaderProgram extends ShaderProgram {
         bytecode.addListener(() -> {
 
             vkDeviceWaitIdle(VulkanRuntime.getCurrentDevice());
-            disposeAll();
+
+            {
+                pipeline.disposeAll();
+                removeDisposable(pipeline);
+                dispose();
+            }
+
             try(MemoryStack stack = stackPush()) {
                 PointerBuffer pContext = stack.callocPointer(1);
                 spvc_context_create(pContext);
