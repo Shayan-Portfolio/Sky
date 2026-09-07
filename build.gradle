@@ -46,7 +46,7 @@ jar {
 
 
 
-project.ext.lwjglVersion = "3.4.1"
+project.ext.lwjglVersion = "3.4.3"
 project.ext.jomlVersion = "1.10.8"
 project.ext.kryoVersion = "5.6.2"
 project.ext.gsonVersion = "2.13.2"
