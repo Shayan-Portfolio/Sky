@@ -15,12 +15,11 @@ import org.lwjgl.system.MemoryUtil;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -46,11 +45,36 @@ public class AssetPackage {
         return path.replace("/", File.separator);
     }
 
+    private static boolean matches(List<PathMatcher> matchers, Path path) {
+        for(PathMatcher matcher : matchers) {
+            if(matcher.matches(path)) return true;
+        }
+        return false;
+    }
+
     public static AssetPackage openLocal(String namespace, Path path) {
+        long start = System.currentTimeMillis();
         HashMap<String, Asset> assetMap = new HashMap<>();
         AssetPackage assetPackage = new AssetPackage(namespace, assetMap);
+        List<PathMatcher> matchers = new ArrayList<>();
 
         {
+
+            Path assetIgnoreFile = path.resolve(".assetignore");
+            if(Files.exists(assetIgnoreFile)) {
+                String assetIgnores = FileSystem.readString(assetIgnoreFile);
+                for (String ignore : assetIgnores.split("\n")) {
+                    if (ignore.isBlank()) continue;
+                    matchers.add(FileSystems.getDefault().getPathMatcher("glob:" + ignore.strip()));
+                }
+            }
+            else {
+                Logger.info(AssetPackage.class, "No .assetignore file found for " + namespace);
+            }
+
+
+
+
             try {
                 Files.walkFileTree(path, new FileVisitor<>() {
 
@@ -60,6 +84,14 @@ public class AssetPackage {
                         String assetFilePath = assetPath.toString();
                         String identifier = useForwardSlash(assetFilePath);
 
+
+                        if(assetFilePath.endsWith(".assetignore") || matches(matchers, assetPath)) {
+                            Logger.info(AssetPackage.class, "Not loading " + identifier);
+                            return FileVisitResult.CONTINUE;
+                        }
+
+
+
                         Object asset = loadRes(identifier, assetPath, namespace);
                         assetMap.put(identifier, new Asset(assetPackage, identifier, asset));
                         return FileVisitResult.CONTINUE;
@@ -68,7 +100,10 @@ public class AssetPackage {
                     @NotNull
                     @Override
                     public FileVisitResult preVisitDirectory(Path dir, @NotNull BasicFileAttributes attrs) {
-                        if(dir.toString().endsWith("src")) return FileVisitResult.SKIP_SUBTREE;
+                        if(matches(matchers, dir)) {
+                            Logger.info(AssetPackage.class, "Not loading " + useForwardSlash(dir.toString()));
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -89,6 +124,9 @@ public class AssetPackage {
                 throw new SkyRuntimeException(e);
             }
         }
+
+        long duration = System.currentTimeMillis() - start;
+        Logger.info(AssetPackage.class, "Loaded " + assetMap.size() + " assets in " + duration + "ms for " + namespace);
 
         return assetPackage;
     }
@@ -113,7 +151,13 @@ public class AssetPackage {
                             channelsInFile,
                             4
                     );
-                    Logger.info(AssetPackage.class, "STBImage says \"" + STBImage.stbi_failure_reason() + "\" for " + identifier);
+
+                    String error = STBImage.stbi_failure_reason();
+                    if(error != null) {
+                        Logger.meltdown(AssetPackage.class, "stb_image error: " + error + " for " + identifier);
+                    }
+
+
                     int size = texture.remaining();
                     byte[] bytes = new byte[texture.remaining()];
 
@@ -133,7 +177,7 @@ public class AssetPackage {
                 }
 
                 //assetMap.put(identifier, asset);
-                Logger.info(AssetPackage.class, "Loading asset " + identifier + " into namespace " + namespace);
+                Logger.info(AssetPackage.class, "Loading asset " + identifier);
             }
         }
         return object;
