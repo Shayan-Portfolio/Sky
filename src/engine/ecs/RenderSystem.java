@@ -119,6 +119,27 @@ public class RenderSystem extends ActorSystem {
             {
                 uiPainterImpl = new UIPainter() {
                     @Override
+                    public void drawRectGradient(float x, float y, float w, float h, Color c0, Color c1, Color c2, Color c3) {
+                        RenderSystem.this.drawQuad(
+                                x,
+                                y,
+                                w,
+                                h,
+                                -1, -1,
+                                -1, -1,
+                                -1, -1,
+                                -1, -1,
+                                -1,
+                                -1,
+                                -1,
+                                c0,
+                                c1,
+                                c2,
+                                c3
+                        );
+                    }
+
+                    @Override
                     public void drawRect(float x, float y, float w, float h, Color color) {
                         RenderSystem.this.drawQuad(
                                 x,
@@ -132,6 +153,9 @@ public class RenderSystem extends ActorSystem {
                                 -1,
                                 -1,
                                 -1,
+                                color,
+                                color,
+                                color,
                                 color
                         );
                     }
@@ -150,6 +174,9 @@ public class RenderSystem extends ActorSystem {
                                 -2,
                                 thickness,
                                 range,
+                                color,
+                                color,
+                                color,
                                 color
                         );
                     }
@@ -228,6 +255,9 @@ public class RenderSystem extends ActorSystem {
                                 msdf ? -3 : 0,
                                 index,
                                 op1,
+                                color,
+                                color,
+                                color,
                                 color
                         );
                     }
@@ -368,6 +398,7 @@ public class RenderSystem extends ActorSystem {
         uiIndexBuffers[renderer.getFrameIndex()].get().clear();
         setOrigin(0, 0);
 
+        Color color = new Color(3, 3, 3, 1);
 
         drawQuad(
                 0,
@@ -381,7 +412,7 @@ public class RenderSystem extends ActorSystem {
                 0,
                 0,
                 -1,
-                new Color(3, 3, 3, 1)
+                color, color, color, color
         );
 
         root.previsitAllActors(actor -> {
@@ -480,7 +511,7 @@ public class RenderSystem extends ActorSystem {
                           int shapeMode,
                           float op0,
                           float op1,
-                          Color color) {
+                          Color c0, Color c1, Color c2, Color c3) {
 
 
         ByteBuffer vertexBufferData = uiVertexBuffers[renderer.getFrameIndex()].get();
@@ -493,10 +524,10 @@ public class RenderSystem extends ActorSystem {
 
         vertexBufferData.putFloat(topLeft.x);
         vertexBufferData.putFloat(topLeft.y);
-        vertexBufferData.putFloat(color.r);
-        vertexBufferData.putFloat(color.g);
-        vertexBufferData.putFloat(color.b);
-        vertexBufferData.putFloat(color.a);
+        vertexBufferData.putFloat(c0.r);
+        vertexBufferData.putFloat(c0.g);
+        vertexBufferData.putFloat(c0.b);
+        vertexBufferData.putFloat(c0.a);
         vertexBufferData.putFloat(uvtlx);
         vertexBufferData.putFloat(uvtly);
         vertexBufferData.putFloat(shapeMode);
@@ -505,10 +536,10 @@ public class RenderSystem extends ActorSystem {
 
         vertexBufferData.putFloat(bottomLeft.x);
         vertexBufferData.putFloat(bottomLeft.y);
-        vertexBufferData.putFloat(color.r);
-        vertexBufferData.putFloat(color.g);
-        vertexBufferData.putFloat(color.b);
-        vertexBufferData.putFloat(color.a);
+        vertexBufferData.putFloat(c1.r);
+        vertexBufferData.putFloat(c1.g);
+        vertexBufferData.putFloat(c1.b);
+        vertexBufferData.putFloat(c1.a);
         vertexBufferData.putFloat(uvblx);
         vertexBufferData.putFloat(uvbly);
         vertexBufferData.putFloat(shapeMode);
@@ -517,10 +548,10 @@ public class RenderSystem extends ActorSystem {
 
         vertexBufferData.putFloat(bottomRight.x);
         vertexBufferData.putFloat(bottomRight.y);
-        vertexBufferData.putFloat(color.r);
-        vertexBufferData.putFloat(color.g);
-        vertexBufferData.putFloat(color.b);
-        vertexBufferData.putFloat(color.a);
+        vertexBufferData.putFloat(c2.r);
+        vertexBufferData.putFloat(c2.g);
+        vertexBufferData.putFloat(c2.b);
+        vertexBufferData.putFloat(c2.a);
         vertexBufferData.putFloat(uvbrx);
         vertexBufferData.putFloat(uvbry);
         vertexBufferData.putFloat(shapeMode);
@@ -529,10 +560,10 @@ public class RenderSystem extends ActorSystem {
 
         vertexBufferData.putFloat(topRight.x);
         vertexBufferData.putFloat(topRight.y);
-        vertexBufferData.putFloat(color.r);
-        vertexBufferData.putFloat(color.g);
-        vertexBufferData.putFloat(color.b);
-        vertexBufferData.putFloat(color.a);
+        vertexBufferData.putFloat(c3.r);
+        vertexBufferData.putFloat(c3.g);
+        vertexBufferData.putFloat(c3.b);
+        vertexBufferData.putFloat(c3.a);
         vertexBufferData.putFloat(uvtrx);
         vertexBufferData.putFloat(uvtry);
         vertexBufferData.putFloat(shapeMode);
