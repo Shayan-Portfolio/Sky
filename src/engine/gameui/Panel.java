@@ -2,7 +2,7 @@ package engine.gameui;
 
 import engine.graphics.Color;
 
-public class ContainerWidget extends Widget {
+public class Panel extends Widget {
     private boolean ignore;
 
     public Widget setIgnore(boolean ignore) {

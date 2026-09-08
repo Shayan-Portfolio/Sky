@@ -3,7 +3,7 @@ package engine.gameui;
 import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
 
-public class Node extends ContainerWidget {
+public class Node extends Panel {
     private boolean expanded;
     private Button button;
     private TextValue value;

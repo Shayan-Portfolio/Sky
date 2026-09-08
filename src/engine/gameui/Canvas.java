@@ -1,10 +1,10 @@
 package engine.gameui;
 
-public abstract class CanvasWidget extends Widget {
+public abstract class Canvas extends Widget {
     private boolean ignore;
     private int width, height;
 
-    public CanvasWidget(int width, int height) {
+    public Canvas(int width, int height) {
         this.width = width;
         this.height = height;
     }
