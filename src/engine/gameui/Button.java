@@ -32,15 +32,16 @@ public class Button extends Widget {
         Vector2f mousePos = Application.get().getSurface().getMousePos();
 
         if(Rect2D.contains(mousePos.x, mousePos.y, x + padding, y + padding, w - padding * 2, h - padding * 2)){
-            platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonHoverColor);
 
             boolean inputPressed = Application.get().getSurface().getMousePressed(Input.MOUSE_BUTTON_1);
             if(pressed) {
-                platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonClickColor);
+                platform.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, platform.getTheme().buttonClickColor, Color.BLACK, Color.BLACK, platform.getTheme().buttonClickColor);
+
 
             }
             else {
-                platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonHoverColor);
+                platform.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, platform.getTheme().buttonHoverColor, Color.BLACK, Color.BLACK, platform.getTheme().buttonHoverColor);
+
             }
 
 
@@ -54,7 +55,8 @@ public class Button extends Widget {
 
         }
         else
-            platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonBackgroundColor);
+            platform.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, platform.getTheme().buttonBackgroundColor, Color.BLACK, Color.BLACK, platform.getTheme().buttonBackgroundColor);
+
 
         platform.drawString(x + (2 * padding), y + (2 * padding), value.string.toString(), font, null, platform.getTheme().textColor);
         updateChildren(platform, x + padding, y + padding, w - padding * 2, h - padding * 2);

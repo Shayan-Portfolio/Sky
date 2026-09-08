@@ -119,19 +119,20 @@ public class RenderSystem extends ActorSystem {
             {
                 uiPainterImpl = new UIPainter() {
                     @Override
-                    public void drawRectGradient(float x, float y, float w, float h, Color c0, Color c1, Color c2, Color c3) {
+                    public void drawRoundRect(float x, float y, float w, float h, float radius, Color c0, Color c1, Color c2, Color c3) {
                         RenderSystem.this.drawQuad(
                                 x,
                                 y,
                                 w,
                                 h,
-                                -1, -1,
-                                -1, -1,
-                                -1, -1,
-                                -1, -1,
-                                -1,
-                                -1,
-                                -1,
+                                0, 0,
+                                0, 1,
+                                1, 0,
+                                1, 1,
+                                -4,
+                                w,
+                                h,
+                                radius,
                                 c0,
                                 c1,
                                 c2,
@@ -150,6 +151,7 @@ public class RenderSystem extends ActorSystem {
                                 -1, -1,
                                 -1, -1,
                                 -1, -1,
+                                -1,
                                 -1,
                                 -1,
                                 -1,
@@ -174,6 +176,7 @@ public class RenderSystem extends ActorSystem {
                                 -2,
                                 thickness,
                                 range,
+                                -1,
                                 color,
                                 color,
                                 color,
@@ -255,6 +258,7 @@ public class RenderSystem extends ActorSystem {
                                 msdf ? -3 : 0,
                                 index,
                                 op1,
+                                -1,
                                 color,
                                 color,
                                 color,
@@ -412,6 +416,7 @@ public class RenderSystem extends ActorSystem {
                 0,
                 0,
                 -1,
+                -1,
                 color, color, color, color
         );
 
@@ -511,6 +516,7 @@ public class RenderSystem extends ActorSystem {
                           int shapeMode,
                           float op0,
                           float op1,
+                          float op2,
                           Color c0, Color c1, Color c2, Color c3) {
 
 
@@ -533,6 +539,7 @@ public class RenderSystem extends ActorSystem {
         vertexBufferData.putFloat(shapeMode);
         vertexBufferData.putFloat(op0);
         vertexBufferData.putFloat(op1);
+        vertexBufferData.putFloat(op2);
 
         vertexBufferData.putFloat(bottomLeft.x);
         vertexBufferData.putFloat(bottomLeft.y);
@@ -545,6 +552,7 @@ public class RenderSystem extends ActorSystem {
         vertexBufferData.putFloat(shapeMode);
         vertexBufferData.putFloat(op0);
         vertexBufferData.putFloat(op1);
+        vertexBufferData.putFloat(op2);
 
         vertexBufferData.putFloat(bottomRight.x);
         vertexBufferData.putFloat(bottomRight.y);
@@ -557,6 +565,7 @@ public class RenderSystem extends ActorSystem {
         vertexBufferData.putFloat(shapeMode);
         vertexBufferData.putFloat(op0);
         vertexBufferData.putFloat(op1);
+        vertexBufferData.putFloat(op2);
 
         vertexBufferData.putFloat(topRight.x);
         vertexBufferData.putFloat(topRight.y);
@@ -569,6 +578,7 @@ public class RenderSystem extends ActorSystem {
         vertexBufferData.putFloat(shapeMode);
         vertexBufferData.putFloat(op0);
         vertexBufferData.putFloat(op1);
+        vertexBufferData.putFloat(op2);
 
         indexBufferData.putInt(0 + (4 * uiQuadCount));
         indexBufferData.putInt(1 + (4 * uiQuadCount));

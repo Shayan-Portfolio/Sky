@@ -23,7 +23,7 @@ public class Panel extends Widget {
     @Override
     public void update(UIPainter platform, int x, int y, int w, int h) {
         if(!ignore)
-            platform.drawRectGradient(x, y, w, h, Color.BLACK, platform.getTheme().buttonHoverColor, platform.getTheme().buttonHoverColor, Color.BLACK);
+            platform.drawRect(x, y, w, h, platform.getTheme().containerBackgroundColor);
         updateChildren(platform, x + padding, y + padding, w - padding, h - padding);
     }
 
