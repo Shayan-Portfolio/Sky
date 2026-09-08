@@ -1,12 +1,11 @@
 package engine.ecs;
 
+import engine.asset.Asset;
+import engine.asset.AssetListener;
+import engine.gameui.*;
 import engine.util.MathUtil;
 import engine.wsi.Surface;
 import engine.asset.AssetRegistry;
-import engine.gameui.UIPainter;
-import engine.gameui.Loop;
-import engine.gameui.TextureBindings;
-import engine.gameui.Theme;
 import engine.graphics.*;
 import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
@@ -32,6 +31,7 @@ public class RenderSystem extends ActorSystem {
     private int uiQuadCount = 0;
     private Camera uiCamera;
 
+    private Theme uiTheme;
     private Matrix4f uiTransform = new Matrix4f();
     private Vector4f origin = new Vector4f();
     private UIPainter uiPainterImpl;
@@ -64,10 +64,12 @@ public class RenderSystem extends ActorSystem {
         }
     }
 
-    public RenderSystem(Renderer renderer, RenderPipeline renderPipeline, Scene scene, Surface surface, Theme theme) {
+    public RenderSystem(Renderer renderer, RenderPipeline renderPipeline, Scene scene, Surface surface, Asset<String> uiThemeJSON) {
         this.renderer = renderer;
         this.renderPipeline = renderPipeline;
         this.scene = scene;
+        uiTheme = ThemeLoader.loadTheme(uiThemeJSON.getObject());
+        uiThemeJSON.addListener(() -> uiTheme = ThemeLoader.loadTheme(uiThemeJSON.getObject()));
 
 
         uiCamera = Camera.newOrthoCamera(
@@ -380,7 +382,7 @@ public class RenderSystem extends ActorSystem {
 
                     @Override
                     public Theme getTheme() {
-                        return theme;
+                        return uiTheme;
                     }
                 };
             }
