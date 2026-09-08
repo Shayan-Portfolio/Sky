@@ -54,7 +54,7 @@ public class Button extends Widget {
 
         }
         else
-            platform.drawRectGradient(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonBackgroundColor, platform.getTheme().buttonBackgroundColor, Color.BLACK, Color.BLACK);
+            platform.drawRect(x + padding, y + padding, w - padding * 2, h - padding * 2, platform.getTheme().buttonBackgroundColor);
 
         platform.drawString(x + (2 * padding), y + (2 * padding), value.string.toString(), font, null, platform.getTheme().textColor);
         updateChildren(platform, x + padding, y + padding, w - padding * 2, h - padding * 2);
