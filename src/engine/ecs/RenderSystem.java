@@ -1,9 +1,7 @@
 package engine.ecs;
 
 import engine.asset.Asset;
-import engine.asset.AssetListener;
 import engine.gameui.*;
-import engine.util.MathUtil;
 import engine.wsi.Surface;
 import engine.asset.AssetRegistry;
 import engine.graphics.*;
@@ -589,55 +587,6 @@ public class RenderSystem extends ActorSystem {
         indexBufferData.putInt(3 + (4 * uiQuadCount));
         indexBufferData.putInt(0 + (4 * uiQuadCount));
         uiQuadCount++;
-    }
-    private void writeSceneDescToByteBuffer(ByteBuffer sceneDescData, Camera camera, Scene scene) {
-
-        sceneDescData.clear();
-
-        camera.getView().get(sceneDescData);
-        sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
-
-        camera.getProj().get(sceneDescData);
-        sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
-
-        camera.getInvView().get(sceneDescData);
-        sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
-
-        camera.getInvProj().get(sceneDescData);
-        sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
-
-        scene.getRootActor().previsitAllActors(actor -> {
-            if(actor.has(LightComponent.class)) {
-                LightComponent lightComponent = actor.getComponent(LightComponent.class);
-
-                lightComponent.data.view.get(sceneDescData);
-                sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
-
-                lightComponent.data.proj.get(sceneDescData);
-                sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
-
-                lightComponent.data.invView.get(sceneDescData);
-                sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
-
-                lightComponent.data.invProj.get(sceneDescData);
-                sceneDescData.position(sceneDescData.position() + MathUtil.MATRIX_SIZE_BYTES);
-
-                sceneDescData.putFloat(lightComponent.data.attenuationConstant);
-                sceneDescData.putFloat(lightComponent.data.attenuationLinear);
-                sceneDescData.putFloat(lightComponent.data.attenuationQuadratic);
-                sceneDescData.putFloat(lightComponent.data.shadowTestOffsetBias);
-                sceneDescData.putFloat(lightComponent.data.color.r);
-                sceneDescData.putFloat(lightComponent.data.color.g);
-                sceneDescData.putFloat(lightComponent.data.color.b);
-                sceneDescData.putFloat(lightComponent.data.color.a);
-                sceneDescData.position(sceneDescData.position() + MathUtil.VEC3_SIZE_BYTES);
-                sceneDescData.putFloat(lightComponent.data.shadowNormalOffsetBias);
-            }
-        });
-
-
-
-
     }
 
 
