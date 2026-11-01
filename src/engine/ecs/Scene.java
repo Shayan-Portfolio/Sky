@@ -1,18 +1,14 @@
 package engine.ecs;
 
 
-import engine.asset.Asset;
 import engine.asset.AssetRegistry;
 import engine.bridge.ProjectLoader;
-import engine.gltf2.Importer;
 import engine.graphics.*;
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
 import engine.mio.Deserializer;
 import engine.mio.BytecodeStream;
 import engine.mio.Bytecode;
-import engine.physics.Collider;
-import engine.physics.BodyParams;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -35,42 +31,6 @@ public class Scene extends Disposable {
 
         //Standard Component Deserializers
         {
-            registerDeserializer("RigidbodyComponent", (iterator, renderer) -> {
-
-                Bytecode type = iterator.next();
-                Bytecode params = iterator.next();
-                Bytecode mass = iterator.next();
-                Bytecode interfaceFriction = iterator.next();
-                Bytecode interfaceRestitution = iterator.next();
-                Bytecode canRotate = iterator.next();
-
-
-                Collider collider = null;
-                switch ((String) type.operands()[2]) {
-                    case "box": {
-                        float width = (float) params.operands()[2];
-                        float height = (float) params.operands()[3];
-                        float depth = (float) params.operands()[4];
-                        collider = Collider.newBoxCollider(width, height, depth);
-                        break;
-                    }
-                    case "cylinder": {
-                        float radius = (float) params.operands()[2];
-                        float height = (float) params.operands()[3];
-
-                        collider = Collider.newCylinderCollider(radius, height);
-                        break;
-                    }
-                }
-
-                float colliderMass = (float) mass.operands()[2];
-                float colliderInterfaceFriction = (float) interfaceFriction.operands()[2];
-                float colliderInterfaceRestitution = (float) interfaceRestitution.operands()[2];
-                boolean colliderCanRotate = (boolean) canRotate.operands()[2];
-
-
-                return (new RigidBodyComponent(collider, colliderMass, new BodyParams(colliderInterfaceFriction, colliderInterfaceRestitution), colliderCanRotate));
-            });
             registerDeserializer("MeshComponent", (iterator, renderer) -> {
 
                 Bytecode type = iterator.next();
