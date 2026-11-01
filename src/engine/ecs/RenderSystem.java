@@ -2,6 +2,7 @@ package engine.ecs;
 
 import engine.asset.Asset;
 import engine.gameui.*;
+import engine.logging.Logger;
 import engine.wsi.Surface;
 import engine.asset.AssetRegistry;
 import engine.graphics.*;
@@ -420,8 +421,14 @@ public class RenderSystem extends ActorSystem {
                 color, color, color, color
         );
 
+
+
         root.previsitAllActors(actor -> {
-            if(actor.has(CameraComponent.class)) camera = actor.getComponent(CameraComponent.class).camera;
+            if(actor.has(CameraComponent.class)) {
+                CameraComponent cameraComponent = actor.getComponent(CameraComponent.class);
+                if(cameraComponent.camera.isActive())
+                    camera = actor.getComponent(CameraComponent.class).camera;
+            }
             if(actor.has(MeshComponent.class) && actor.has(MaterialComponent.class) && actor.has(ShaderComponent.class) && actor.has(TransformComponent.class)) {
                 MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
                 MaterialComponent materialComponent = actor.getComponent(MaterialComponent.class);

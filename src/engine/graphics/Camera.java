@@ -9,7 +9,7 @@ public class Camera {
     private boolean invertY;
     private Matrix4f invProj = new Matrix4f(), invView = new Matrix4f();
     private float zNear, zFar, fovY;
-
+    private boolean active;
 
     public static Camera newPerspectiveCamera(Vector3f pos,
                                            Vector3f lookAt,
@@ -87,6 +87,14 @@ public class Camera {
     public void setProj(Matrix4f proj) {
         this.proj = proj;
         proj.invert(this.invProj);
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Matrix4f getInvProj() {
