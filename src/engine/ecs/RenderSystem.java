@@ -2,7 +2,6 @@ package engine.ecs;
 
 import engine.asset.Asset;
 import engine.gameui.*;
-import engine.logging.Logger;
 import engine.wsi.Surface;
 import engine.asset.AssetRegistry;
 import engine.graphics.*;
@@ -12,6 +11,7 @@ import engine.graphics.text.MsdfJsonLoader;
 import engine.graphics.text.TextEffect;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.nio.ByteBuffer;
@@ -21,7 +21,7 @@ public class RenderSystem extends ActorSystem {
     private Renderer renderer;
     private RenderPipeline renderPipeline;
     private Scene scene;
-    private Camera camera;
+    private Camera activeCamera;
     private List<IndexedDrawCall> indexedDrawCalls = new java.util.LinkedList<>();
     private List<LightData> lights = new java.util.LinkedList<>();
     private Buffer[] uiVertexBuffers;
@@ -426,8 +426,12 @@ public class RenderSystem extends ActorSystem {
         root.previsitAllActors(actor -> {
             if(actor.has(CameraComponent.class)) {
                 CameraComponent cameraComponent = actor.getComponent(CameraComponent.class);
+                Camera newCamera = actor.getComponent(CameraComponent.class).camera;
                 if(cameraComponent.camera.isActive())
-                    camera = actor.getComponent(CameraComponent.class).camera;
+                    activeCamera = newCamera;
+                else
+                    drawCameraFrustum(actor.getName(), newCamera);
+
             }
             if(actor.has(MeshComponent.class) && actor.has(MaterialComponent.class) && actor.has(ShaderComponent.class) && actor.has(TransformComponent.class)) {
                 MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
@@ -483,7 +487,7 @@ public class RenderSystem extends ActorSystem {
         });
 
         List<Pass> passes = renderPipeline.buildFrame(new SceneRenderData(
-                camera,
+                activeCamera,
                 indexedDrawCalls,
                 lights,
                 uiVertexBuffers[renderer.getFrameIndex()],
@@ -495,6 +499,38 @@ public class RenderSystem extends ActorSystem {
 
         renderer.submit(passes);
         uiQuadCount = 0;
+    }
+
+    private void drawCameraFrustum(String name, Camera camera) {
+
+        Matrix4f invView = camera.getInvView();
+        int w = renderer.getWidth(), h = renderer.getHeight();
+
+        Vector2f eye = activeCamera.project(w, h, new Vector3f(
+                invView.m30(),
+                invView.m31(),
+                invView.m32()
+        ));
+
+
+        float depth = 1;
+        Vector2f tr = activeCamera.project(w, h, camera.unproject(new Vector2f(1f, -1f), depth).xyz(new Vector3f()));
+        Vector2f tl = activeCamera.project(w, h, camera.unproject(new Vector2f(-1f, -1f), depth).xyz(new Vector3f()));
+        Vector2f br = activeCamera.project(w, h, camera.unproject(new Vector2f(1f, 1f), depth).xyz(new Vector3f()));
+        Vector2f bl = activeCamera.project(w, h, camera.unproject(new Vector2f(-1f, 1f), depth).xyz(new Vector3f()));
+
+        Color color = camera.getDebugColor();
+        uiPainterImpl.drawLine(tl.x, tl.y, tr.x, tr.y, color);
+        uiPainterImpl.drawLine(bl.x, bl.y, tl.x, tl.y, color);
+        uiPainterImpl.drawLine(br.x, br.y, bl.x, bl.y, color);
+        uiPainterImpl.drawLine(tr.x, tr.y, br.x, br.y, color);
+
+        uiPainterImpl.drawLine(eye.x, eye.y, tl.x, tl.y, color);
+        uiPainterImpl.drawLine(eye.x, eye.y, br.x, br.y, color);
+        uiPainterImpl.drawLine(eye.x, eye.y, bl.x, bl.y, color);
+        uiPainterImpl.drawLine(eye.x, eye.y, tr.x, tr.y, color);
+
+
     }
 
     private void setOrigin(float x, float y) {

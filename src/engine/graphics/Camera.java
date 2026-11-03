@@ -2,7 +2,9 @@ package engine.graphics;
 
 import engine.util.MathUtil;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class Camera {
     private Matrix4f proj, view;
@@ -10,6 +12,7 @@ public class Camera {
     private Matrix4f invProj = new Matrix4f(), invView = new Matrix4f();
     private float zNear, zFar, fovY;
     private boolean active;
+    private Color debugColor;
 
     public static Camera newPerspectiveCamera(Vector3f pos,
                                            Vector3f lookAt,
@@ -63,6 +66,38 @@ public class Camera {
         return camera;
     }
 
+    public Camera() {
+        debugColor = new Color((float) Math.random(), (float) Math.random(), (float) Math.random(), 1);
+    }
+
+    public Vector2f project(int width, int height, Vector3f w) {
+        Vector4f uv = proj.transform(view.transform(new Vector4f(
+                w.x,
+                w.y,
+                w.z,
+                1
+        )));
+        uv.div(uv.w);
+        uv.mul(0.5f);
+        uv.add(0.5f, 0.5f, 0.5f, 0.5f);
+        return new Vector2f(uv.x * width, uv.y * height);
+    }
+
+    public Vector4f unproject(Vector2f ndcXY, float depth) {
+        float ndcX = ndcXY.x;
+        float ndcY = ndcXY.y;
+        Vector4f start = new Vector4f(ndcX, ndcY, depth, 1.0f);
+        Vector4f view = invProj.transform(start);
+        Vector4f w = invView.transform(view);
+
+        w.div(w.w);
+
+        return w;
+    }
+
+    public Color getDebugColor() {
+        return debugColor;
+    }
 
     public boolean isInvertY() {
         return invertY;

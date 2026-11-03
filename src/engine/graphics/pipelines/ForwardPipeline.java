@@ -333,7 +333,7 @@ public class ForwardPipeline extends RenderPipeline {
 
         scenePass.bind("IShadowTextures", shadowMapTextures);
         scenePass.submit(() -> {
-            scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.WHITE);
+            scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
             {
                 for(RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
                     scenePass.setCullMode(CullMode.Back);
