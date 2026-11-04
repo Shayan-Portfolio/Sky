@@ -7,7 +7,9 @@ import engine.wsi.Surface;
 import engine.bridge.ProjectLoader;
 import engine.logging.SkyRuntimeException;
 import org.lwjgl.system.Configuration;
+import org.lwjgl.system.Library;
 
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -20,6 +22,29 @@ public class Launcher {
     public void initLogging() {
         //Logger.setFileTarget(new File("engine.log"));
         Logger.setConsoleTarget(System.out);
+    }
+
+    public void loadNatives() {
+        File nativesDir = new File("natives");
+
+        try {
+            for (File file : nativesDir.listFiles()) {
+                String path = file.getAbsolutePath();
+                if(path.endsWith("jar")) {
+                    String module = file.getName().replaceAll("\\.jar$", "");
+                    String dll = file.getPath()
+                            .replaceAll("\\.jar$", "")
+                            .replace(File.separator, "/");
+
+                    Logger.info(Launcher.class, "Loading native library " + module + " at " + dll);
+                    Library.loadSystem(module, dll);
+                }
+
+            }
+        }
+        catch (UnsatisfiedLinkError e) {
+            throw new SkyRuntimeException(e);
+        }
     }
 
 
