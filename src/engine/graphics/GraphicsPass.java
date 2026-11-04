@@ -19,8 +19,10 @@ public abstract class GraphicsPass extends Pass {
 
     public abstract void setCullMode(CullMode cullMode);
     public abstract void setDrawBuffers(Buffer vertexBuffer, Buffer indexBuffer);
+    public abstract void setVertexBuffer(Buffer vertexBuffer);
     public abstract void setShaderProgram(ShaderProgram shaderProgram);
     public abstract void setPushConstants(ByteBuffer pPushConstants);
     public abstract void drawInstanced(int indexCount, int instanceCount);
     public abstract void drawIndexed(int indexCount);
+    public abstract void draw(int vertexCount);
 }

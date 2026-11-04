@@ -18,6 +18,7 @@ public abstract class ShaderProgram extends Disposable {
     protected List<VertexAttribute> vertexAttributes = new ArrayList<>();
     protected int pushConstantsSizeBytes;
     protected DepthTestType depthTestType = DepthTestType.LessThan;
+    protected TopologyType topologyType = TopologyType.TriangleList;
     protected boolean enableBlending = false;
 
 
@@ -54,6 +55,14 @@ public abstract class ShaderProgram extends Disposable {
 
     public void setDepthTestType(DepthTestType depthTestType) {
         this.depthTestType = depthTestType;
+    }
+
+    public TopologyType getTopologyType() {
+        return topologyType;
+    }
+
+    public void setTopologyType(TopologyType topologyType) {
+        this.topologyType = topologyType;
     }
 
     public int getVertexAttributesSize() {

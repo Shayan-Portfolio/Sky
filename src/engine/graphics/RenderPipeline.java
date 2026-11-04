@@ -7,5 +7,5 @@ public abstract class RenderPipeline {
     public abstract void init(Renderer renderer);
     public abstract List<Pass> buildFrame(SceneRenderData sceneRenderData);
     public abstract ShaderProgram getUIShaderProgram();
-
+    public abstract ShaderProgram getWireframeShaderProgram();
 }

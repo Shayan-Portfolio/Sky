@@ -28,11 +28,12 @@ public class ForwardPipeline extends RenderPipeline {
     private ComputePass tilingPass;
     private ShaderProgram tiledLightingShaderProgram;
     private ShaderProgram uiShaderProgram;
+    private ShaderProgram wireframeShaderProgram;
     private Texture[] nDepthPrepassTextures;
     private Buffer[] tileDataBuffers;
     private Buffer[] sceneBuffers;
     private Renderer renderer;
-    private TextureBindings textureBindings;
+
 
     private Sampler sampler;
     private static final int PbrMode = 0, ShadowMapMode = 1, DepthPrepassMode = 2;
@@ -81,8 +82,15 @@ public class ForwardPipeline extends RenderPipeline {
             uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/UI_vertex.spv"), ShaderType.VertexShader);
             uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/UI_fragment.spv"), ShaderType.FragmentShader);
             uiShaderProgram.assemble();
+        }
 
-
+        //Wireframe Shader
+        {
+            wireframeShaderProgram = ShaderProgram.newShaderProgram(graph);
+            wireframeShaderProgram.setTopologyType(TopologyType.LineList);
+            wireframeShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/Wireframe_vertex.spv"), ShaderType.VertexShader);
+            wireframeShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/Wireframe_fragment.spv"), ShaderType.FragmentShader);
+            wireframeShaderProgram.assemble();
         }
 
         //Scene Data Buffers
@@ -91,7 +99,7 @@ public class ForwardPipeline extends RenderPipeline {
             for (int i = 0; i < sceneBuffers.length; i++) {
                 sceneBuffers[i] = Buffer.newBuffer(
                         renderer,
-                        3136,
+                        3136, //TODO Shayan this is bad!!!
                         Buffer.Usage.ShaderStorageBuffer,
                         Buffer.Type.GPULocal,
                         false
@@ -261,6 +269,13 @@ public class ForwardPipeline extends RenderPipeline {
 
         }
 
+        //Update Wireframe descriptors
+        {
+            wireframeShaderProgram.setBuffers(
+                    renderer.getFrameIndex(),
+                    new DescriptorUpdate<>("scene_desc", sceneBuffers[renderer.getFrameIndex()])
+            );
+        }
 
 
 
@@ -363,6 +378,12 @@ public class ForwardPipeline extends RenderPipeline {
                     if(drawCall.instanced) scenePass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
                     else scenePass.drawIndexed(drawCall.indexCount);
                 }
+
+
+                scenePass.setCullMode(CullMode.None);
+                scenePass.setShaderProgram(wireframeShaderProgram);
+                scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
+                scenePass.draw(sceneRenderData.wireframeVertexCount());
             }
             scenePass.endRendering();
 
@@ -394,4 +415,10 @@ public class ForwardPipeline extends RenderPipeline {
     public ShaderProgram getUIShaderProgram() {
         return uiShaderProgram;
     }
+
+    @Override
+    public ShaderProgram getWireframeShaderProgram() {
+        return wireframeShaderProgram;
+    }
+
 }

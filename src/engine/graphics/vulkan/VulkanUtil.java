@@ -62,6 +62,17 @@ public class VulkanUtil {
         throw new SkyRuntimeException("The depth operation for this pipeline is an invalid value [" + depthTestType + "]");
     }
 
+    public static int getVulkanTopologyType(TopologyType topologyType) {
+        switch (topologyType) {
+            case LineList -> {
+                return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            }
+            case TriangleList -> {
+                return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            }
+        }
+        return -1;
+    }
 
 
     public static void transitionImageLayout(VulkanImage image,

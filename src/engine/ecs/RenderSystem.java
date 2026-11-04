@@ -24,8 +24,12 @@ public class RenderSystem extends ActorSystem {
     private Camera activeCamera;
     private List<IndexedDrawCall> indexedDrawCalls = new java.util.LinkedList<>();
     private List<LightData> lights = new java.util.LinkedList<>();
-    private Buffer[] uiVertexBuffers;
-    private Buffer[] uiIndexBuffers;
+
+
+    private Buffer[] uiVertexBuffers, uiIndexBuffers;
+    private Buffer[] wireframeVertexBuffers;
+
+
     private int uiQuadCount = 0;
     private Camera uiCamera;
     private TextureBindings textureBindings;
@@ -34,6 +38,8 @@ public class RenderSystem extends ActorSystem {
     private Vector4f origin = new Vector4f();
     private UIPainter uiPainterImpl;
     private int maxUIQuads = 6000;
+    private int maxWireframeLines = 1000;
+    private int wireframeVertexCount = 0;
 
 
 
@@ -381,6 +387,22 @@ public class RenderSystem extends ActorSystem {
 
         }
 
+        //Wireframes
+        {
+            wireframeVertexBuffers = new Buffer[renderer.getMaxFramesInFlight()];
+
+
+            for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
+                wireframeVertexBuffers[i] = Buffer.newBuffer(
+                        renderer,
+                        renderPipeline.getWireframeShaderProgram().getVertexAttributesSize() * Float.BYTES * 2 * maxWireframeLines,
+                        Buffer.Usage.VertexBuffer,
+                        Buffer.Type.CPUGPUShared,
+                        false
+                );
+            }
+        }
+
 
 
     }
@@ -394,6 +416,7 @@ public class RenderSystem extends ActorSystem {
         uiTransform.identity();
         uiVertexBuffers[renderer.getFrameIndex()].get().clear();
         uiIndexBuffers[renderer.getFrameIndex()].get().clear();
+        wireframeVertexBuffers[renderer.getFrameIndex()].get().clear();
         setOrigin(0, 0);
 
         Color color = new Color(3, 3, 3, 1);
@@ -486,41 +509,61 @@ public class RenderSystem extends ActorSystem {
                 uiVertexBuffers[renderer.getFrameIndex()],
                 uiIndexBuffers[renderer.getFrameIndex()],
                 uiQuadCount,
-                uiCamera)
-        );
+                uiCamera,
+                wireframeVertexBuffers[renderer.getFrameIndex()],
+                wireframeVertexCount
+        ));
 
         renderer.submit(passes);
         uiQuadCount = 0;
     }
 
+    private void drawLine(float x1, float y1, float z1, float x2, float y2, float z2, Color color) {
+        ByteBuffer vertexBufferData = wireframeVertexBuffers[renderer.getFrameIndex()].get();
+
+        vertexBufferData.putFloat(x1);
+        vertexBufferData.putFloat(y1);
+        vertexBufferData.putFloat(z1);
+
+        vertexBufferData.putFloat(color.r);
+        vertexBufferData.putFloat(color.g);
+        vertexBufferData.putFloat(color.b);
+        vertexBufferData.putFloat(color.a);
+
+        vertexBufferData.putFloat(x2);
+        vertexBufferData.putFloat(y2);
+        vertexBufferData.putFloat(z2);
+
+        vertexBufferData.putFloat(color.r);
+        vertexBufferData.putFloat(color.g);
+        vertexBufferData.putFloat(color.b);
+        vertexBufferData.putFloat(color.a);
+
+        wireframeVertexCount += 2;
+    }
     private void drawCameraFrustum(String name, Camera camera) {
 
         Matrix4f invView = camera.getInvView();
-        int w = renderer.getWidth(), h = renderer.getHeight();
+        Color color = camera.getDebugColor();
 
-        Vector2f eye = activeCamera.project(w, h, new Vector3f(
-                invView.m30(),
-                invView.m31(),
-                invView.m32()
-        ));
+        float x = invView.m30(), y = invView.m31(), z = invView.m32();
 
 
         float depth = 1;
-        Vector2f tr = activeCamera.project(w, h, camera.unproject(new Vector2f(1f, -1f), depth).xyz(new Vector3f()));
-        Vector2f tl = activeCamera.project(w, h, camera.unproject(new Vector2f(-1f, -1f), depth).xyz(new Vector3f()));
-        Vector2f br = activeCamera.project(w, h, camera.unproject(new Vector2f(1f, 1f), depth).xyz(new Vector3f()));
-        Vector2f bl = activeCamera.project(w, h, camera.unproject(new Vector2f(-1f, 1f), depth).xyz(new Vector3f()));
+        Vector4f tr = camera.unproject(new Vector2f(1f, -1f), depth);
+        Vector4f tl = camera.unproject(new Vector2f(-1f, -1f), depth);
+        Vector4f br = camera.unproject(new Vector2f(1f, 1f), depth);
+        Vector4f bl = camera.unproject(new Vector2f(-1f, 1f), depth);
 
-        Color color = camera.getDebugColor();
-        uiPainterImpl.drawLine(tl.x, tl.y, tr.x, tr.y, color);
-        uiPainterImpl.drawLine(bl.x, bl.y, tl.x, tl.y, color);
-        uiPainterImpl.drawLine(br.x, br.y, bl.x, bl.y, color);
-        uiPainterImpl.drawLine(tr.x, tr.y, br.x, br.y, color);
+        drawLine(x, y, z, tr.x, tr.y, tr.z, color);
+        drawLine(x, y, z, tl.x, tl.y, tl.z, color);
+        drawLine(x, y, z, br.x, br.y, br.z, color);
+        drawLine(x, y, z, bl.x, bl.y, bl.z, color);
 
-        uiPainterImpl.drawLine(eye.x, eye.y, tl.x, tl.y, color);
-        uiPainterImpl.drawLine(eye.x, eye.y, br.x, br.y, color);
-        uiPainterImpl.drawLine(eye.x, eye.y, bl.x, bl.y, color);
-        uiPainterImpl.drawLine(eye.x, eye.y, tr.x, tr.y, color);
+        drawLine(tl.x, tl.y, tl.z, tr.x, tr.y, tr.z, color);
+        drawLine(tr.x, tr.y, tr.z, br.x, br.y, br.z, color);
+        drawLine(br.x, br.y, br.z, bl.x, bl.y, bl.z, color);
+        drawLine(bl.x, bl.y, bl.z, tl.x, tl.y, tl.z, color);
 
 
     }
