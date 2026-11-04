@@ -8,11 +8,11 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
-import java.util.Optional;
+
 
 import static org.lwjgl.system.MemoryStack.stackPush;
-import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
+import static org.lwjgl.vulkan.VK13.*;
+import static org.lwjgl.vulkan.VK13.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK13.vkCmdSetCullMode;
 
 public class VulkanGraphicsPass extends GraphicsPass {
@@ -76,6 +76,18 @@ public class VulkanGraphicsPass extends GraphicsPass {
     }
 
     @Override
+    public void setVertexBuffer(Buffer vertexBuffer) {
+        try(MemoryStack stack = stackPush()) {
+            VulkanBuffer vulkanVertexBuffer = (VulkanBuffer) vertexBuffer;
+
+            LongBuffer vertexBuffers = stack.longs(vulkanVertexBuffer.getHandle());
+            LongBuffer offsets = stack.longs(0);
+
+            vkCmdBindVertexBuffers(commandBuffers[frameIndex], 0, vertexBuffers, offsets);
+        }
+    }
+
+    @Override
     public void setShaderProgram(ShaderProgram shaderProgram) {
         try(MemoryStack stack = stackPush()) {
             this.shaderProgram = shaderProgram;
@@ -118,6 +130,10 @@ public class VulkanGraphicsPass extends GraphicsPass {
         );
     }
 
+    @Override
+    public void draw(int vertexCount) {
+        vkCmdDraw(commandBuffers[frameIndex], vertexCount, 1, 0, 0);
+    }
 
 
     @Override
