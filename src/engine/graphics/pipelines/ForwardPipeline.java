@@ -3,6 +3,7 @@ package engine.graphics.pipelines;
 import engine.asset.AssetRegistry;
 import engine.ecs.LightComponent;
 import engine.ecs.RenderSystem;
+import engine.gameui.TextureBindings;
 import engine.graphics.*;
 import engine.util.MathUtil;
 import org.lwjgl.system.MemoryStack;
@@ -26,10 +27,12 @@ public class ForwardPipeline extends RenderPipeline {
     private GraphicsPass shadowMapPass;
     private ComputePass tilingPass;
     private ShaderProgram tiledLightingShaderProgram;
+    private ShaderProgram uiShaderProgram;
     private Texture[] nDepthPrepassTextures;
     private Buffer[] tileDataBuffers;
     private Buffer[] sceneBuffers;
     private Renderer renderer;
+    private TextureBindings textureBindings;
 
     private Sampler sampler;
     private static final int PbrMode = 0, ShadowMapMode = 1, DepthPrepassMode = 2;
@@ -68,8 +71,16 @@ public class ForwardPipeline extends RenderPipeline {
                 );
                 tiledLightingShaderProgram.setBuffers(i, new DescriptorUpdate<>("tiled_lighting_data", tileDataBuffers[i]));
             }
+        }
 
-
+        //UI shader
+        {
+            uiShaderProgram = ShaderProgram.newShaderProgram(graph);
+            uiShaderProgram.setDepthTestType(DepthTestType.Always);
+            uiShaderProgram.setEnableBlending(true);
+            uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/UI_vertex.spv"), ShaderType.VertexShader);
+            uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/UI_fragment.spv"), ShaderType.FragmentShader);
+            uiShaderProgram.assemble();
 
 
         }
@@ -149,8 +160,8 @@ public class ForwardPipeline extends RenderPipeline {
     public List<Pass> buildFrame(SceneRenderData sceneRenderData) {
 
 
-        sceneRenderData.uiShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[renderer.getFrameIndex()]).arrayIndex(0));
-        sceneRenderData.uiShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
+        uiShaderProgram.setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[renderer.getFrameIndex()]).arrayIndex(0));
+        uiShaderProgram.setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(0));
         Texture[] swapchainTextures = renderer.getSwapchainRenderTarget()
                 .getAttachment(AttachmentTypes.Color0)
                 .getTextures();
@@ -193,10 +204,10 @@ public class ForwardPipeline extends RenderPipeline {
             }
         }
 
-        tiledLightingShaderProgram.setBuffers(
+        /*tiledLightingShaderProgram.setBuffers(
                 renderer.getFrameIndex(),
                 new DescriptorUpdate<>("scene_desc", sceneBuffers[renderer.getFrameIndex()])
-        );
+        );*/
 
         tiledLightingShaderProgram.setBuffers(renderer.getFrameIndex(), new DescriptorUpdate<>("tiled_lighting_data", tileDataBuffers[renderer.getFrameIndex()]));
 
@@ -364,7 +375,7 @@ public class ForwardPipeline extends RenderPipeline {
             {
                 uiPass.setDrawBuffers(sceneRenderData.uiVertexBuffer(), sceneRenderData.uiIndexBuffer());
                 uiPass.setCullMode(CullMode.Back);
-                uiPass.setShaderProgram(sceneRenderData.uiShaderProgram());
+                uiPass.setShaderProgram(uiShaderProgram);
                 try (MemoryStack stack = stackPush()) {
                     ByteBuffer pPushConstants = stack.calloc(MathUtil.MATRIX_SIZE_BYTES * 2);
                     sceneRenderData.uiCamera().getView().get(pPushConstants);
@@ -377,5 +388,10 @@ public class ForwardPipeline extends RenderPipeline {
         });
 
         return graph.compile(uiPass);
+    }
+
+    @Override
+    public ShaderProgram getUIShaderProgram() {
+        return uiShaderProgram;
     }
 }

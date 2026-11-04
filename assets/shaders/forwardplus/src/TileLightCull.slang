@@ -55,15 +55,15 @@ Plane set_plane(float3 v1, float3 v2, float3 p) {
 }
 
 
-static float4[] colors = {float4(1, 0, 0, 0), float4(0, 1, 0, 0), float4(0, 0, 1, 0)};
+//static float4[] colors = {float4(0.1, 0, 0, 0), float4(0, 0.1, 0, 0), float4(0, 0, 0.1, 0)};
 
 [numthreads(1, 1, 1)]
 void computeMain(int3 dispatch_ID: SV_DispatchThreadID, int3 group_id: SV_GroupID, uniform int tiles_w, uniform int tiles_h, uniform int tile_size, uniform int w, uniform int h) {
 
     int index = group_id.y * tiles_w + group_id.x;
-    //tiled_lighting_data[index] = colors[(index + group_id.y) % 3];
+    tiled_lighting_data[index] = float4(0, 0, 0, 0);//colors[(index + group_id.y) % 3];
 
-    
+    /*
 
     Camera camera = scene_desc[0].camera;
 
@@ -131,7 +131,7 @@ void computeMain(int3 dispatch_ID: SV_DispatchThreadID, int3 group_id: SV_GroupI
         is_point_in_halfspace(frustum.planes[2], cone.tip) ? 0 : 1,
         0,
         1
-    );
+    );*/
 
 
 

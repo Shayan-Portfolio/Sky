@@ -26,15 +26,13 @@ public class RenderSystem extends ActorSystem {
     private List<LightData> lights = new java.util.LinkedList<>();
     private Buffer[] uiVertexBuffers;
     private Buffer[] uiIndexBuffers;
-    private ShaderProgram uiShaderProgram;
     private int uiQuadCount = 0;
     private Camera uiCamera;
-
+    private TextureBindings textureBindings;
     private Theme uiTheme;
     private Matrix4f uiTransform = new Matrix4f();
     private Vector4f origin = new Vector4f();
     private UIPainter uiPainterImpl;
-    private TextureBindings textureBindings;
     private int maxUIQuads = 6000;
 
 
@@ -81,12 +79,7 @@ public class RenderSystem extends ActorSystem {
         );
 
 
-        uiShaderProgram = ShaderProgram.newShaderProgram(renderer);
-        uiShaderProgram.setDepthTestType(DepthTestType.Always);
-        uiShaderProgram.setEnableBlending(true);
-        uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/UI_vertex.spv"), ShaderType.VertexShader);
-        uiShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/UI_fragment.spv"), ShaderType.FragmentShader);
-        uiShaderProgram.assemble();
+
 
         //UI Compositing setup
         {
@@ -97,7 +90,7 @@ public class RenderSystem extends ActorSystem {
             for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
                 uiVertexBuffers[i] = Buffer.newBuffer(
                         renderer,
-                        uiShaderProgram.getVertexAttributesSize() * Float.BYTES * 4 * maxUIQuads,
+                        renderPipeline.getUIShaderProgram().getVertexAttributesSize() * Float.BYTES * 4 * maxUIQuads,
                         Buffer.Usage.VertexBuffer,
                         Buffer.Type.CPUGPUShared,
                         false
@@ -239,8 +232,8 @@ public class RenderSystem extends ActorSystem {
 
                         int index = textureBindings.getTextureBinding(texture);
 
-                        uiShaderProgram.setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", texture).arrayIndex(index));
-                        uiShaderProgram.setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(index));
+                        renderPipeline.getUIShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", texture).arrayIndex(index));
+                        renderPipeline.getUIShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(index));
 
 
                         drawQuad(
@@ -492,7 +485,6 @@ public class RenderSystem extends ActorSystem {
                 lights,
                 uiVertexBuffers[renderer.getFrameIndex()],
                 uiIndexBuffers[renderer.getFrameIndex()],
-                uiShaderProgram,
                 uiQuadCount,
                 uiCamera)
         );
