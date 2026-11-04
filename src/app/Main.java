@@ -10,6 +10,7 @@ public class Main {
         Launcher launcher = new Launcher();
         launcher.initLogging();
         launcher.logPlatformInfo();
+        launcher.loadNatives();
         launcher.enableDebugOptionsIfAttached();
 
         try {

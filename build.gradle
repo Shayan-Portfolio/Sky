@@ -91,8 +91,7 @@ dependencies {
         implementation "org.lwjgl:lwjgl-spvc"
         implementation "org.joml:joml:$jomlVersion"
         implementation "org.lwjgl:lwjgl-jawt"
-        implementation files("thirdparty/lwjgl3-awt-0.2.3.jar")
-        implementation files("thirdparty/Box3D-JDK-0.1.0.jar")
+        implementation files("natives/box3d.jar")
         implementation "com.google.code.gson:gson:$gsonVersion"
         implementation "org.lwjgl:lwjgl-openal"
         implementation "com.github.stephengold:jbullet:$jbulletVersion"
