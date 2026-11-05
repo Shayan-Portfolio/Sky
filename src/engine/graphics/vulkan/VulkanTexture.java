@@ -188,10 +188,11 @@ public class VulkanTexture extends Texture {
                 );
             }
             else {
+                //Set the default layout
                 VulkanUtil.transitionImageLayout(
                         image,
                         commandBuffer,
-                        VK_IMAGE_LAYOUT_GENERAL,
+                        formatType == TextureFormatType.Depth32 ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL,
                         VK_ACCESS_TRANSFER_WRITE_BIT,
                         VK_ACCESS_SHADER_READ_BIT,
                         aspectMask,

@@ -590,7 +590,7 @@ public class VulkanRenderer extends Renderer {
                                             }
                                             vkCmdPipelineBarrier(
                                                     commandBuffer,
-                                                    imageView.getAspectMask() == VK_IMAGE_ASPECT_COLOR_BIT ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                     pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                                     0,
                                                     null,

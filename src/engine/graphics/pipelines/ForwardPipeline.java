@@ -174,21 +174,24 @@ public class ForwardPipeline extends RenderPipeline {
                 .getAttachment(AttachmentTypes.Color0)
                 .getTextures();
 
-        Texture[] shadowMapTextures = new Texture[sceneRenderData.lights().size()];
+        Texture[] shadowMapTextures = new Texture[sceneRenderData.lights().size() * renderer.getMaxFramesInFlight()];
 
         List<LightData> lights = sceneRenderData.lights();
         for (int i = 0; i < lights.size(); i++) {
             LightData lightData = lights.get(i);
-            shadowMapTextures[i] = lightData.renderTarget
-                    .getAttachment(AttachmentTypes.Depth)
-                    .getTextures()[renderer.getFrameIndex()];
+
+            for (int j = 0; j < renderer.getMaxFramesInFlight(); j++) {
+                shadowMapTextures[(renderer.getMaxFramesInFlight() * i) + j] = lightData.renderTarget
+                        .getAttachment(AttachmentTypes.Depth)
+                        .getTextures()[renderer.getFrameIndex()];
+            }
         }
 
         List<RenderSystem.IndexedDrawCall> drawCalls = sceneRenderData.drawCalls();
         for (RenderSystem.IndexedDrawCall drawCall : drawCalls) {
             for (int j = 0; j < sceneRenderData.lights().size(); j++) {
                 drawCall.shaderProgram.setTextures(
-                        renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps", shadowMapTextures[j]).arrayIndex(j)
+                        renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps", shadowMapTextures[renderer.getMaxFramesInFlight() * j + renderer.getFrameIndex()]).arrayIndex(j)
                 );
             }
             drawCall.shaderProgram.setSamplers(
