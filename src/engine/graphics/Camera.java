@@ -83,17 +83,7 @@ public class Camera {
         return new Vector2f(uv.x * width, uv.y * height);
     }
 
-    public Vector4f unproject(Vector2f ndcXY, float depth) {
-        float ndcX = ndcXY.x;
-        float ndcY = ndcXY.y;
-        Vector4f start = new Vector4f(ndcX, ndcY, depth, 1.0f);
-        Vector4f view = invProj.transform(start);
-        Vector4f w = invView.transform(view);
 
-        w.div(w.w);
-
-        return w;
-    }
 
     public Color getDebugColor() {
         return debugColor;

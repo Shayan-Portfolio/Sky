@@ -2,8 +2,8 @@ package engine.ecs;
 
 import engine.asset.Asset;
 import engine.gameui.*;
+import engine.util.MathUtil;
 import engine.wsi.Surface;
-import engine.asset.AssetRegistry;
 import engine.graphics.*;
 import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
@@ -11,7 +11,6 @@ import engine.graphics.text.MsdfJsonLoader;
 import engine.graphics.text.TextEffect;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
-import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.nio.ByteBuffer;
@@ -446,7 +445,7 @@ public class RenderSystem extends ActorSystem {
                 if(cameraComponent.camera.isActive())
                     activeCamera = newCamera;
                 else
-                    drawCameraFrustum(actor.getName(), newCamera);
+                    drawFrustum(newCamera.getInvView(), newCamera.getInvProj(), newCamera.getDebugColor());
 
             }
             if(actor.has(MeshComponent.class) && actor.has(MaterialComponent.class) && actor.has(ShaderComponent.class) && actor.has(TransformComponent.class)) {
@@ -473,7 +472,11 @@ public class RenderSystem extends ActorSystem {
                 if(!meshComponent.instanced) transformComponent.transform().get(0, transformsData);
             }
             if(actor.has(LightComponent.class)) {
-                lights.add(actor.getComponent(LightComponent.class).data);
+                LightData lightData = actor.getComponent(LightComponent.class).data;
+
+                lights.add(lightData);
+                drawFrustum(lightData.invView, lightData.invProj, Color.RED);
+
             }
             if(actor.has(UIComponent.class)) {
                 UIComponent uiComponent = actor.getComponent(UIComponent.class);
@@ -541,19 +544,16 @@ public class RenderSystem extends ActorSystem {
 
         wireframeVertexCount += 2;
     }
-    private void drawCameraFrustum(String name, Camera camera) {
-
-        Matrix4f invView = camera.getInvView();
-        Color color = camera.getDebugColor();
+    private void drawFrustum(Matrix4f invView, Matrix4f invProj, Color color) {
 
         float x = invView.m30(), y = invView.m31(), z = invView.m32();
 
 
         float depth = 1;
-        Vector4f tr = camera.unproject(new Vector2f(1f, -1f), depth);
-        Vector4f tl = camera.unproject(new Vector2f(-1f, -1f), depth);
-        Vector4f br = camera.unproject(new Vector2f(1f, 1f), depth);
-        Vector4f bl = camera.unproject(new Vector2f(-1f, 1f), depth);
+        Vector4f tr = MathUtil.unproject(new Vector2f(1f, -1f), depth, invView, invProj);
+        Vector4f tl = MathUtil.unproject(new Vector2f(-1f, -1f), depth, invView, invProj);
+        Vector4f br = MathUtil.unproject(new Vector2f(1f, 1f), depth, invView, invProj);
+        Vector4f bl = MathUtil.unproject(new Vector2f(-1f, 1f), depth, invView, invProj);
 
         drawLine(x, y, z, tr.x, tr.y, tr.z, color);
         drawLine(x, y, z, tl.x, tl.y, tl.z, color);

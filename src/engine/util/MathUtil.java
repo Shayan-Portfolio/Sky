@@ -1,9 +1,6 @@
 package engine.util;
 
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 
 import javax.vecmath.Quat4f;
 
@@ -120,6 +117,18 @@ public class MathUtil {
 
         return dst;
 
+    }
+
+    public static Vector4f unproject(Vector2f ndcXY, float depth, Matrix4f invView, Matrix4f invProj) {
+        float ndcX = ndcXY.x;
+        float ndcY = ndcXY.y;
+        Vector4f start = new Vector4f(ndcX, ndcY, depth, 1.0f);
+        Vector4f view = invProj.transform(start);
+        Vector4f w = invView.transform(view);
+
+        w.div(w.w);
+
+        return w;
     }
 
 
