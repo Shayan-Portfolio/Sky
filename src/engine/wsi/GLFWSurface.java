@@ -204,7 +204,7 @@ public class GLFWSurface extends Surface {
 
                 instanceCreateInfo.pNext(debugCreateInfo.address());
             }
-            if(true) {
+            if(false) {
                 IntBuffer enables = stack.ints(
                         EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                         EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,

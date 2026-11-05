@@ -68,6 +68,7 @@ public class Launcher {
             boolean success = application.update();
             Time.deltaTime = (float) (surface.getTime() - application.getStartTime());
             application.setStartTime((float) surface.getTime());
+            //System.out.println(Time.framesPerSecond());
             if(!success) break;
         }
 

@@ -70,13 +70,8 @@ public class Camera {
         debugColor = new Color((float) Math.random(), (float) Math.random(), (float) Math.random(), 1);
     }
 
-    public Vector2f project(int width, int height, Vector3f w) {
-        Vector4f uv = proj.transform(view.transform(new Vector4f(
-                w.x,
-                w.y,
-                w.z,
-                1
-        )));
+    public Vector2f project(int width, int height, Vector4f w) {
+        Vector4f uv = proj.transform(view.transform(w, new Vector4f()));
         uv.div(uv.w);
         uv.mul(0.5f);
         uv.add(0.5f, 0.5f, 0.5f, 0.5f);

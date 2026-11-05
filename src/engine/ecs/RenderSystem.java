@@ -37,7 +37,7 @@ public class RenderSystem extends ActorSystem {
     private Vector4f origin = new Vector4f();
     private UIPainter uiPainterImpl;
     private int maxUIQuads = 6000;
-    private int maxWireframeLines = 1000;
+    private int maxWireframeLines = 100000;
     private int wireframeVertexCount = 0;
 
 
@@ -53,7 +53,7 @@ public class RenderSystem extends ActorSystem {
         public int indexCount;
         public Buffer[] transformsBuffers;
 
-        public IndexedDrawCall(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount, Buffer[] transformsBuffers) {
+        public IndexedDrawCall(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount, Buffer[] transformsBuffers, Vector4f sphereRadius) {
             this.vertexBuffer = vertexBuffer;
             this.indexBuffer = indexBuffer;
             this.material = material;
@@ -454,7 +454,11 @@ public class RenderSystem extends ActorSystem {
                 ShaderComponent shaderComponent = actor.getComponent(ShaderComponent.class);
                 TransformComponent transformComponent = actor.getComponent(TransformComponent.class);
 
+                Vector4f sphereCenter = transformComponent.getPosition(new Vector4f());
+                Vector4f sphereMaxPoint = transformComponent.transform().transform(meshComponent.getMeshData().getSphereMaxPoint(), new Vector4f());
+
                 if(meshComponent.isVisible()) {
+                    drawSphere(sphereCenter, sphereMaxPoint);
                     indexedDrawCalls.add(new IndexedDrawCall(
                             meshComponent.vertexBuffer,
                             meshComponent.indexBuffer,
@@ -464,7 +468,8 @@ public class RenderSystem extends ActorSystem {
                             meshComponent.instanced,
                             meshComponent.instanceCount,
                             meshComponent.indexCount,
-                            meshComponent.transformsBuffers
+                            meshComponent.transformsBuffers,
+                            sphereMaxPoint
                     ));
                 }
 
@@ -519,6 +524,48 @@ public class RenderSystem extends ActorSystem {
 
         renderer.submit(passes);
         uiQuadCount = 0;
+    }
+
+    private void drawSphere(Vector4f center, Vector4f sphereMaxPoint) {
+        float dx = sphereMaxPoint.x - center.x;
+        float dy = sphereMaxPoint.y - center.y;
+        float dz = sphereMaxPoint.z - center.z;
+
+        float radius = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        int stacks = 16;
+        int slices = 16;
+
+        for (int i = 0; i <= stacks; i++) {
+            float phi = (float) (Math.PI * i / stacks);
+
+            for (int j = 0; j <= slices; j++) {
+                float theta = (float) (2.0 * Math.PI * j / slices);
+
+                float x = center.x + radius * (float) (Math.sin(phi) * Math.cos(theta));
+                float y = center.y + radius * (float) Math.cos(phi);
+                float z = center.z + radius * (float) (Math.sin(phi) * Math.sin(theta));
+
+                if (j < slices) {
+                    float nextTheta = (float) (2.0 * Math.PI * (j + 1) / slices);
+
+                    float nextX = center.x + radius * (float) (Math.sin(phi) * Math.cos(nextTheta));
+                    float nextZ = center.z + radius * (float) (Math.sin(phi) * Math.sin(nextTheta));
+
+                    drawLine(x, y, z, nextX, y, nextZ, Color.BLUE);
+                }
+
+                if (i < stacks) {
+                    float nextPhi = (float) (Math.PI * (i + 1) / stacks);
+
+                    float nextX = center.x + radius * (float) (Math.sin(nextPhi) * Math.cos(theta));
+                    float nextY = center.y + radius * (float) Math.cos(nextPhi);
+                    float nextZ = center.z + radius * (float) (Math.sin(nextPhi) * Math.sin(theta));
+
+                    drawLine(x, y, z, nextX, nextY, nextZ, Color.BLUE);
+                }
+            }
+        }
     }
 
     private void drawLine(float x1, float y1, float z1, float x2, float y2, float z2, Color color) {
