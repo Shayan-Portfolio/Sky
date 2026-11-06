@@ -49,7 +49,6 @@ public class Launcher {
 
 
     public void launch(String[] args) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException, MalformedURLException {
-        System.setProperty("org.lwjgl.system.stackSize", "128");
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
             throw new SkyRuntimeException(e);
         });
@@ -68,7 +67,6 @@ public class Launcher {
             boolean success = application.update();
             Time.deltaTime = (float) (surface.getTime() - application.getStartTime());
             application.setStartTime((float) surface.getTime());
-            //System.out.println(Time.framesPerSecond());
             if(!success) break;
         }
 

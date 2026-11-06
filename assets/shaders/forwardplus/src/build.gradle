@@ -19,7 +19,7 @@ shaders.each { shaderFileName, stages ->
                     '-matrix-layout-column-major',
                     '-o', outputName,
                     '-stage', stage,
-                    '-O2',
+                    '-O3',
                     '-preserve-params',
                     '-entry', "${stage}Main"
             outputs.file(outputName)

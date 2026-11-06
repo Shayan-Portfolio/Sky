@@ -124,8 +124,9 @@ public class VulkanUtil {
     }
 
     public static String nameObject(String name, int type, long handle, MemoryStack stack) {
-        String n = "\n(Resource Name) " + name + "\n\n" + NamingUtil.getCallStack() + "\n";
+        String n = name;
         if(VulkanRuntime.hasValidation()){
+            n = "\n(Resource Name) " + name + "\n\n" + NamingUtil.getCallStack() + "\n";
             VkDebugUtilsObjectNameInfoEXT debugUtilsObjectNameInfoEXT = VkDebugUtilsObjectNameInfoEXT.calloc(stack);
             debugUtilsObjectNameInfoEXT.sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT);
             debugUtilsObjectNameInfoEXT.objectType(type);

@@ -3,21 +3,28 @@ package engine.gameui;
 import engine.graphics.Texture;
 
 public class TextureBindings {
-    public Texture[] textures = new Texture[32];
-    public int cursor = 2;
+    public Texture[][] textures;
+    public int[] cursor = new int[]{2, 2};
+    public int maxTextures = 32;
 
-    public int getTextureBinding(Texture texture) {
-        for (int i = 0; i < textures.length; i++) {
-            Texture t = textures[i];
+    public TextureBindings(int maxFramesInFlight) {
+        this.textures = new Texture[maxFramesInFlight][maxTextures];
+    }
+
+    public int getTextureBinding(Texture texture, int frameIndex) {
+        for (int i = 0; i < maxTextures; i++) {
+            Texture t = textures[frameIndex][i];
             if (t == texture) {
                 return i;
             }
         }
-
-        int index = cursor;
-        textures[cursor] = texture;
-        cursor++;
-        return index;
+        return -1;
     }
 
+    public int addBinding(Texture texture, int frameIndex) {
+        int index = cursor[frameIndex];
+        textures[frameIndex][cursor[frameIndex]] = texture;
+        cursor[frameIndex]++;
+        return index;
+    }
 }

@@ -109,7 +109,7 @@ public class RenderSystem extends ActorSystem {
                 );
             }
 
-            textureBindings = new TextureBindings();
+            textureBindings = new TextureBindings(renderer.getMaxFramesInFlight());
 
 
 
@@ -235,11 +235,12 @@ public class RenderSystem extends ActorSystem {
                                             Texture texture,
                                             Sampler sampler, boolean msdf) {
 
-                        int index = textureBindings.getTextureBinding(texture);
-
-                        renderPipeline.getUIShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", texture).arrayIndex(index));
-                        renderPipeline.getUIShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(index));
-
+                        int index = textureBindings.getTextureBinding(texture, renderer.getFrameIndex());
+                        if(index == -1) {
+                            index = textureBindings.addBinding(texture, renderer.getFrameIndex());
+                            renderPipeline.getUIShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", texture).arrayIndex(index));
+                            renderPipeline.getUIShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(index));
+                        }
 
                         drawQuad(
                                 x,
@@ -299,6 +300,7 @@ public class RenderSystem extends ActorSystem {
                         MsdfJsonLoader.MsdfData msdfData = msdfFont.getMSDFData();
                         int msdfScreenPxRange = (int) ((32 / msdfData.width) * msdfData.size);
 
+                        //drawRect(x, y, w, h, Color.GREEN); //TODO(Shayan!)
                         drawTexture(
                                 x,
                                 y,
