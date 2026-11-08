@@ -56,8 +56,9 @@ public class RenderSystem extends ActorSystem {
         public Buffer[] transformsBuffers;
         public Camera camera;
         public Vector3f sphereCenter;
+        public float radius;
 
-        public RenderItem(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount, Buffer[] transformsBuffers, Camera camera, Vector3f sphereCenter) {
+        public RenderItem(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount, Buffer[] transformsBuffers, Camera camera, Vector3f sphereCenter, float radius) {
             this.vertexBuffer = vertexBuffer;
             this.indexBuffer = indexBuffer;
             this.material = material;
@@ -69,6 +70,7 @@ public class RenderSystem extends ActorSystem {
             this.transformsBuffers = transformsBuffers;
             this.camera = camera;
             this.sphereCenter = sphereCenter;
+            this.radius = radius;
         }
     }
 
@@ -480,7 +482,8 @@ public class RenderSystem extends ActorSystem {
                             meshComponent.indexCount,
                             meshComponent.transformsBuffers,
                             activeCamera,
-                            sphereCenter
+                            sphereCenter,
+                            radius
                     ));
                 }
 
