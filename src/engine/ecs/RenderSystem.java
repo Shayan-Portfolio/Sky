@@ -9,8 +9,10 @@ import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
 import engine.graphics.text.MsdfJsonLoader;
 import engine.graphics.text.TextEffect;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.nio.ByteBuffer;
@@ -21,7 +23,7 @@ public class RenderSystem extends ActorSystem {
     private RenderPipeline renderPipeline;
     private Scene scene;
     private Camera activeCamera;
-    private List<IndexedDrawCall> indexedDrawCalls = new java.util.LinkedList<>();
+    private List<RenderItem> items = new java.util.LinkedList<>();
     private List<LightData> lights = new java.util.LinkedList<>();
 
 
@@ -42,7 +44,7 @@ public class RenderSystem extends ActorSystem {
 
 
 
-    public static class IndexedDrawCall {
+    public static class RenderItem {
         public Buffer vertexBuffer;
         public Buffer indexBuffer;
         public Material material;
@@ -52,8 +54,11 @@ public class RenderSystem extends ActorSystem {
         public int instanceCount;
         public int indexCount;
         public Buffer[] transformsBuffers;
+        public Camera camera;
+        public Vector3f sphereCenter;
+        public float radius;
 
-        public IndexedDrawCall(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount, Buffer[] transformsBuffers, Vector4f sphereRadius) {
+        public RenderItem(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount, Buffer[] transformsBuffers, Camera camera, Vector3f sphereCenter, float radius) {
             this.vertexBuffer = vertexBuffer;
             this.indexBuffer = indexBuffer;
             this.material = material;
@@ -63,6 +68,9 @@ public class RenderSystem extends ActorSystem {
             this.instanceCount = instanceCount;
             this.indexCount = indexCount;
             this.transformsBuffers = transformsBuffers;
+            this.camera = camera;
+            this.sphereCenter = sphereCenter;
+            this.radius = radius;
         }
     }
 
@@ -412,7 +420,7 @@ public class RenderSystem extends ActorSystem {
 
     @Override
     public void run(Actor root) {
-        indexedDrawCalls.clear();
+        items.clear();
         lights.clear();
         uiTransform.identity();
         uiVertexBuffers[renderer.getFrameIndex()].get().clear();
@@ -456,12 +464,14 @@ public class RenderSystem extends ActorSystem {
                 ShaderComponent shaderComponent = actor.getComponent(ShaderComponent.class);
                 TransformComponent transformComponent = actor.getComponent(TransformComponent.class);
 
-                Vector4f sphereCenter = transformComponent.getPosition(new Vector4f());
-                Vector4f sphereMaxPoint = transformComponent.transform().transform(meshComponent.getMeshData().getSphereMaxPoint(), new Vector4f());
+                Vector3f sphereCenter = transformComponent.getPosition(new Vector3f());
+                Vector3f sphereMaxPoint = transformComponent.transform().transform(meshComponent.getMeshData().getSphereMaxPoint(), new Vector4f()).xyz(new Vector3f());
+                float radius = sphereCenter.distance(sphereMaxPoint);
+
 
                 if(meshComponent.isVisible()) {
                     drawSphere(sphereCenter, sphereMaxPoint);
-                    indexedDrawCalls.add(new IndexedDrawCall(
+                    items.add(new RenderItem(
                             meshComponent.vertexBuffer,
                             meshComponent.indexBuffer,
                             materialComponent.material,
@@ -471,7 +481,10 @@ public class RenderSystem extends ActorSystem {
                             meshComponent.instanceCount,
                             meshComponent.indexCount,
                             meshComponent.transformsBuffers,
-                            sphereMaxPoint
+                            activeCamera,
+                            sphereCenter,
+                            radius
+
                     ));
                 }
 
@@ -514,7 +527,7 @@ public class RenderSystem extends ActorSystem {
 
         List<Pass> passes = renderPipeline.buildFrame(new SceneRenderData(
                 activeCamera,
-                indexedDrawCalls,
+                items,
                 lights,
                 uiVertexBuffers[renderer.getFrameIndex()],
                 uiIndexBuffers[renderer.getFrameIndex()],
@@ -528,7 +541,7 @@ public class RenderSystem extends ActorSystem {
         uiQuadCount = 0;
     }
 
-    private void drawSphere(Vector4f center, Vector4f sphereMaxPoint) {
+    private void drawSphere(@NotNull Vector3f center, Vector3f sphereMaxPoint) {
         float dx = sphereMaxPoint.x - center.x;
         float dy = sphereMaxPoint.y - center.y;
         float dz = sphereMaxPoint.z - center.z;
@@ -595,24 +608,29 @@ public class RenderSystem extends ActorSystem {
     }
     private void drawFrustum(Matrix4f invView, Matrix4f invProj, Color color) {
 
+
         float x = invView.m30(), y = invView.m31(), z = invView.m32();
+        Vector3f[] frustum = MathUtil.getFrustum(invView, invProj, 1);
+        {
+            Vector3f tr = frustum[0];
+            Vector3f tl = frustum[1];
+            Vector3f br = frustum[2];
+            Vector3f bl = frustum[3];
+
+            drawLine(x, y, z, tr.x, tr.y, tr.z, color);
+            drawLine(x, y, z, tl.x, tl.y, tl.z, color);
+            drawLine(x, y, z, br.x, br.y, br.z, color);
+            drawLine(x, y, z, bl.x, bl.y, bl.z, color);
+
+            drawLine(tl.x, tl.y, tl.z, tr.x, tr.y, tr.z, color);
+            drawLine(tr.x, tr.y, tr.z, br.x, br.y, br.z, color);
+            drawLine(br.x, br.y, br.z, bl.x, bl.y, bl.z, color);
+            drawLine(bl.x, bl.y, bl.z, tl.x, tl.y, tl.z, color);
+        }
 
 
-        float depth = 1;
-        Vector4f tr = MathUtil.unproject(new Vector2f(1f, -1f), depth, invView, invProj);
-        Vector4f tl = MathUtil.unproject(new Vector2f(-1f, -1f), depth, invView, invProj);
-        Vector4f br = MathUtil.unproject(new Vector2f(1f, 1f), depth, invView, invProj);
-        Vector4f bl = MathUtil.unproject(new Vector2f(-1f, 1f), depth, invView, invProj);
 
-        drawLine(x, y, z, tr.x, tr.y, tr.z, color);
-        drawLine(x, y, z, tl.x, tl.y, tl.z, color);
-        drawLine(x, y, z, br.x, br.y, br.z, color);
-        drawLine(x, y, z, bl.x, bl.y, bl.z, color);
 
-        drawLine(tl.x, tl.y, tl.z, tr.x, tr.y, tr.z, color);
-        drawLine(tr.x, tr.y, tr.z, br.x, br.y, br.z, color);
-        drawLine(br.x, br.y, br.z, bl.x, bl.y, bl.z, color);
-        drawLine(bl.x, bl.y, bl.z, tl.x, tl.y, tl.z, color);
 
 
     }

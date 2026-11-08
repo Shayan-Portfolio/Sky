@@ -61,7 +61,71 @@ public class MathUtil {
         }
     }
 
+    public static Vector3f[] getFrustum(Matrix4f invView, Matrix4f invProj, float depth) {
+        Vector3f tr = MathUtil.unproject(new Vector2f(1f, -1f), depth, invView, invProj);
+        Vector3f tl = MathUtil.unproject(new Vector2f(-1f, -1f), depth, invView, invProj);
+        Vector3f br = MathUtil.unproject(new Vector2f(1f, 1f), depth, invView, invProj);
+        Vector3f bl = MathUtil.unproject(new Vector2f(-1f, 1f), depth, invView, invProj);
 
+        return new Vector3f[]{tr, tl, br, bl};
+    }
+
+
+
+
+    public static boolean isSphereInFrustum(Vector3f sphereCenter, float radius, Vector3f frustumCenter, Vector3f[] frustum) {
+        //Ax + By + Cz - d = 0
+        sphereCenter = sphereCenter.sub(frustumCenter, new Vector3f());
+
+        int success = 0;
+        //Far
+        {
+            Vector3f A = frustum[2].sub(frustum[0], new Vector3f()); //br - tr
+            Vector3f B = frustum[3].sub(frustum[0], new Vector3f()); //bl - tr
+            Vector3f N = B.cross(A).normalize();
+            float d = frustum[0].dot(N);
+            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
+        }
+
+        //Left
+        {
+            Vector3f A = frustum[1].sub(sphereCenter, new Vector3f());
+            Vector3f B = frustum[3].sub(sphereCenter, new Vector3f());
+            Vector3f N = B.cross(A).normalize();
+            float d = frustum[1].dot(N);
+            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
+        }
+
+        //Right
+        {
+            Vector3f A = frustum[0].sub(sphereCenter, new Vector3f());
+            Vector3f B = frustum[2].sub(sphereCenter, new Vector3f());
+            Vector3f N = B.cross(A).normalize();
+            float d = frustum[0].dot(N);
+            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
+        }
+
+        //Bottom
+        {
+            Vector3f A = frustum[2].sub(sphereCenter, new Vector3f());
+            Vector3f B = frustum[3].sub(sphereCenter, new Vector3f());
+            Vector3f N = B.cross(A).normalize();
+            float d = frustum[2].dot(N);
+            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
+        }
+
+        //Top
+        {
+            Vector3f A = frustum[0].sub(sphereCenter, new Vector3f());
+            Vector3f B = frustum[1].sub(sphereCenter, new Vector3f());
+            Vector3f N = B.cross(A).normalize();
+            float d = frustum[0].dot(N);
+            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
+        }
+
+
+        return success == 5;
+    }
 
 
     public static Quat4f quat4(Quaternionf src) {
@@ -119,7 +183,7 @@ public class MathUtil {
 
     }
 
-    public static Vector4f unproject(Vector2f ndcXY, float depth, Matrix4f invView, Matrix4f invProj) {
+    public static Vector3f unproject(Vector2f ndcXY, float depth, Matrix4f invView, Matrix4f invProj) {
         float ndcX = ndcXY.x;
         float ndcY = ndcXY.y;
         Vector4f start = new Vector4f(ndcX, ndcY, depth, 1.0f);
@@ -128,7 +192,7 @@ public class MathUtil {
 
         w.div(w.w);
 
-        return w;
+        return w.xyz(new Vector3f());
     }
 
 

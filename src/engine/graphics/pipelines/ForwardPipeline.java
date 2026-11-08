@@ -1,11 +1,10 @@
 package engine.graphics.pipelines;
 
 import engine.asset.AssetRegistry;
-import engine.ecs.LightComponent;
 import engine.ecs.RenderSystem;
-import engine.gameui.TextureBindings;
 import engine.graphics.*;
 import engine.util.MathUtil;
+import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
@@ -37,7 +36,7 @@ public class ForwardPipeline extends RenderPipeline {
 
     private Sampler sampler;
     private static final int PbrMode = 0, ShadowMapMode = 1, DepthPrepassMode = 2;
-    private int TileSize = 64;
+    private final int TileSize = 64;
     @Override
     public void init(Renderer renderer) {
         this.renderer = renderer;
@@ -187,8 +186,8 @@ public class ForwardPipeline extends RenderPipeline {
             }
         }
 
-        List<RenderSystem.IndexedDrawCall> drawCalls = sceneRenderData.drawCalls();
-        for (RenderSystem.IndexedDrawCall drawCall : drawCalls) {
+        List<RenderSystem.RenderItem> drawCalls = sceneRenderData.drawCalls();
+        for (RenderSystem.RenderItem drawCall : drawCalls) {
             for (int j = 0; j < sceneRenderData.lights().size(); j++) {
                 drawCall.shaderProgram.setTextures(
                         renderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps", shadowMapTextures[renderer.getMaxFramesInFlight() * j + renderer.getFrameIndex()]).arrayIndex(j)
@@ -295,7 +294,7 @@ public class ForwardPipeline extends RenderPipeline {
                 shadowMapPass.startRendering(lightData.renderTarget, 0, 1024, 1024, true, Color.BLACK);
                 shadowMapPass.setCullMode(CullMode.None);
 
-                for (RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
+                for (RenderSystem.RenderItem drawCall : sceneRenderData.drawCalls()) {
                     shadowMapPass.setShaderProgram(drawCall.shaderProgram);
                     shadowMapPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
                     try (MemoryStack stack = stackPush()) {
@@ -316,7 +315,7 @@ public class ForwardPipeline extends RenderPipeline {
         depthPass.submit(() -> {
             depthPass.startRendering(depthPassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
             {
-                for(RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
+                for(RenderSystem.RenderItem drawCall : sceneRenderData.drawCalls()) {
                     depthPass.setCullMode(CullMode.Back);
                     depthPass.setShaderProgram(drawCall.shaderProgram);
                     depthPass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
@@ -364,22 +363,29 @@ public class ForwardPipeline extends RenderPipeline {
         scenePass.submit(() -> {
             scenePass.startRendering(scenePassRT, 0, renderer.getWidth(), renderer.getHeight(), true, Color.BLACK);
             {
-                for(RenderSystem.IndexedDrawCall drawCall : sceneRenderData.drawCalls()) {
-                    scenePass.setCullMode(CullMode.Back);
-                    scenePass.setShaderProgram(drawCall.shaderProgram);
-                    scenePass.setDrawBuffers(drawCall.vertexBuffer, drawCall.indexBuffer);
-                    try (MemoryStack stack = stackPush()) {
-                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
-                        pPushConstants.putInt(PbrMode);
-                        pPushConstants.putInt(-1);
-                        pPushConstants.putInt(sceneRenderData.lights().size());
-                        pPushConstants.putInt(tilesW);
-                        pPushConstants.putInt(tilesH);
-                        pPushConstants.putInt(TileSize);
-                        scenePass.setPushConstants(pPushConstants);
+
+                Vector3f cameraPosition = camera.getPosition(new Vector3f());
+                Vector3f[] frustum = MathUtil.getFrustum(camera.getInvView(), camera.getInvProj(), 1);
+                for(RenderSystem.RenderItem item : sceneRenderData.drawCalls()) {
+
+                    if(MathUtil.isSphereInFrustum(item.sphereCenter, item.radius, cameraPosition, frustum)) {
+
+                        scenePass.setCullMode(CullMode.Back);
+                        scenePass.setShaderProgram(item.shaderProgram);
+                        scenePass.setDrawBuffers(item.vertexBuffer, item.indexBuffer);
+                        try (MemoryStack stack = stackPush()) {
+                            ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
+                            pPushConstants.putInt(PbrMode);
+                            pPushConstants.putInt(-1);
+                            pPushConstants.putInt(sceneRenderData.lights().size());
+                            pPushConstants.putInt(tilesW);
+                            pPushConstants.putInt(tilesH);
+                            pPushConstants.putInt(TileSize);
+                            scenePass.setPushConstants(pPushConstants);
+                        }
+                        if (item.instanced) scenePass.drawInstanced(item.indexCount, item.instanceCount);
+                        else scenePass.drawIndexed(item.indexCount);
                     }
-                    if(drawCall.instanced) scenePass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
-                    else scenePass.drawIndexed(drawCall.indexCount);
                 }
 
 

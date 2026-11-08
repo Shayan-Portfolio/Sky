@@ -78,6 +78,13 @@ public class Camera {
         return new Vector2f(uv.x * width, uv.y * height);
     }
 
+    public Vector3f getPosition(Vector3f d) {
+        d.x = invView.m30();
+        d.y = invView.m31();
+        d.z = invView.m32();
+        return d;
+    }
+
 
 
     public Color getDebugColor() {

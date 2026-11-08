@@ -27,7 +27,6 @@ public class MeshData {
                 sphereMaxPoint.set(x, y, z, 1);
         }
 
-        System.out.println();
     }
 
     public Vector4f getSphereMaxPoint() {
