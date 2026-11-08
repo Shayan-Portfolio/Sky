@@ -73,29 +73,74 @@ public class MathUtil {
 
 
 
-    public static boolean isSphereInFrustum(Vector3f sphereCenter, float radius, Vector3f frustumCenter, Vector3f[] frustum) {
+    public static boolean isSphereInFrustum(Vector3f P, Vector3f frustumCenter, Vector3f[] F) {
         //Ax + By + Cz - d = 0
-        sphereCenter = sphereCenter.sub(frustumCenter, new Vector3f());
+        Vector3f sphereCenter = P.sub(frustumCenter, new Vector3f());
 
-        for (int i = 0; i < frustum.length; i++) {
-            frustum[i].sub(frustumCenter);
-        }
+        Vector3f[] frustum = new Vector3f[F.length];
+
+        for (int i = 0; i < frustum.length; i++)
+            F[i].sub(frustumCenter, frustum[i] = new Vector3f());
 
         int success = 0;
         //Far
         {
 
-            Vector3f A = frustum[2].sub(frustum[0], new Vector3f()); //br - tr
-            Vector3f B = frustum[3].sub(frustum[0], new Vector3f()); //bl - tr
+            Vector3f A = frustum[2].sub(frustum[0], new Vector3f());
+            Vector3f B = frustum[3].sub(frustum[0], new Vector3f());
             Vector3f N = A.cross(B).normalize();
             float d = frustum[0].dot(N);
             float dist = (N.dot(sphereCenter) - d);
             if(dist > 0) success++;
         }
 
+        //Left
+        {
+
+            Vector3f A = frustum[1];
+            Vector3f B = frustum[3];
+            Vector3f N = A.cross(B, new Vector3f()).normalize();
+            float d = frustum[1].dot(N);
+            float dist = (N.dot(sphereCenter) - d);
+            if(dist > 0) success++;
+        }
+
+        //Right
+        {
+
+            Vector3f A = frustum[0];
+            Vector3f B = frustum[2];
+            Vector3f N = B.cross(A, new Vector3f()).normalize();
+            float d = frustum[0].dot(N);
+            float dist = (N.dot(sphereCenter) - d);
+            if(dist > 0) success++;
+        }
+
+        //Top
+        {
+
+            Vector3f A = frustum[0];
+            Vector3f B = frustum[1];
+            Vector3f N = A.cross(B, new Vector3f()).normalize();
+            float d = frustum[0].dot(N);
+            float dist = (N.dot(sphereCenter) - d);
+            if(dist > 0) success++;
+        }
+
+        //Bottom
+        {
+
+            Vector3f A = frustum[2];
+            Vector3f B = frustum[3];
+            Vector3f N = B.cross(A, new Vector3f()).normalize();
+            float d = frustum[2].dot(N);
+            float dist = (N.dot(sphereCenter) - d);
+            if(dist > 0) success++;
+        }
 
 
-        return success == 1;
+
+        return success == 5;
     }
 
 

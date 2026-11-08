@@ -368,7 +368,7 @@ public class ForwardPipeline extends RenderPipeline {
                 Vector3f[] frustum = MathUtil.getFrustum(camera.getInvView(), camera.getInvProj(), 1);
                 for(RenderSystem.RenderItem item : sceneRenderData.drawCalls()) {
 
-                    if(MathUtil.isSphereInFrustum(item.sphereCenter, item.radius, cameraPosition, frustum)) {
+                    if(MathUtil.isSphereInFrustum(item.sphereCenter, cameraPosition, frustum)) {
 
                         scenePass.setCullMode(CullMode.Back);
                         scenePass.setShaderProgram(item.shaderProgram);
@@ -386,6 +386,7 @@ public class ForwardPipeline extends RenderPipeline {
                         if (item.instanced) scenePass.drawInstanced(item.indexCount, item.instanceCount);
                         else scenePass.drawIndexed(item.indexCount);
                     }
+
                 }
 
 
