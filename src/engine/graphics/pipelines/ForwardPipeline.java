@@ -28,6 +28,7 @@ public class ForwardPipeline extends RenderPipeline {
     private ShaderProgram tiledLightingShaderProgram;
     private ShaderProgram uiShaderProgram;
     private ShaderProgram wireframeShaderProgram;
+    private ShaderProgram skyboxShaderProgram;
     private Texture[] nDepthPrepassTextures;
     private Buffer[] tileDataBuffers;
     private Buffer[] sceneBuffers;
@@ -90,6 +91,15 @@ public class ForwardPipeline extends RenderPipeline {
             wireframeShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/Wireframe_vertex.spv"), ShaderType.VertexShader);
             wireframeShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/Wireframe_fragment.spv"), ShaderType.FragmentShader);
             wireframeShaderProgram.assemble();
+        }
+
+        //Skybox Shader
+        {
+            skyboxShaderProgram = ShaderProgram.newShaderProgram(graph);
+            skyboxShaderProgram.setDepthTestType(DepthTestType.Equals);
+            skyboxShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/Skybox_vertex.spv"), ShaderType.VertexShader);
+            skyboxShaderProgram.add(AssetRegistry.getAsset("core:assets/shaders/forwardplus/Skybox_fragment.spv"), ShaderType.FragmentShader);
+            skyboxShaderProgram.assemble();
         }
 
         //Scene Data Buffers
@@ -386,9 +396,6 @@ public class ForwardPipeline extends RenderPipeline {
                         if (item.instanced) scenePass.drawInstanced(item.indexCount, item.instanceCount);
                         else scenePass.drawIndexed(item.indexCount);
                     }
-                    else {
-                        System.out.println("Culling!!! " + item);
-                    }
 
                 }
 
@@ -397,6 +404,10 @@ public class ForwardPipeline extends RenderPipeline {
                 scenePass.setShaderProgram(wireframeShaderProgram);
                 scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
                 scenePass.draw(sceneRenderData.wireframeVertexCount());
+
+                scenePass.setCullMode(CullMode.None);
+                scenePass.setShaderProgram(skyboxShaderProgram);
+                scenePass.draw(36);
             }
             scenePass.endRendering();
 

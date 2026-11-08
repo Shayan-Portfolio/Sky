@@ -57,6 +57,9 @@ public class VulkanUtil {
             case Never -> {
                 return VK_COMPARE_OP_NEVER;
             }
+            case Equals -> {
+                return VK_COMPARE_OP_EQUAL;
+            }
         }
 
         throw new SkyRuntimeException("The depth operation for this pipeline is an invalid value [" + depthTestType + "]");

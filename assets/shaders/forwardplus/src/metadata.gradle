@@ -2,5 +2,6 @@ ext.shaders = [
         'UI': ['vertex', 'fragment'],
         'Default2': ['vertex', 'fragment'],
         'Wireframe': ['vertex', 'fragment'],
-        'TileLightCull': ['compute']
+        'TileLightCull': ['compute'],
+        'Skybox': ['vertex', 'fragment']
 ]

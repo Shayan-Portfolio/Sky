@@ -6,5 +6,6 @@ public enum DepthTestType {
     LessOrEqualTo,
     GreaterOrEqualTo,
     Never,
-    Always
+    Always,
+    Equals
 }
