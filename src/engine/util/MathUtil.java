@@ -77,54 +77,25 @@ public class MathUtil {
         //Ax + By + Cz - d = 0
         sphereCenter = sphereCenter.sub(frustumCenter, new Vector3f());
 
+        for (int i = 0; i < frustum.length; i++) {
+            frustum[i].sub(frustumCenter);
+        }
+
         int success = 0;
         //Far
         {
+
             Vector3f A = frustum[2].sub(frustum[0], new Vector3f()); //br - tr
             Vector3f B = frustum[3].sub(frustum[0], new Vector3f()); //bl - tr
-            Vector3f N = B.cross(A).normalize();
+            Vector3f N = A.cross(B).normalize();
             float d = frustum[0].dot(N);
-            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
-        }
-
-        //Left
-        {
-            Vector3f A = frustum[1].sub(sphereCenter, new Vector3f());
-            Vector3f B = frustum[3].sub(sphereCenter, new Vector3f());
-            Vector3f N = B.cross(A).normalize();
-            float d = frustum[1].dot(N);
-            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
-        }
-
-        //Right
-        {
-            Vector3f A = frustum[0].sub(sphereCenter, new Vector3f());
-            Vector3f B = frustum[2].sub(sphereCenter, new Vector3f());
-            Vector3f N = B.cross(A).normalize();
-            float d = frustum[0].dot(N);
-            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
-        }
-
-        //Bottom
-        {
-            Vector3f A = frustum[2].sub(sphereCenter, new Vector3f());
-            Vector3f B = frustum[3].sub(sphereCenter, new Vector3f());
-            Vector3f N = B.cross(A).normalize();
-            float d = frustum[2].dot(N);
-            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
-        }
-
-        //Top
-        {
-            Vector3f A = frustum[0].sub(sphereCenter, new Vector3f());
-            Vector3f B = frustum[1].sub(sphereCenter, new Vector3f());
-            Vector3f N = B.cross(A).normalize();
-            float d = frustum[0].dot(N);
-            success = (N.dot(sphereCenter) - d) < radius ? success + 1 : 0;
+            float dist = (N.dot(sphereCenter) - d);
+            if(dist > 0) success++;
         }
 
 
-        return success == 5;
+
+        return success == 1;
     }
 
 
