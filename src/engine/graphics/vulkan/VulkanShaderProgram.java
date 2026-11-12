@@ -12,8 +12,11 @@ import org.lwjgl.util.spvc.SpvcErrorCallback;
 import org.lwjgl.util.spvc.SpvcReflectedResource;
 import org.lwjgl.vulkan.*;
 
+import java.io.IOException;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -375,7 +378,9 @@ public class VulkanShaderProgram extends ShaderProgram {
     }
     @Override
     public void add(Asset<byte[]> bytecode, ShaderType shaderType) {
-        load(bytecode, shaderType);
+        shaders.put(shaderType, bytecode.getObject());
+        load(bytecode.getObject(), shaderType);
+
         bytecode.addListener(() -> {
 
             vkDeviceWaitIdle(VulkanRuntime.getCurrentDevice());
@@ -416,8 +421,10 @@ public class VulkanShaderProgram extends ShaderProgram {
             pushConstantsSizeBytes = 0;
             stageCount = 0;
 
+            shaders.put(shaderType, bytecode.getObject());
             for(ShaderType s : shaders.keySet()) {
-                load(bytecode, s);
+                byte[] shaderBytecode = shaders.get(s);
+                load(shaderBytecode, s);
             }
 
             assemble();
@@ -431,20 +438,19 @@ public class VulkanShaderProgram extends ShaderProgram {
 
         });
     }
-    private void load(Asset<byte[]> bytecode, ShaderType shaderType) {
-        shaders.put(shaderType, bytecode.getObject());
+    private void load(byte[] bytecode, ShaderType shaderType) {
         try(MemoryStack stack = stackPush()) {
 
             long compiler;
             long shaderResourcesHandle;
 
             {
-                IntBuffer spirvData = stack.bytes(bytecode.getObject()).asIntBuffer();
+                IntBuffer spirvData = stack.bytes(bytecode).asIntBuffer();
 
                 PointerBuffer pIR = stack.callocPointer(1);
                 PointerBuffer pCompiler = stack.callocPointer(1);
 
-                spvc_context_parse_spirv(context, spirvData, bytecode.getObject().length / Integer.BYTES, pIR);
+                spvc_context_parse_spirv(context, spirvData, bytecode.length / Integer.BYTES, pIR);
                 spvc_context_create_compiler(context, SPVC_BACKEND_HLSL, pIR.get(0), SPVC_CAPTURE_MODE_COPY, pCompiler);
 
                 compiler = pCompiler.get(0);
@@ -477,9 +483,9 @@ public class VulkanShaderProgram extends ShaderProgram {
                     getResources(SPVC_RESOURCE_TYPE_SEPARATE_SAMPLERS, shaderResourcesHandle)
                 };
 
+
                 for (ReflectedResourcesInfo resourcesInfo : resourcesInfos) {
                     SpvcReflectedResource.Buffer spvcReflectedResources = SpvcReflectedResource.create(resourcesInfo.start, resourcesInfo.count);
-
 
                     for (int i = 0; i < resourcesInfo.count; i++) {
                         SpvcReflectedResource spvcReflectedResource = spvcReflectedResources.get(i);
@@ -525,8 +531,7 @@ public class VulkanShaderProgram extends ShaderProgram {
                                 if (spvc_type_get_num_array_dimensions(typeHandle) == 1)
                                     descriptor.count(spvc_type_get_array_dimension(typeHandle, 0));
                             }
-                        }
-                        else {
+                        } else {
                             long typeHandle = spvc_compiler_get_type_handle(compiler, spvcReflectedResource.base_type_id());
                             PointerBuffer pSize = stack.callocPointer(1);
                             spvc_compiler_get_declared_struct_size(compiler, typeHandle, pSize);
