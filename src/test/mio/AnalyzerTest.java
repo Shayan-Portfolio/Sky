@@ -1,4 +1,4 @@
-package mio;
+package test.mio;
 
 import engine.mio.Analyzer;
 import engine.mio.Context;

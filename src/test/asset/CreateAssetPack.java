@@ -1,4 +1,4 @@
-package asset;
+package test.asset;
 
 import engine.asset.AssetPackage;
 import engine.logging.Logger;

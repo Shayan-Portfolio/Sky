@@ -23,11 +23,7 @@ sourceSets {
         
         
     }
-    test {
-        java {
-            srcDirs = ['test']
-        }
-    }
+
 }
 
 jar {
@@ -37,6 +33,7 @@ jar {
             it.isDirectory() ? it : zipTree(it)
         }
     }
+    exclude 'test'
     manifest {
         manifest.attributes["Main-Class"] = "app.Main"
     }
