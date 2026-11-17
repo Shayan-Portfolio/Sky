@@ -21,7 +21,7 @@ public class MeshComponent {
     public boolean instanced = false;
     public int instanceCount = 1;
 
-    public MeshComponent(Disposable parent, Renderer renderer, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
+    public MeshComponent(Disposable parent, SceneRenderer sceneRenderer, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
         this.maxVertexCount = maxVertexCount;
         this.maxIndexCount = maxIndexCount;
         this.shaderProgram = shaderProgram;
@@ -42,9 +42,9 @@ public class MeshComponent {
                 false
         );
 
-        transformsBuffers = new Buffer[renderer.getMaxFramesInFlight()];
+        transformsBuffers = new Buffer[sceneRenderer.getMaxFramesInFlight()];
 
-        for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
+        for (int i = 0; i < sceneRenderer.getMaxFramesInFlight(); i++) {
             transformsBuffers[i] = Buffer.newBuffer(
                     parent,
                     MathUtil.MATRIX_SIZE_BYTES * instanceCount,

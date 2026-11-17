@@ -20,6 +20,7 @@ public abstract class ShaderProgram extends Disposable {
     protected DepthTestType depthTestType = DepthTestType.LessThan;
     protected TopologyType topologyType = TopologyType.TriangleList;
     protected boolean enableBlending = false;
+    protected boolean usesVertexBuffer = true;
 
 
     public ShaderProgram(Disposable parent){
@@ -47,6 +48,14 @@ public abstract class ShaderProgram extends Disposable {
 
     public boolean isBlendingEnabled() {
         return enableBlending;
+    }
+
+    public boolean usesVertexBuffer() {
+        return usesVertexBuffer;
+    }
+
+    public void setUsesVertexBuffer(boolean usesVertexBuffer) {
+        this.usesVertexBuffer = usesVertexBuffer;
     }
 
     public void setEnableBlending(boolean enableBlending) {
@@ -83,7 +92,7 @@ public abstract class ShaderProgram extends Disposable {
     }
 
     public static ShaderProgram newShaderProgram(Disposable parent){
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan){
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan){
             return new VulkanShaderProgram(parent);
         }
         return null;

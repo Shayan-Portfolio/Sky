@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 public class RenderSystem extends ActorSystem {
-    private Renderer renderer;
+    private SceneRenderer sceneRenderer;
     private RenderPipeline renderPipeline;
     private Scene scene;
     private Camera activeCamera;
@@ -74,8 +74,8 @@ public class RenderSystem extends ActorSystem {
         }
     }
 
-    public RenderSystem(Renderer renderer, RenderPipeline renderPipeline, Scene scene, Surface surface, Asset<String> uiThemeJSON) {
-        this.renderer = renderer;
+    public RenderSystem(SceneRenderer sceneRenderer, RenderPipeline renderPipeline, Scene scene, Surface surface, Asset<String> uiThemeJSON) {
+        this.sceneRenderer = sceneRenderer;
         this.renderPipeline = renderPipeline;
         this.scene = scene;
         uiTheme = ThemeLoader.loadTheme(uiThemeJSON.getObject());
@@ -83,8 +83,8 @@ public class RenderSystem extends ActorSystem {
 
 
         uiCamera = Camera.newOrthoCamera(
-                renderer.getWidth(),
-                renderer.getHeight(),
+                sceneRenderer.getWidth(),
+                sceneRenderer.getHeight(),
                 0,
                 1,
                 true,
@@ -96,20 +96,20 @@ public class RenderSystem extends ActorSystem {
 
         //UI Compositing setup
         {
-            uiVertexBuffers = new Buffer[renderer.getMaxFramesInFlight()];
-            uiIndexBuffers = new Buffer[renderer.getMaxFramesInFlight()];
+            uiVertexBuffers = new Buffer[sceneRenderer.getMaxFramesInFlight()];
+            uiIndexBuffers = new Buffer[sceneRenderer.getMaxFramesInFlight()];
 
 
-            for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
+            for (int i = 0; i < sceneRenderer.getMaxFramesInFlight(); i++) {
                 uiVertexBuffers[i] = Buffer.newBuffer(
-                        renderer,
+                        sceneRenderer,
                         renderPipeline.getUIShaderProgram().getVertexAttributesSize() * Float.BYTES * 4 * maxUIQuads,
                         Buffer.Usage.VertexBuffer,
                         Buffer.Type.CPUGPUShared,
                         false
                 );
                 uiIndexBuffers[i] = Buffer.newBuffer(
-                        renderer,
+                        sceneRenderer,
                         Integer.BYTES * 6 * maxUIQuads,
                         Buffer.Usage.IndexBuffer,
                         Buffer.Type.CPUGPUShared,
@@ -117,7 +117,7 @@ public class RenderSystem extends ActorSystem {
                 );
             }
 
-            textureBindings = new TextureBindings(renderer.getMaxFramesInFlight());
+            textureBindings = new TextureBindings(sceneRenderer.getMaxFramesInFlight());
 
 
 
@@ -243,11 +243,11 @@ public class RenderSystem extends ActorSystem {
                                             Texture texture,
                                             Sampler sampler, boolean msdf) {
 
-                        int index = textureBindings.getTextureBinding(texture, renderer.getFrameIndex());
+                        int index = textureBindings.getTextureBinding(texture, sceneRenderer.getFrameIndex());
                         if(index == -1) {
-                            index = textureBindings.addBinding(texture, renderer.getFrameIndex());
-                            renderPipeline.getUIShaderProgram().setTextures(renderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", texture).arrayIndex(index));
-                            renderPipeline.getUIShaderProgram().setSamplers(renderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(index));
+                            index = textureBindings.addBinding(texture, sceneRenderer.getFrameIndex());
+                            renderPipeline.getUIShaderProgram().setTextures(sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", texture).arrayIndex(index));
+                            renderPipeline.getUIShaderProgram().setSamplers(sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("input_samplers", sampler).arrayIndex(index));
                         }
 
                         drawQuad(
@@ -398,12 +398,12 @@ public class RenderSystem extends ActorSystem {
 
         //Wireframes
         {
-            wireframeVertexBuffers = new Buffer[renderer.getMaxFramesInFlight()];
+            wireframeVertexBuffers = new Buffer[sceneRenderer.getMaxFramesInFlight()];
 
 
-            for (int i = 0; i < renderer.getMaxFramesInFlight(); i++) {
+            for (int i = 0; i < sceneRenderer.getMaxFramesInFlight(); i++) {
                 wireframeVertexBuffers[i] = Buffer.newBuffer(
-                        renderer,
+                        sceneRenderer,
                         renderPipeline.getWireframeShaderProgram().getVertexAttributesSize() * Float.BYTES * 2 * maxWireframeLines,
                         Buffer.Usage.VertexBuffer,
                         Buffer.Type.CPUGPUShared,
@@ -423,9 +423,9 @@ public class RenderSystem extends ActorSystem {
         items.clear();
         lights.clear();
         uiTransform.identity();
-        uiVertexBuffers[renderer.getFrameIndex()].get().clear();
-        uiIndexBuffers[renderer.getFrameIndex()].get().clear();
-        wireframeVertexBuffers[renderer.getFrameIndex()].get().clear();
+        uiVertexBuffers[sceneRenderer.getFrameIndex()].get().clear();
+        uiIndexBuffers[sceneRenderer.getFrameIndex()].get().clear();
+        wireframeVertexBuffers[sceneRenderer.getFrameIndex()].get().clear();
         setOrigin(0, 0);
 
         Color color = new Color(3, 3, 3, 1);
@@ -433,8 +433,8 @@ public class RenderSystem extends ActorSystem {
         drawQuad(
                 0,
                 0,
-                renderer.getWidth(),
-                renderer.getHeight(),
+                sceneRenderer.getWidth(),
+                sceneRenderer.getHeight(),
                 0, 0,
                 0, 1,
                 1, 0,
@@ -487,7 +487,7 @@ public class RenderSystem extends ActorSystem {
                     ));
                 }
 
-                ByteBuffer transformsData = meshComponent.transformsBuffers[renderer.getFrameIndex()].get();
+                ByteBuffer transformsData = meshComponent.transformsBuffers[sceneRenderer.getFrameIndex()].get();
                 if(!meshComponent.instanced) transformComponent.transform().get(0, transformsData);
             }
             if(actor.has(LightComponent.class)) {
@@ -528,15 +528,15 @@ public class RenderSystem extends ActorSystem {
                 activeCamera,
                 items,
                 lights,
-                uiVertexBuffers[renderer.getFrameIndex()],
-                uiIndexBuffers[renderer.getFrameIndex()],
+                uiVertexBuffers[sceneRenderer.getFrameIndex()],
+                uiIndexBuffers[sceneRenderer.getFrameIndex()],
                 uiQuadCount,
                 uiCamera,
-                wireframeVertexBuffers[renderer.getFrameIndex()],
+                wireframeVertexBuffers[sceneRenderer.getFrameIndex()],
                 wireframeVertexCount
         ));
 
-        renderer.submit(passes);
+        sceneRenderer.submit(passes);
         uiQuadCount = 0;
     }
 
@@ -583,7 +583,7 @@ public class RenderSystem extends ActorSystem {
     }
 
     private void drawLine(float x1, float y1, float z1, float x2, float y2, float z2, Color color) {
-        ByteBuffer vertexBufferData = wireframeVertexBuffers[renderer.getFrameIndex()].get();
+        ByteBuffer vertexBufferData = wireframeVertexBuffers[sceneRenderer.getFrameIndex()].get();
 
         vertexBufferData.putFloat(x1);
         vertexBufferData.putFloat(y1);
@@ -664,8 +664,8 @@ public class RenderSystem extends ActorSystem {
                           Color c0, Color c1, Color c2, Color c3) {
 
 
-        ByteBuffer vertexBufferData = uiVertexBuffers[renderer.getFrameIndex()].get();
-        ByteBuffer indexBufferData = uiIndexBuffers[renderer.getFrameIndex()].get();
+        ByteBuffer vertexBufferData = uiVertexBuffers[sceneRenderer.getFrameIndex()].get();
+        ByteBuffer indexBufferData = uiIndexBuffers[sceneRenderer.getFrameIndex()].get();
 
                 Vector4f topLeft = new Vector4f(x, y, 0, 1).sub(origin).mul(uiTransform).add(origin),
                 bottomLeft = new Vector4f(x, y + h, 0, 1).sub(origin).mul(uiTransform).add(origin),

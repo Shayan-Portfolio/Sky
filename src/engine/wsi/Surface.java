@@ -1,8 +1,8 @@
 package engine.wsi;
 
 import engine.graphics.Disposable;
-import engine.graphics.RenderAPI;
-import engine.graphics.RendererSettings;
+import engine.graphics.GraphicsAPIs;
+import engine.graphics.GraphicsOptions;
 import engine.input.SurfaceCharCallback;
 import engine.input.SurfaceKeyCallback;
 import org.joml.Vector2f;
@@ -25,7 +25,7 @@ public abstract class Surface extends Disposable {
     protected VkInstance vkInstance;
     protected VkDebugUtilsMessengerCallbackEXT vkDebugUtilsMessengerCallbackEXT;
 
-    public abstract void requestRenderAPI(RenderAPI api, RendererSettings settings);
+    public abstract void requestRenderAPI(GraphicsAPIs api, GraphicsOptions settings);
 
     protected List<SurfaceKeyCallback> surfaceKeyCallbacks = new ArrayList<>();
     protected List<SurfaceCharCallback> surfaceCharCallbacks = new ArrayList<>();
@@ -105,7 +105,7 @@ public abstract class Surface extends Disposable {
         return vkDebugMessenger;
     }
 
-    public abstract boolean supportsRenderAPI(RenderAPI api);
+    public abstract boolean supportsRenderAPI(GraphicsAPIs api);
     public abstract double getTime();
     public abstract void display();
     public abstract boolean update();

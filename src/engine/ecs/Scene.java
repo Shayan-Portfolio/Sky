@@ -244,7 +244,7 @@ public class Scene extends Disposable {
         return actor;
     }
 
-    public void exec(Renderer renderer, BytecodeStream bytecodeStream) {
+    public void exec(SceneRenderer sceneRenderer, BytecodeStream bytecodeStream) {
 
         for (Iterator<Bytecode> iterator = bytecodeStream.getList().iterator(); iterator.hasNext(); ) {
             Bytecode bytecode = iterator.next();
@@ -259,7 +259,7 @@ public class Scene extends Disposable {
                 case BeginAdd -> {
                     Deserializer deserializer = deserializers.getOrDefault((String) bytecode.operands()[0], null);
                     if (deserializer == null) throw new SkyRuntimeException("No deserializer for " + bytecode.operands()[0]);
-                    Object data = deserializer.deserialize(iterator, renderer);
+                    Object data = deserializer.deserialize(iterator, sceneRenderer);
                     actor.add(data);
                     break;
                 }

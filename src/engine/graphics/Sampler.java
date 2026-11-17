@@ -14,7 +14,7 @@ public abstract class Sampler extends Disposable {
     }
 
     public static Sampler newSampler(Disposable parent, Texture.Filter minFilter, Texture.Filter magFilter, boolean anisotropy){
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan){
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan){
             return new VulkanSampler(parent, minFilter, magFilter, anisotropy);
         }
         return null;

@@ -3,10 +3,10 @@ package engine.graphics.vulkan;
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
 import engine.wsi.Surface;
-import engine.graphics.RenderAPI;
+import engine.graphics.GraphicsAPIs;
 import engine.graphics.RenderContext;
 
-import engine.graphics.RendererSettings;
+import engine.graphics.GraphicsOptions;
 import org.lwjgl.vulkan.*;
 
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
@@ -24,12 +24,12 @@ public class VulkanRenderContext extends RenderContext {
 
 
     @Override
-    public void readyDisplay(Surface surface, RendererSettings settings) {
+    public void readyDisplay(Surface surface, GraphicsOptions settings) {
         this.surface = surface;
-        if(!surface.supportsRenderAPI(RenderAPI.Vulkan)) {
+        if(!surface.supportsRenderAPI(GraphicsAPIs.Vulkan)) {
             throw new SkyRuntimeException(Logger.error(VulkanRenderContext.class, "The surface does not support Vulkan"));
         }
-        surface.requestRenderAPI(RenderAPI.Vulkan, settings);
+        surface.requestRenderAPI(GraphicsAPIs.Vulkan, settings);
 
         instance = surface.getVulkanInstance();
         vkSurface = surface.getVulkanSurface();

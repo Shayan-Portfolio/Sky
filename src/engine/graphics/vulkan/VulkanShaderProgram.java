@@ -1,6 +1,5 @@
 package engine.graphics.vulkan;
 
-import engine.asset.AssetListener;
 import engine.logging.Logger;
 import engine.util.Pair;
 import engine.logging.SkyRuntimeException;
@@ -12,11 +11,8 @@ import org.lwjgl.util.spvc.SpvcErrorCallback;
 import org.lwjgl.util.spvc.SpvcReflectedResource;
 import org.lwjgl.vulkan.*;
 
-import java.io.IOException;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -133,40 +129,40 @@ public class VulkanShaderProgram extends ShaderProgram {
             {
 
 
+                if(usesVertexBuffer) {
 
-                int vertexSize = 0;
-                for(VertexAttribute vertexAttribute : vertexAttributes){
-                    vertexSize += vertexAttribute.getSize();
+                    int vertexSize = 0;
+                    for (VertexAttribute vertexAttribute : vertexAttributes) {
+                        vertexSize += vertexAttribute.getSize();
+                    }
+
+
+                    VkVertexInputBindingDescription.Buffer bindingDescription = VkVertexInputBindingDescription.calloc(1, stack);
+
+
+                    bindingDescription.binding(0);
+                    bindingDescription.stride(vertexSize * Float.BYTES);
+                    bindingDescription.inputRate(VK_VERTEX_INPUT_RATE_VERTEX);
+                    vertexInputInfo.pVertexBindingDescriptions(bindingDescription);
+
+
+                    VkVertexInputAttributeDescription.Buffer attributeDescriptions = VkVertexInputAttributeDescription.calloc(vertexAttributes.size(), stack);
+
+                    int offset = 0;
+
+                    for (int i = 0; i < vertexAttributes.size(); i++) {
+                        VertexAttribute vertexAttribute = vertexAttributes.get(i);
+                        VkVertexInputAttributeDescription attribute = attributeDescriptions.get(i);
+                        attribute.binding(0);
+                        attribute.location(i);
+                        attribute.format(VulkanUtil.getVulkanVertexAttributeType(vertexAttribute.getSize()));
+                        attribute.offset(offset);
+
+                        offset += vertexAttribute.getSize() * Float.BYTES;
+                    }
+
+                    vertexInputInfo.pVertexAttributeDescriptions(attributeDescriptions.rewind());
                 }
-
-
-                VkVertexInputBindingDescription.Buffer bindingDescription =
-                        VkVertexInputBindingDescription.calloc(1, stack);
-
-
-                bindingDescription.binding(0);
-                bindingDescription.stride(vertexSize * Float.BYTES);
-                bindingDescription.inputRate(VK_VERTEX_INPUT_RATE_VERTEX);
-                vertexInputInfo.pVertexBindingDescriptions(bindingDescription);
-
-
-
-                VkVertexInputAttributeDescription.Buffer attributeDescriptions = VkVertexInputAttributeDescription.calloc(vertexAttributes.size(), stack);
-
-                int offset = 0;
-
-                for (int i = 0; i < vertexAttributes.size(); i++) {
-                    VertexAttribute vertexAttribute = vertexAttributes.get(i);
-                    VkVertexInputAttributeDescription attribute = attributeDescriptions.get(i);
-                    attribute.binding(0);
-                    attribute.location(i);
-                    attribute.format(VulkanUtil.getVulkanVertexAttributeType(vertexAttribute.getSize()));
-                    attribute.offset(offset);
-
-                    offset += vertexAttribute.getSize() * Float.BYTES;
-                }
-
-                vertexInputInfo.pVertexAttributeDescriptions(attributeDescriptions.rewind());
             }
 
             VkPipelineInputAssemblyStateCreateInfo inputAssembly = VkPipelineInputAssemblyStateCreateInfo.calloc(stack);
@@ -637,7 +633,7 @@ public class VulkanShaderProgram extends ShaderProgram {
                 descriptorPoolCreateInfo.maxSets(descriptorSetsSpec.size());
 
 
-                for (int i = 0; i < VulkanRenderer.FRAMES_IN_FLIGHT; i++) {
+                for (int i = 0; i < VulkanSceneRenderer.FRAMES_IN_FLIGHT; i++) {
                     LongBuffer pDescriptorPool = stack.callocLong(1);
                     if (vkCreateDescriptorPool(VulkanRuntime.getCurrentDevice(), descriptorPoolCreateInfo, null, pDescriptorPool) != VK_SUCCESS) {
                         throw new SkyRuntimeException("Failed to create descriptor pool");
@@ -662,7 +658,7 @@ public class VulkanShaderProgram extends ShaderProgram {
                         binding.descriptorCount(descriptor.getCount());
                     }
 
-                    for (int frameIndex = 0; frameIndex < VulkanRenderer.FRAMES_IN_FLIGHT; frameIndex++) {
+                    for (int frameIndex = 0; frameIndex < VulkanSceneRenderer.FRAMES_IN_FLIGHT; frameIndex++) {
                         descriptorSetLayoutHandles.add(new ArrayList<>());
                         descriptorSetHandles.add(new ArrayList<>());
 
