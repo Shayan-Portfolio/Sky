@@ -416,7 +416,7 @@ public class ForwardPipeline extends RenderPipeline {
                 //scenePass.draw(sceneRenderData.wireframeVertexCount());
 
 
-                scenePass.setCullMode(CullMode.Front);
+                scenePass.setCullMode(CullMode.None);
                 scenePass.setShaderProgram(skyboxShaderProgram);
                 scenePass.draw(36);
             }

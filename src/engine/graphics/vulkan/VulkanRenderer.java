@@ -510,14 +510,18 @@ public class VulkanRenderer extends Renderer {
             VulkanSemaphore wait = ((VulkanSemaphore[]) swapchainImageAcquireSemaphores)[frameIndex];
 
             for (Pass pass : passes) {
+
                 //Insert barriers
                 {
+                    int dstStageEnum = pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
                     pass.setStartingBarriers(object -> {
 
                         VkCommandBuffer commandBuffer = (VkCommandBuffer) object;
 
                         for (Dependency rd : pass.getDependencies()) {
-                            RenderGraphResource rgResource = rd.getResource();
+                            var rgResource = rd.getResource();
+
 
                             assert rgResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
 
@@ -543,6 +547,8 @@ public class VulkanRenderer extends Renderer {
                                     Texture texture = textures[i * maxFramesInFlight + frameIndex];
                                     VulkanImage image = ((VulkanTexture) texture).getImage();
                                     VulkanImageView imageView = ((VulkanTexture) texture).getImageView();
+
+
                                     switch (rd.getAccessType()) {
                                         case AccessTypes.DepthReadWrite: {
                                             VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
@@ -591,7 +597,7 @@ public class VulkanRenderer extends Renderer {
                                             vkCmdPipelineBarrier(
                                                     commandBuffer,
                                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                    pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                    dstStageEnum,
                                                     0,
                                                     null,
                                                     null,
@@ -699,8 +705,8 @@ public class VulkanRenderer extends Renderer {
 
                                             vkCmdPipelineBarrier(
                                                     commandBuffer,
-                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                     0,
                                                     null,
                                                     bufferBarrier,
