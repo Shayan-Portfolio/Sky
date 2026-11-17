@@ -511,9 +511,9 @@ public class VulkanSceneRenderer extends SceneRenderer {
 
             for (Pass pass : passes) {
 
+                int dstStageEnum = pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
                 //Insert barriers
                 {
-                    int dstStageEnum = pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 
                     pass.setStartingBarriers(object -> {
 
@@ -521,9 +521,6 @@ public class VulkanSceneRenderer extends SceneRenderer {
 
                         for (Dependency rd : pass.getDependencies()) {
                             var rgResource = rd.getResource();
-
-
-                            assert rgResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
 
                             Texture[] textures = null;
                             Buffer[] buffers = null;
@@ -796,7 +793,7 @@ public class VulkanSceneRenderer extends SceneRenderer {
 
                     vkQueueSubmit(graphicsQueue, submitInfo, pass == passes.getLast() ? ((VulkanFence[]) submissionFences)[frameIndex].getHandle() : VK_NULL_HANDLE);
 
-                    waitDstStageMask = pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                    waitDstStageMask = dstStageEnum == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : dstStageEnum;
                     wait = (VulkanSemaphore) pass.getFinishedSemaphores()[frameIndex];
                 }
             }
