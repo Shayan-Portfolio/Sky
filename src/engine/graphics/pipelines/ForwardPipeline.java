@@ -228,8 +228,16 @@ public class ForwardPipeline extends RenderPipeline {
                 renderer.getFrameIndex(),
                 new DescriptorUpdate<>("scene_desc", sceneBuffers[renderer.getFrameIndex()])
         );*/
+        tiledLightingShaderProgram.setBuffers(
+                renderer.getFrameIndex(),
+                new DescriptorUpdate<>("tiled_lighting_data", tileDataBuffers[renderer.getFrameIndex()])
+        );
 
-        tiledLightingShaderProgram.setBuffers(renderer.getFrameIndex(), new DescriptorUpdate<>("tiled_lighting_data", tileDataBuffers[renderer.getFrameIndex()]));
+        skyboxShaderProgram.setBuffers(
+                renderer.getFrameIndex(),
+                new DescriptorUpdate<>("scene_desc", sceneBuffers[renderer.getFrameIndex()])
+        );
+
 
         Camera camera = sceneRenderData.sceneCamera();
         Buffer sceneBuffer = sceneBuffers[renderer.getFrameIndex()];
