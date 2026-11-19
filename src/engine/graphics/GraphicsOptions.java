@@ -1,20 +1,20 @@
 package engine.graphics;
 
-public class RendererSettings {
+public class GraphicsOptions {
     public boolean validation = true;
-    public RenderAPI backend;
+    public GraphicsAPIs backend;
     public boolean vsync;
 
-    public RendererSettings(RenderAPI backend) {
+    public GraphicsOptions(GraphicsAPIs backend) {
         this.backend = backend;
     }
 
-    public RendererSettings validation(boolean validation){
+    public GraphicsOptions validation(boolean validation){
         this.validation = validation;
         return this;
     }
 
-    public RendererSettings vsync(boolean vsync){
+    public GraphicsOptions vsync(boolean vsync){
         this.vsync = vsync;
         return this;
     }

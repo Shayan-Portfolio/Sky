@@ -3,17 +3,17 @@ package engine.graphics;
 import engine.logging.Logger;
 import engine.wsi.Surface;
 import engine.graphics.vulkan.VulkanRenderContext;
-import engine.graphics.vulkan.VulkanRenderer;
+import engine.graphics.vulkan.VulkanSceneRenderer;
 import org.lwjgl.vulkan.VkInstance;
 
 import java.util.List;
 
-public abstract class Renderer extends Disposable {
+public abstract class SceneRenderer extends Disposable {
 
     protected int width;
     protected int height;
-    private static RenderAPI api;
-    protected RendererSettings settings;
+    private static GraphicsAPIs api;
+    protected GraphicsOptions options;
     protected int maxFramesInFlight;
     protected Surface surface;
     protected RenderTarget swapchainRenderTarget;
@@ -23,22 +23,22 @@ public abstract class Renderer extends Disposable {
 
 
 
-    public Renderer(Disposable parent, int width, int height, int maxFramesInFlight, RendererSettings settings, Surface surface){
+    public SceneRenderer(Disposable parent, int width, int height, int maxFramesInFlight, GraphicsOptions options, Surface surface){
         super(parent);
         this.width = width;
         this.height = height;
-        this.settings = settings;
+        this.options = options;
         this.maxFramesInFlight = maxFramesInFlight;
         this.surface = surface;
 
     }
 
-    public RendererSettings getSettings() {
-        return settings;
+    public GraphicsOptions getOptions() {
+        return options;
     }
 
 
-    public abstract void syncWithSurface(boolean surfaceInvalidated);
+    public abstract void update(boolean surfaceInvalidated);
     public Semaphore[] getRenderStartSemaphores() {
         return swapchainImageAcquireSemaphores;
     }
@@ -56,24 +56,24 @@ public abstract class Renderer extends Disposable {
         return height;
     }
     public abstract void waitForDevice();
-    public static Renderer newRenderer(Surface surface, int width, int height, RendererSettings settings){
+    public static SceneRenderer newSceneRenderer(Surface surface, int width, int height, GraphicsOptions settings){
         api = settings.backend;
 
 
-        if(settings.backend == RenderAPI.Vulkan){
+        if(settings.backend == GraphicsAPIs.Vulkan){
             VulkanRenderContext vkContext = new VulkanRenderContext();
             vkContext.readyDisplay(surface, settings);
 
             long vkSurface = vkContext.getVkSurface();
             VkInstance instance = vkContext.getInstance();
 
-            return new VulkanRenderer(surface, instance, vkSurface, width, height, settings, vkContext.getDebugMessenger(), surface);
+            return new VulkanSceneRenderer(surface, instance, vkSurface, width, height, settings, vkContext.getDebugMessenger(), surface);
         }
         else if(settings.backend == null){
-            Logger.meltdown(Renderer.class, "The target graphics API was not specified in RenderSettings!");
+            Logger.meltdown(SceneRenderer.class, "The target graphics API was not specified in RenderSettings!");
         }
         else {
-            Logger.meltdown(Renderer.class, "User requested renderer backend " + settings.backend + " but no backend could be initialized!");
+            Logger.meltdown(SceneRenderer.class, "User requested renderer backend " + settings.backend + " but no backend could be initialized!");
         }
 
 
@@ -81,7 +81,7 @@ public abstract class Renderer extends Disposable {
         return null;
     }
 
-    public static RenderAPI getRenderAPI() {
+    public static GraphicsAPIs getAPI() {
         return api;
     }
     public RenderTarget getSwapchainRenderTarget() { return swapchainRenderTarget; }

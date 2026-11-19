@@ -7,7 +7,6 @@ import engine.logging.SkyRuntimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 public abstract class Pass extends Disposable {
     protected int frameIndex;
@@ -38,12 +37,12 @@ public abstract class Pass extends Disposable {
 
 
     public static GraphicsPass newGraphicsPass(Disposable disposable, String name, int framesInFlight) {
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan) return new VulkanGraphicsPass(disposable, name, framesInFlight);
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan) return new VulkanGraphicsPass(disposable, name, framesInFlight);
         return null;
     }
 
     public static ComputePass newComputePass(Disposable disposable, String name, int framesInFlight) {
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan) return new VulkanComputePass(disposable, name, framesInFlight);
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan) return new VulkanComputePass(disposable, name, framesInFlight);
         return null;
     }
 

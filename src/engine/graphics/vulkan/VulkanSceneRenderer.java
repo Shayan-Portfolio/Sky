@@ -27,7 +27,7 @@ import static org.lwjgl.vulkan.KHRSwapchain.vkGetSwapchainImagesKHR;
 import static org.lwjgl.vulkan.VK13.*;
 
 
-public class VulkanRenderer extends Renderer {
+public class VulkanSceneRenderer extends SceneRenderer {
 
     public static final int FRAMES_IN_FLIGHT = 2;
 
@@ -55,8 +55,8 @@ public class VulkanRenderer extends Renderer {
     private VulkanFence[] submissionFences;
 
 
-    public VulkanRenderer(Disposable parent, VkInstance instance, long vkSurface, int width, int height, RendererSettings rendererSettings, long debugMessenger, Surface surface) {
-        super(parent, width, height, FRAMES_IN_FLIGHT, rendererSettings, surface);
+    public VulkanSceneRenderer(Disposable parent, VkInstance instance, long vkSurface, int width, int height, GraphicsOptions graphicsOptions, long debugMessenger, Surface surface) {
+        super(parent, width, height, FRAMES_IN_FLIGHT, graphicsOptions, surface);
         this.instance = instance;
         this.vkSurface = vkSurface;
         this.debugMessenger = debugMessenger;
@@ -64,10 +64,10 @@ public class VulkanRenderer extends Renderer {
         physicalDevice = selectPhysicalDevice(instance, vkSurface);
         physicalDeviceProperties = getPhysicalDeviceProperties(physicalDevice);
 
-        VulkanRuntime.setValidation(rendererSettings.validation);
+        VulkanRuntime.setValidation(graphicsOptions.validation);
 
         VulkanRuntime.setPhysicalDeviceProperties(physicalDeviceProperties);
-        Logger.info(VulkanRenderer.class, "Selected Physical Device " + physicalDeviceProperties.deviceNameString());
+        Logger.info(VulkanSceneRenderer.class, "Selected Physical Device " + physicalDeviceProperties.deviceNameString());
         device = createDevice(physicalDevice);
 
         VulkanRuntime.setCurrentDevice(device);
@@ -83,7 +83,7 @@ public class VulkanRenderer extends Renderer {
         VulkanRuntime.setGraphicsFamilyIndex(queueFamilies.graphicsFamily);
         VulkanRuntime.setComputeFamilyIndex(queueFamilies.computeFamily);
 
-        swapchainRenderTarget = createSwapchainRenderTarget(rendererSettings);
+        swapchainRenderTarget = createSwapchainRenderTarget(graphicsOptions);
 
         swapchainImageAcquireSemaphores = new VulkanSemaphore[maxFramesInFlight];
         submissionFences = new VulkanFence[maxFramesInFlight];
@@ -95,7 +95,7 @@ public class VulkanRenderer extends Renderer {
     }
 
 
-    private RenderTarget createSwapchainRenderTarget(RendererSettings rendererSettings) {
+    private RenderTarget createSwapchainRenderTarget(GraphicsOptions graphicsOptions) {
         RenderTarget swapchainRenderTarget = new RenderTarget(this);
 
 
@@ -110,7 +110,7 @@ public class VulkanRenderer extends Renderer {
 
 
                 VkSurfaceFormatKHR surfaceFormat = selectSwapchainSurfaceFormat(swapchainSupportDetails.formats);
-                int presentMode = selectSwapchainPresentMode(swapchainSupportDetails.presentModes, rendererSettings.vsync);
+                int presentMode = selectSwapchainPresentMode(swapchainSupportDetails.presentModes, graphicsOptions.vsync);
                 VkExtent2D extent = selectSwapchainExtent(swapchainSupportDetails.capabilities, width, height);
 
 
@@ -428,7 +428,7 @@ public class VulkanRenderer extends Renderer {
         }
 
 
-        Logger.info(VulkanRenderer.class, "Unable to find sRGB VkSurfaceFormatKHR, using default. Colors may look incorrect.");
+        Logger.info(VulkanSceneRenderer.class, "Unable to find sRGB VkSurfaceFormatKHR, using default. Colors may look incorrect.");
 
         return availableFormats.get(0);
 
@@ -473,8 +473,8 @@ public class VulkanRenderer extends Renderer {
     }
 
     @Override
-    public void syncWithSurface(boolean surfaceInvalidated) {
-        if (surfaceInvalidated) {
+    public void update(boolean isSwapchainBroken) {
+        if (isSwapchainBroken) {
             swapchain.disposeAll();
             this.removeDisposable(swapchain);
             swapchainRenderTarget.disposeAll();
@@ -483,7 +483,7 @@ public class VulkanRenderer extends Renderer {
             this.width = surface.getWidth();
             this.height = surface.getHeight();
 
-            swapchainRenderTarget = createSwapchainRenderTarget(settings);
+            swapchainRenderTarget = createSwapchainRenderTarget(options);
             frameIndex = 0;
         }
 
@@ -510,16 +510,17 @@ public class VulkanRenderer extends Renderer {
             VulkanSemaphore wait = ((VulkanSemaphore[]) swapchainImageAcquireSemaphores)[frameIndex];
 
             for (Pass pass : passes) {
+
+                int dstStageEnum = pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
                 //Insert barriers
                 {
+
                     pass.setStartingBarriers(object -> {
 
                         VkCommandBuffer commandBuffer = (VkCommandBuffer) object;
 
                         for (Dependency rd : pass.getDependencies()) {
-                            RenderGraphResource rgResource = rd.getResource();
-
-                            assert rgResource != null : "All resource dependencies must be fully realized by the time the graph is submitted to the renderer";
+                            var rgResource = rd.getResource();
 
                             Texture[] textures = null;
                             Buffer[] buffers = null;
@@ -543,6 +544,8 @@ public class VulkanRenderer extends Renderer {
                                     Texture texture = textures[i * maxFramesInFlight + frameIndex];
                                     VulkanImage image = ((VulkanTexture) texture).getImage();
                                     VulkanImageView imageView = ((VulkanTexture) texture).getImageView();
+
+
                                     switch (rd.getAccessType()) {
                                         case AccessTypes.DepthReadWrite: {
                                             VkImageMemoryBarrier.Buffer imageBarrier = VkImageMemoryBarrier.calloc(1, stack);
@@ -591,7 +594,7 @@ public class VulkanRenderer extends Renderer {
                                             vkCmdPipelineBarrier(
                                                     commandBuffer,
                                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                    pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                    dstStageEnum,
                                                     0,
                                                     null,
                                                     null,
@@ -699,8 +702,8 @@ public class VulkanRenderer extends Renderer {
 
                                             vkCmdPipelineBarrier(
                                                     commandBuffer,
-                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                     0,
                                                     null,
                                                     bufferBarrier,
@@ -790,7 +793,7 @@ public class VulkanRenderer extends Renderer {
 
                     vkQueueSubmit(graphicsQueue, submitInfo, pass == passes.getLast() ? ((VulkanFence[]) submissionFences)[frameIndex].getHandle() : VK_NULL_HANDLE);
 
-                    waitDstStageMask = pass instanceof VulkanGraphicsPass ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                    waitDstStageMask = dstStageEnum == VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : dstStageEnum;
                     wait = (VulkanSemaphore) pass.getFinishedSemaphores()[frameIndex];
                 }
             }
@@ -835,7 +838,7 @@ public class VulkanRenderer extends Renderer {
 
         vmaDestroyAllocator(allocator.getId());
         vkDestroySurfaceKHR(instance, vkSurface, null);
-        if(settings.validation)
+        if(options.validation)
             EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, null);
 
         physicalDeviceProperties.free();

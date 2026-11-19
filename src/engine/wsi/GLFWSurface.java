@@ -12,9 +12,9 @@ import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3;
 
 import engine.graphics.Disposable;
-import engine.graphics.RenderAPI;
-import engine.graphics.RendererSettings;
-import engine.graphics.vulkan.VulkanRenderer;
+import engine.graphics.GraphicsAPIs;
+import engine.graphics.GraphicsOptions;
+import engine.graphics.vulkan.VulkanSceneRenderer;
 import engine.input.SurfaceCharCallback;
 import engine.input.SurfaceKeyCallback;
 import engine.logging.Logger;
@@ -42,8 +42,8 @@ public class GLFWSurface extends Surface {
 
 
     @Override
-    public void requestRenderAPI(RenderAPI api, RendererSettings settings) {
-        if(api == RenderAPI.Vulkan) {
+    public void requestRenderAPI(GraphicsAPIs api, GraphicsOptions settings) {
+        if(api == GraphicsAPIs.Vulkan) {
             try (MemoryStack stack = stackPush()) {
                 vkInstance = createInstance(title, settings.validation ? List.of("VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2") : null);
                 LongBuffer pSurface = stack.mallocLong(1);
@@ -130,7 +130,7 @@ public class GLFWSurface extends Surface {
                         throw new SkyRuntimeException("Validation Layer " + validationLayerName + " is not available");
                     }
                     else {
-                        Logger.info(VulkanRenderer.class, validationLayerName);
+                        Logger.info(VulkanSceneRenderer.class, validationLayerName);
                     }
                 }
             }
@@ -188,7 +188,7 @@ public class GLFWSurface extends Surface {
                     @Override
                     public int invoke(int messageSeverity, int messageTypes, long pCallbackData, long pUserData) {
                         VkDebugUtilsMessengerCallbackDataEXT callbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
-                        Logger.info(VulkanRenderer.class, callbackData.pMessageString());
+                        Logger.info(VulkanSceneRenderer.class, callbackData.pMessageString());
 
                         return VK_FALSE;
                     }
@@ -204,7 +204,7 @@ public class GLFWSurface extends Surface {
 
                 instanceCreateInfo.pNext(debugCreateInfo.address());
             }
-            if(false) {
+            if(Boolean.parseBoolean(System.getProperty("vulkan.gpu-av"))) {
                 IntBuffer enables = stack.ints(
                         EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                         EXTValidationFeatures.VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
@@ -256,8 +256,8 @@ public class GLFWSurface extends Surface {
 
 
     @Override
-    public boolean supportsRenderAPI(RenderAPI api) {
-        if(api == RenderAPI.Vulkan) return glfwVulkanSupported();
+    public boolean supportsRenderAPI(GraphicsAPIs api) {
+        if(api == GraphicsAPIs.Vulkan) return glfwVulkanSupported();
         return false;
     }
 

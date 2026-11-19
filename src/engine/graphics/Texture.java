@@ -53,7 +53,7 @@ public abstract class Texture extends Disposable {
     }
 
     public static Texture newSkyboxTextureFromAsset(Disposable parent, Asset<TextureData> right, Asset<TextureData> left, Asset<TextureData> up, Asset<TextureData> down, Asset<TextureData> forwards, Asset<TextureData> backwards, TextureFormatType textureFormatType){
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan) {
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan) {
             return new VulkanTexture(
                     parent,
                     right.getObject().width,
@@ -70,7 +70,7 @@ public abstract class Texture extends Disposable {
     }
 
     public static Texture newColorTextureFromAsset(Disposable parent, Asset<TextureData> textureData, TextureFormatType textureFormatType){
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan) {
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan) {
             return new VulkanTexture(
                     parent,
                     textureData.getObject().width,
@@ -87,7 +87,7 @@ public abstract class Texture extends Disposable {
     }
 
     public static Texture newColorTexture(Disposable parent, int width, int height, TextureFormatType textureFormatType){
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan) {
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan) {
             return new VulkanTexture(
                     parent,
                     width,
@@ -104,7 +104,7 @@ public abstract class Texture extends Disposable {
     }
 
     public static Texture newStorageTexture(Disposable parent, int width, int height, TextureFormatType textureFormatType){
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan) {
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan) {
             return new VulkanTexture(
                     parent,
                     width,
@@ -121,7 +121,7 @@ public abstract class Texture extends Disposable {
     }
 
     public static Texture newDepthTexture(Disposable parent, int width, int height, TextureFormatType textureFormatType){
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan) {
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan) {
             return new VulkanTexture(
                     parent,
                     width,

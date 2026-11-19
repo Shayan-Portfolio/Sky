@@ -74,7 +74,7 @@ public abstract class Buffer extends Disposable {
     }
 
     public static Buffer newBuffer(Disposable parent, int sizeBytes, Usage usage, Type type, boolean staging){
-        if(Renderer.getRenderAPI() == RenderAPI.Vulkan) return new VulkanBuffer(parent, sizeBytes, usage, type, staging);
+        if(SceneRenderer.getAPI() == GraphicsAPIs.Vulkan) return new VulkanBuffer(parent, sizeBytes, usage, type, staging);
 
         return null;
     }

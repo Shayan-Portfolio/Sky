@@ -1,5 +1,5 @@
 package engine.graphics;
 
-public enum RenderAPI {
+public enum GraphicsAPIs {
     Vulkan
 }
