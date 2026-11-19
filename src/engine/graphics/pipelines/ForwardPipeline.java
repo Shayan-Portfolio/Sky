@@ -1,8 +1,11 @@
 package engine.graphics.pipelines;
 
+import engine.Application;
+import engine.Time;
 import engine.asset.AssetRegistry;
 import engine.ecs.RenderSystem;
 import engine.graphics.*;
+import engine.input.Input;
 import engine.util.MathUtil;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
@@ -174,6 +177,7 @@ public class ForwardPipeline extends RenderPipeline {
         );
     }
 
+    private float radius = 0.37f;
     @Override
     public List<Pass> buildFrame(SceneRenderData sceneRenderData) {
 
@@ -225,10 +229,10 @@ public class ForwardPipeline extends RenderPipeline {
             }
         }
 
-        /*tiledLightingShaderProgram.setBuffers(
-                renderer.getFrameIndex(),
-                new DescriptorUpdate<>("scene_desc", sceneBuffers[renderer.getFrameIndex()])
-        );*/
+        tiledLightingShaderProgram.setBuffers(
+                sceneRenderer.getFrameIndex(),
+                new DescriptorUpdate<>("scene_desc", sceneBuffers[sceneRenderer.getFrameIndex()])
+        );
         tiledLightingShaderProgram.setBuffers(
                 sceneRenderer.getFrameIndex(),
                 new DescriptorUpdate<>("tiled_lighting_data", tileDataBuffers[sceneRenderer.getFrameIndex()])
@@ -359,13 +363,26 @@ public class ForwardPipeline extends RenderPipeline {
         tilingPass.submit(() -> {
             tilingPass.setShaderProgram(tiledLightingShaderProgram);
 
+            if(Application.get().getSurface().getKeyPressed(Input.KEY_LEFT)) {
+                radius -= 10 * Time.deltaTime;
+            }
+            if(Application.get().getSurface().getKeyPressed(Input.KEY_RIGHT)) {
+                radius += 10 * Time.deltaTime;
+            }
+
+            System.out.println(radius);
+
+
+
             try (MemoryStack stack = stackPush()) {
-                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 5);
+                ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 7);
                 pPushConstants.putInt(tilesW);
                 pPushConstants.putInt(tilesH);
                 pPushConstants.putInt(TileSize);
                 pPushConstants.putInt(sceneRenderer.getWidth());
                 pPushConstants.putInt(sceneRenderer.getHeight());
+                pPushConstants.putInt(lights.size());
+                pPushConstants.putInt((int) radius);
                 tilingPass.setPushConstants(pPushConstants);
             }
             tilingPass.dispatch(
@@ -396,7 +413,7 @@ public class ForwardPipeline extends RenderPipeline {
                             ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
                             pPushConstants.putInt(PbrMode);
                             pPushConstants.putInt(-1);
-                            pPushConstants.putInt(sceneRenderData.lights().size());
+                            pPushConstants.putInt(lights.size());
                             pPushConstants.putInt(tilesW);
                             pPushConstants.putInt(tilesH);
                             pPushConstants.putInt(TileSize);
@@ -409,12 +426,12 @@ public class ForwardPipeline extends RenderPipeline {
                 }
 
 
-                //scenePass.setCullMode(CullMode.None);
-                //scenePass.setShaderProgram(wireframeShaderProgram);
-                //scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
+                scenePass.setCullMode(CullMode.None);
+                scenePass.setShaderProgram(wireframeShaderProgram);
+                scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
 
                 //TODO(Shayan) This is incredibly slow on Intel Iris Xe (Windows)
-                //scenePass.draw(sceneRenderData.wireframeVertexCount());
+                scenePass.draw(sceneRenderData.wireframeVertexCount());
 
 
                 scenePass.setCullMode(CullMode.None);
