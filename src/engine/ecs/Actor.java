@@ -53,6 +53,14 @@ public class Actor extends Disposable {
         visitor.visit(this);
     }
 
+    public static Actor newActor(String name, Object... components) {
+        Actor actor = new Actor(name);
+        for(Object component : components)
+            actor.addComponent(component);
+
+        return actor;
+    }
+
     private void visitRecursive(ActorVisitor visitor, Actor actor, boolean pre) {
         Actor[] actors = actor.children;
         for (int i = 0; i < actors.length; i++) {
@@ -67,7 +75,7 @@ public class Actor extends Disposable {
     }
 
 
-    public void add(Object component) {
+    public void addComponent(Object component) {
         int index = getIndex(component.getClass());
         components[index] = component;
         mask |= getMask(component.getClass());

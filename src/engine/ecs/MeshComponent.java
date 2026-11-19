@@ -21,6 +21,10 @@ public class MeshComponent {
     public boolean instanced = false;
     public int instanceCount = 1;
 
+    public MeshComponent(Disposable parent, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram, MeshData data) {
+        this(parent, instanceCount, maxVertexCount, maxIndexCount, shaderProgram);
+        setMeshData(data);
+    }
     public MeshComponent(Disposable parent, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
         this.maxVertexCount = maxVertexCount;
         this.maxIndexCount = maxIndexCount;

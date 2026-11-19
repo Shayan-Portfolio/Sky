@@ -1,20 +1,13 @@
 package engine.ecs;
 
 
-import engine.asset.AssetRegistry;
-import engine.bridge.ProjectLoader;
 import engine.ecs.std.StdDeserializers;
 import engine.graphics.*;
-import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
 import engine.mio.Deserializer;
 import engine.mio.BytecodeStream;
 import engine.mio.Bytecode;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class Scene extends Disposable {
@@ -54,13 +47,6 @@ public class Scene extends Disposable {
         return actor;
     }
 
-    public Actor newActor(String name, Object... components) {
-        Actor actor = new Actor(name);
-        for(Object component : components)
-            actor.add(component);
-
-        return actor;
-    }
 
     public void load(BytecodeStream bytecodeStream) {
 
@@ -78,7 +64,7 @@ public class Scene extends Disposable {
                     Deserializer deserializer = deserializers.getOrDefault((String) bytecode.operands()[0], null);
                     if (deserializer == null) throw new SkyRuntimeException("No ECS deserializer for " + bytecode.operands()[0]);
                     Object data = deserializer.deserialize(iterator);
-                    actor.add(data);
+                    actor.addComponent(data);
                     break;
                 }
                 case EndActor -> {
