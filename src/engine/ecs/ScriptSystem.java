@@ -1,11 +1,6 @@
 package engine.ecs;
 
 public class ScriptSystem extends ActorSystem {
-    private Scene scene;
-
-    public ScriptSystem(Scene scene) {
-        this.scene = scene;
-    }
 
     @Override
     public void run(Actor root) {

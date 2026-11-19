@@ -26,10 +26,6 @@ public abstract class Application extends Disposable {
         startTime = (float) surface.getTime();
     }
 
-    public void close(){
-        //disposeAll();
-    }
-
     public Surface getSurface() {
         return surface;
     }

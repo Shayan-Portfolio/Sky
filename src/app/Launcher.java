@@ -71,7 +71,7 @@ public class Launcher {
         }
 
 
-        application.close();
+
         surface.disposeAll();
     }
 

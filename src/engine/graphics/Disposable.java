@@ -30,10 +30,9 @@ public abstract class Disposable {
     }
 
     public void addDisposable(Disposable child){
+        if(child == this) throw new SkyRuntimeException("A Disposable cannot be a child of itself");
+        if(childrenToDispose.contains(child)) throw new SkyRuntimeException("You cannot add the same child multiple times");
 
-        if(child == this) {
-            throw new SkyRuntimeException("A Disposable cannot be a child of itself");
-        }
         child.disposer = this;
         childrenToDispose.add(child);
     }

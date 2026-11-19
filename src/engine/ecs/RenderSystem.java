@@ -21,7 +21,6 @@ import java.util.List;
 public class RenderSystem extends ActorSystem {
     private SceneRenderer sceneRenderer;
     private RenderPipeline renderPipeline;
-    private Scene scene;
     private Camera activeCamera;
     private List<RenderItem> items = new java.util.LinkedList<>();
     private List<LightData> lights = new java.util.LinkedList<>();
@@ -74,10 +73,9 @@ public class RenderSystem extends ActorSystem {
         }
     }
 
-    public RenderSystem(SceneRenderer sceneRenderer, RenderPipeline renderPipeline, Scene scene, Surface surface, Asset<String> uiThemeJSON) {
+    public RenderSystem(SceneRenderer sceneRenderer, RenderPipeline renderPipeline, Asset<String> uiThemeJSON) {
         this.sceneRenderer = sceneRenderer;
         this.renderPipeline = renderPipeline;
-        this.scene = scene;
         uiTheme = ThemeLoader.loadTheme(uiThemeJSON.getObject());
         uiThemeJSON.addListener(() -> uiTheme = ThemeLoader.loadTheme(uiThemeJSON.getObject()));
 

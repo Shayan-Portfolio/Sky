@@ -31,15 +31,10 @@ public class Engine extends Disposable {
         systems.remove(actorSystem);
     }
 
-
-    public void close() {
+    @Override
+    public void dispose() {
         for(ActorSystem system : systems) {
             system.dispose();
         }
-    }
-
-    @Override
-    public void dispose() {
-
     }
 }
