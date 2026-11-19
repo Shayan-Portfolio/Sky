@@ -1,4 +1,4 @@
-package test.box3d;
+package tests.box3d;
 
 import java.lang.foreign.*;
 import static box3d.box3d_h.*;

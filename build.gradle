@@ -33,7 +33,7 @@ jar {
             it.isDirectory() ? it : zipTree(it)
         }
     }
-    exclude 'test'
+    exclude 'tests'
     manifest {
         manifest.attributes["Main-Class"] = "app.Main"
     }

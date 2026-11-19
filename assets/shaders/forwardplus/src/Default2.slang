@@ -184,7 +184,7 @@ FSOutput fragmentMain(VSOutput vsOutput, uniform int render_mode, uniform int li
 
             int index = tile_pos.y * tiles_w + tile_pos.x;
 
-            output.color0 *= tile_colors[index];
+            //output.color0 *= tile_colors[index];
         }
     }
 

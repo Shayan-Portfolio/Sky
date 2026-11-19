@@ -21,7 +21,7 @@ public class MeshComponent {
     public boolean instanced = false;
     public int instanceCount = 1;
 
-    public MeshComponent(Disposable parent, SceneRenderer sceneRenderer, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
+    public MeshComponent(Disposable parent, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
         this.maxVertexCount = maxVertexCount;
         this.maxIndexCount = maxIndexCount;
         this.shaderProgram = shaderProgram;
@@ -41,6 +41,8 @@ public class MeshComponent {
                 Buffer.Type.CPUGPUShared,
                 false
         );
+
+        SceneRenderer sceneRenderer = SceneRenderer.peek();
 
         transformsBuffers = new Buffer[sceneRenderer.getMaxFramesInFlight()];
 

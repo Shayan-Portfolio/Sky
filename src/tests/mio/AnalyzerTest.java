@@ -1,4 +1,4 @@
-package test.mio;
+package tests.mio;
 
 import engine.mio.Analyzer;
 import engine.mio.Context;
@@ -17,8 +17,15 @@ class AnalyzerTest {
                     add Baz
                         MyFoo = "A"
                         MyBar = vec3(1, 2, 3)
-                
                     end
+                    
+                actor Baz
+                    actor Bean
+                    
+                    end
+                end
+                    
+                    
                 end
                         
                         """, new DefaultLogStrategy());

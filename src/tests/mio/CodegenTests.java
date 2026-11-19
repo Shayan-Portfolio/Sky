@@ -1,4 +1,4 @@
-package test.mio;
+package tests.mio;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
@@ -10,25 +10,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.DeflaterOutputStream;
 
-public class SATests {
+public class CodegenTests {
     public static void main(String[] args) {
-        Context source = new Context("test.scene",
-                """
-                actor Foo
-                    add Bar
-                        Foo = 1
-                        Foo = 2
+        Context source = new Context("test.scene", """
+                POS = vec3(0, 10, 5)
+                actor MySpotlight
+                    add LightComponent
+                        fovDeg = 120
+                        eye = vec3(0, 10, 5)
+                        center = vec3(0, 5, 0)
+                        up = vec3(0, 0, 1)
+                        aspectRatio = 1.0
+                        zNear = 0.1
+                        zFar = 50.0
+                        zZeroToOne = true
+                        invertY = true
+                        color = vec3(3, 3, 3)
                     end
                 end
-                """, new DefaultLogStrategy());
-
-
-
-
-
-
-
-
+                
+              
+                        """, new DefaultLogStrategy());
 
         Analyzer tokenizer = new Analyzer(source);
 
@@ -36,8 +38,6 @@ public class SATests {
 
         try {
             ASTNode node = parser.parseAll(tokenizer);
-            SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(source);
-            semanticAnalyzer.analyze(node);
             Codegen codegen = new Codegen(source);
             BytecodeStream stream = codegen.flatten(node);
 
@@ -59,7 +59,7 @@ public class SATests {
                 output.close();
             }
         }
-        catch(ParseException | SemanticAnalysisException e) {
+        catch(ParseException e) {
             e.printStackTrace();
         }
     }

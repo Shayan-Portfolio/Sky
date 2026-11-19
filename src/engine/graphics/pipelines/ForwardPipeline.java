@@ -211,7 +211,7 @@ public class ForwardPipeline extends RenderPipeline {
             drawCall.shaderProgram.setSamplers(
                     sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps_sampler", sampler)
             );
-            drawCall.shaderProgram.setBuffers(sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("tile_colors", tileDataBuffers[sceneRenderer.getFrameIndex()]));
+            //drawCall.shaderProgram.setBuffers(sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("tile_colors", tileDataBuffers[sceneRenderer.getFrameIndex()]));
             drawCall.shaderProgram.setBuffers(
                     sceneRenderer.getFrameIndex(),
                     new DescriptorUpdate<>("scene_desc", sceneBuffers[sceneRenderer.getFrameIndex()]),
@@ -370,7 +370,7 @@ public class ForwardPipeline extends RenderPipeline {
                 radius += 10 * Time.deltaTime;
             }
 
-            System.out.println(radius);
+
 
 
 
@@ -426,12 +426,12 @@ public class ForwardPipeline extends RenderPipeline {
                 }
 
 
-                scenePass.setCullMode(CullMode.None);
-                scenePass.setShaderProgram(wireframeShaderProgram);
-                scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
+                //scenePass.setCullMode(CullMode.None);
+                //scenePass.setShaderProgram(wireframeShaderProgram);
+                //scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
 
                 //TODO(Shayan) This is incredibly slow on Intel Iris Xe (Windows)
-                scenePass.draw(sceneRenderData.wireframeVertexCount());
+                //scenePass.draw(sceneRenderData.wireframeVertexCount());
 
 
                 scenePass.setCullMode(CullMode.None);

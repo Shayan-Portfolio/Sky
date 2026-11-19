@@ -1,4 +1,4 @@
-package test.mio;
+package tests.mio;
 
 import engine.mio.*;
 

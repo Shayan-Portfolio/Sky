@@ -1,4 +1,4 @@
-package test.vfs;
+package tests.vfs;
 
 
 import engine.logging.Logger;

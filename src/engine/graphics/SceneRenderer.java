@@ -7,6 +7,7 @@ import engine.graphics.vulkan.VulkanSceneRenderer;
 import org.lwjgl.vulkan.VkInstance;
 
 import java.util.List;
+import java.util.Stack;
 
 public abstract class SceneRenderer extends Disposable {
 
@@ -20,8 +21,7 @@ public abstract class SceneRenderer extends Disposable {
     protected Semaphore[] swapchainImageAcquireSemaphores;
     protected int frameIndex;
 
-
-
+    private static Stack<SceneRenderer> stack = new Stack<>();
 
     public SceneRenderer(Disposable parent, int width, int height, int maxFramesInFlight, GraphicsOptions options, Surface surface){
         super(parent);
@@ -30,8 +30,21 @@ public abstract class SceneRenderer extends Disposable {
         this.options = options;
         this.maxFramesInFlight = maxFramesInFlight;
         this.surface = surface;
-
     }
+
+    public static void push(SceneRenderer s) {
+        stack.push(s);
+    }
+
+    public static SceneRenderer peek() {
+        return stack.peek();
+    }
+
+    public static SceneRenderer pop() {
+        return stack.pop();
+    }
+
+
 
     public GraphicsOptions getOptions() {
         return options;
