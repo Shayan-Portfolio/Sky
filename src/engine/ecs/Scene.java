@@ -18,7 +18,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class Scene extends Disposable {
-    private List<ActorSystem> systems = new ArrayList<>();
     private Actor root;
     private String name;
     private Actor actor;
@@ -37,11 +36,7 @@ public class Scene extends Disposable {
         deserializers.put(clazz, deserializer);
     }
 
-    public void tick() {
-        for(ActorSystem system : systems) {
-            system.run(root);
-        }
-    }
+
 
 
 
@@ -101,23 +96,6 @@ public class Scene extends Disposable {
         return new Actor(name);
     }
 
-
-
-    public void addSystem(ActorSystem... actorSystems) {
-        this.systems.addAll(Arrays.asList(actorSystems));
-    }
-
-
-    public void removeSystem(ActorSystem actorSystem) {
-        systems.remove(actorSystem);
-    }
-
-
-    public void close() {
-        for(ActorSystem system : systems) {
-            system.dispose();
-        }
-    }
 
 
     @Override
