@@ -18,18 +18,17 @@ public class MeshComponent {
     public boolean finalized;
     public boolean visible = true;
     private MeshData meshData;
-    public boolean instanced = false;
-    public int instanceCount = 1;
+    public int instances;
 
-    public MeshComponent(Disposable parent, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram, MeshData data) {
-        this(parent, instanceCount, maxVertexCount, maxIndexCount, shaderProgram);
+    public MeshComponent(Disposable parent, int instances, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram, MeshData data) {
+        this(parent, instances, maxVertexCount, maxIndexCount, shaderProgram);
         setMeshData(data);
     }
-    public MeshComponent(Disposable parent, int instanceCount, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
+    public MeshComponent(Disposable parent, int instances, int maxVertexCount, int maxIndexCount, ShaderProgram shaderProgram) {
         this.maxVertexCount = maxVertexCount;
         this.maxIndexCount = maxIndexCount;
         this.shaderProgram = shaderProgram;
-        this.instanceCount = instanceCount;
+        this.instances = instances;
 
         vertexBuffer = Buffer.newBuffer(
                 parent,
@@ -53,7 +52,7 @@ public class MeshComponent {
         for (int i = 0; i < sceneRenderer.getMaxFramesInFlight(); i++) {
             transformsBuffers[i] = Buffer.newBuffer(
                     parent,
-                    MathUtil.MATRIX_SIZE_BYTES * instanceCount,
+                    MathUtil.MATRIX_SIZE_BYTES * instances,
                     Buffer.Usage.ShaderStorageBuffer,
                     Buffer.Type.CPUGPUShared,
                     false

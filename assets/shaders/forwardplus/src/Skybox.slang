@@ -8,12 +8,12 @@ struct VSOutput {
 StructuredBuffer<Scene> scene_desc;
 
 static float3 skybox_color[] = {
-    float3(0.5, 0.5, 0.5),
-    float3(0.5, 0.5, 0.5),
-    float3(0.5, 0.5, 0.5),
-    float3(0.5, 0.5, 0.5),
-    float3(0.5, 0.5, 0.5),
-    float3(0.5, 0.5, 0.5),
+    float3(0.2, 0.2, 0.2),
+    float3(0.2, 0.2, 0.2),
+    float3(0.2, 0.2, 0.2),
+    float3(0.2, 0.2, 0.2),
+    float3(0.2, 0.2, 0.2),
+    float3(0.2, 0.2, 0.2),
 
 };
 

@@ -327,8 +327,7 @@ public class ForwardPipeline extends RenderPipeline {
                         pPushConstants.putInt(sceneRenderData.lights().size());
                         shadowMapPass.setPushConstants(pPushConstants);
                     }
-                    if(drawCall.instanced) shadowMapPass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
-                    else shadowMapPass.drawIndexed(drawCall.indexCount);
+                    shadowMapPass.drawIndexedInstanced(drawCall.indexCount, drawCall.instanceCount);
                 }
 
                 shadowMapPass.endRendering();
@@ -352,8 +351,7 @@ public class ForwardPipeline extends RenderPipeline {
                         pPushConstants.putInt(TileSize);
                         depthPass.setPushConstants(pPushConstants);
                     }
-                    if(drawCall.instanced) depthPass.drawInstanced(drawCall.indexCount, drawCall.instanceCount);
-                    else depthPass.drawIndexed(drawCall.indexCount);
+                    depthPass.drawIndexedInstanced(drawCall.indexCount, drawCall.instanceCount);
                 }
             }
             depthPass.endRendering();
@@ -419,19 +417,19 @@ public class ForwardPipeline extends RenderPipeline {
                             pPushConstants.putInt(TileSize);
                             scenePass.setPushConstants(pPushConstants);
                         }
-                        if (item.instanced) scenePass.drawInstanced(item.indexCount, item.instanceCount);
-                        else scenePass.drawIndexed(item.indexCount);
+                        scenePass.drawIndexedInstanced(item.indexCount, item.instanceCount);
                     }
+
 
                 }
 
 
-                //scenePass.setCullMode(CullMode.None);
-                //scenePass.setShaderProgram(wireframeShaderProgram);
-                //scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
+                scenePass.setCullMode(CullMode.None);
+                scenePass.setShaderProgram(wireframeShaderProgram);
+                scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
 
                 //TODO(Shayan) This is incredibly slow on Intel Iris Xe (Windows)
-                //scenePass.draw(sceneRenderData.wireframeVertexCount());
+                scenePass.draw(sceneRenderData.wireframeVertexCount());
 
 
                 scenePass.setCullMode(CullMode.None);

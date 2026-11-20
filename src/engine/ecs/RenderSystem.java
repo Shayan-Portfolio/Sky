@@ -3,7 +3,6 @@ package engine.ecs;
 import engine.asset.Asset;
 import engine.gameui.*;
 import engine.util.MathUtil;
-import engine.wsi.Surface;
 import engine.graphics.*;
 import engine.graphics.Color;
 import engine.graphics.text.MsdfFont;
@@ -49,27 +48,38 @@ public class RenderSystem extends ActorSystem {
         public Material material;
         public ShaderProgram shaderProgram;
         public boolean visible;
-        public boolean instanced;
         public int instanceCount;
         public int indexCount;
         public Buffer[] transformsBuffers;
         public Camera camera;
         public Vector3f sphereCenter;
         public float radius;
+        public Actor actor;
 
-        public RenderItem(Buffer vertexBuffer, Buffer indexBuffer, Material material, ShaderProgram shaderProgram, boolean visible, boolean instanced, int instanceCount, int indexCount, Buffer[] transformsBuffers, Camera camera, Vector3f sphereCenter, float radius) {
+        public RenderItem(Buffer vertexBuffer,
+                          Buffer indexBuffer,
+                          Material material,
+                          ShaderProgram shaderProgram,
+                          boolean visible,
+                          int instanceCount,
+                          int indexCount,
+                          Buffer[] transformsBuffers,
+                          Camera camera,
+                          Vector3f sphereCenter,
+                          float radius,
+                          Actor actor) {
             this.vertexBuffer = vertexBuffer;
             this.indexBuffer = indexBuffer;
             this.material = material;
             this.shaderProgram = shaderProgram;
             this.visible = visible;
-            this.instanced = instanced;
             this.instanceCount = instanceCount;
             this.indexCount = indexCount;
             this.transformsBuffers = transformsBuffers;
             this.camera = camera;
             this.sphereCenter = sphereCenter;
             this.radius = radius;
+            this.actor = actor;
         }
     }
 
@@ -462,31 +472,81 @@ public class RenderSystem extends ActorSystem {
                 ShaderComponent shaderComponent = actor.getComponent(ShaderComponent.class);
                 TransformComponent transformComponent = actor.getComponent(TransformComponent.class);
 
-                Vector3f sphereCenter = transformComponent.getPosition(new Vector3f());
-                Vector3f sphereMaxPoint = transformComponent.transform().transform(meshComponent.getMeshData().getSphereMaxPoint(), new Vector4f()).xyz(new Vector3f());
+                Vector3f sphereCenter = null, sphereMaxPoint = null;
+
+                if(meshComponent.instances > 1) {
+                    sphereCenter = new Vector3f();
+                    sphereMaxPoint = new Vector3f();
+                    for (int i = 0; i < meshComponent.instances; i++) {
+                        Matrix4f t = transformComponent.transforms()[i];
+                        sphereCenter.add(
+                                t.m30(),
+                                t.m31(),
+                                t.m32()
+                        );
+                    }
+                    sphereCenter.div(meshComponent.instances);
+
+
+                    for (int i = 0; i < meshComponent.instances; i++) {
+                        Matrix4f transform = transformComponent.transforms()[i];
+                        Vector3f pos = transformComponent.getPosition(i, new Vector3f());
+
+
+                        Vector3f max = transform.transform(meshComponent.getMeshData().getSphereMaxPoint(), new Vector4f()).xyz(new Vector3f());
+
+                        float r = max.distance(pos);
+
+
+
+
+                        drawSphere(pos, max, Color.RED);
+
+
+
+                        if(sphereCenter.distance(pos) + r > sphereCenter.distance(sphereMaxPoint)) {
+                            sphereMaxPoint = pos.normalize(pos.length() + r);
+                        }
+
+                    }
+
+
+
+                }
+                else {
+                    sphereCenter = transformComponent.getPosition(0, new Vector3f());
+                    sphereMaxPoint = transformComponent.transforms()[0].transform(
+                            meshComponent.getMeshData().getSphereMaxPoint(),
+                            new Vector4f()
+                    ).xyz(new Vector3f());
+                }
+
+
                 float radius = sphereCenter.distance(sphereMaxPoint);
 
 
                 if(meshComponent.isVisible()) {
-                    drawSphere(sphereCenter, sphereMaxPoint);
+                    drawSphere(sphereCenter, sphereMaxPoint, Color.RED);
                     items.add(new RenderItem(
                             meshComponent.vertexBuffer,
                             meshComponent.indexBuffer,
                             materialComponent.material,
                             shaderComponent.shaderProgram(),
                             meshComponent.visible,
-                            meshComponent.instanced,
-                            meshComponent.instanceCount,
+                            meshComponent.instances,
                             meshComponent.indexCount,
                             meshComponent.transformsBuffers,
                             activeCamera,
                             sphereCenter,
-                            radius
+                            radius,
+                            actor
                     ));
                 }
 
                 ByteBuffer transformsData = meshComponent.transformsBuffers[sceneRenderer.getFrameIndex()].get();
-                if(!meshComponent.instanced) transformComponent.transform().get(0, transformsData);
+                for(int i = 0; i < meshComponent.instances; i++)
+                    transformComponent.transforms()[i].get(i * MathUtil.MATRIX_SIZE_BYTES, transformsData);
+
             }
             if(actor.has(LightComponent.class)) {
                 LightData lightData = actor.getComponent(LightComponent.class).data;
@@ -538,7 +598,7 @@ public class RenderSystem extends ActorSystem {
         uiQuadCount = 0;
     }
 
-    private void drawSphere(@NotNull Vector3f center, Vector3f sphereMaxPoint) {
+    private void drawSphere(@NotNull Vector3f center, Vector3f sphereMaxPoint, Color color) {
         float dx = sphereMaxPoint.x - center.x;
         float dy = sphereMaxPoint.y - center.y;
         float dz = sphereMaxPoint.z - center.z;
@@ -564,7 +624,7 @@ public class RenderSystem extends ActorSystem {
                     float nextX = center.x + radius * (float) (Math.sin(phi) * Math.cos(nextTheta));
                     float nextZ = center.z + radius * (float) (Math.sin(phi) * Math.sin(nextTheta));
 
-                    drawLine(x, y, z, nextX, y, nextZ, Color.BLUE);
+                    drawLine(x, y, z, nextX, y, nextZ, color);
                 }
 
                 if (i < stacks) {
@@ -574,7 +634,7 @@ public class RenderSystem extends ActorSystem {
                     float nextY = center.y + radius * (float) Math.cos(nextPhi);
                     float nextZ = center.z + radius * (float) (Math.sin(nextPhi) * Math.sin(theta));
 
-                    drawLine(x, y, z, nextX, nextY, nextZ, Color.BLUE);
+                    drawLine(x, y, z, nextX, nextY, nextZ, color);
                 }
             }
         }
