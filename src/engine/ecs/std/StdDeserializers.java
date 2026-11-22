@@ -5,6 +5,7 @@ import engine.bridge.ProjectLoader;
 import engine.ecs.*;
 import engine.graphics.*;
 import engine.logging.Logger;
+import engine.logging.SkyRuntimeException;
 import engine.mio.Bytecode;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -197,6 +198,9 @@ public class StdDeserializers {
 
                 );
                 return lightComponent;
+            });
+            scene.registerDeserializer("MujocoComponent", (iterator) -> {
+                throw new SkyRuntimeException("Not implemented");
             });
         }
 
