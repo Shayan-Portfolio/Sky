@@ -4,8 +4,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-@ComponentArray(mask = 1 << 7)
-public record TransformComponent(Matrix4f... transforms) {
+@ComponentArray(mask = 1 << 9)
+public record TransformComponent(Matrix4f... transforms) implements Component {
     public void setPosition(int index, float x, float y, float z) {
         transforms[index].m30(x);
         transforms[index].m31(y);
@@ -28,4 +28,8 @@ public record TransformComponent(Matrix4f... transforms) {
         return d;
     }
 
+    @Override
+    public void removed(Actor a) {
+        for(Matrix4f t : transforms) t.zero();
+    }
 }

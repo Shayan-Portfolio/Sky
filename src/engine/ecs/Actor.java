@@ -4,7 +4,7 @@ import engine.graphics.Disposable;
 import engine.logging.Logger;
 
 public class Actor extends Disposable {
-    private Object[] components = new Object[64];
+    private Component[] components = new Component[64];
     private long mask = 0L;
     private Actor[] children = new Actor[128];
     private int nextChildIndex;
@@ -53,9 +53,9 @@ public class Actor extends Disposable {
         visitor.visit(this);
     }
 
-    public static Actor newActor(String name, Object... components) {
+    public static Actor newActor(String name, Component... components) {
         Actor actor = new Actor(name);
-        for(Object component : components)
+        for(Component component : components)
             actor.addComponent(component);
 
         return actor;
@@ -75,27 +75,28 @@ public class Actor extends Disposable {
     }
 
 
-    public void addComponent(Object component) {
+    public void addComponent(Component component) {
         int index = getIndex(component.getClass());
         components[index] = component;
         mask |= getMask(component.getClass());
     }
 
-    public boolean has(Class<?> clazz) {
+    public boolean has(Class<? extends Component> clazz) {
         return (mask & getMask(clazz)) != 0;
     }
 
-    public void remove(Class<?> clazz) {
+    public void removeComponent(Class<? extends Component> clazz) {
         int index = getIndex(clazz);
+        components[index].removed(this);
         components[index] = null;
         mask = mask & ~getMask(clazz);
     }
 
-    public <T> T getComponent(Class<T> c) {
+    public <T extends Component> T getComponent(Class<T> c) {
         return ((T) components[getIndex(c)]);
     }
 
-    public static long getMask(Class<?> clazz) {
+    public static long getMask(Class<? extends Component> clazz) {
         return clazz.getAnnotation(ComponentArray.class).mask();
     }
 
@@ -103,7 +104,7 @@ public class Actor extends Disposable {
         return mask;
     }
 
-    public static int getIndex(Class<?> clazz) {
+    public static int getIndex(Class<? extends Component> clazz) {
         return 64 - Long.numberOfTrailingZeros(getMask(clazz)) - 1;
     }
 

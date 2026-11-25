@@ -3,7 +3,7 @@ package engine.ecs;
 import engine.graphics.*;
 
 @ComponentArray(mask = 1 << 3)
-public class LightComponent {
+public class LightComponent implements Component {
 
     public LightData data;
 
@@ -32,5 +32,10 @@ public class LightComponent {
     }
 
 
+    @Override
+    public void removed(Actor a) {
+        a.removeDisposable(data.renderTarget);
+        data.renderTarget.disposeAll();
 
+    }
 }

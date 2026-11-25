@@ -5,8 +5,8 @@ import engine.audio.AudioBuffer;
 import engine.audio.AudioSource;
 import org.joml.Vector3f;
 
-@ComponentArray(mask = 1 << 11)
-public class AudioSourceComponent {
+@ComponentArray(mask = 1 << 1)
+public class AudioSourceComponent implements Component {
     public Vector3f position;
     public Asset<byte[]> sampleAsset;
     public boolean registered;
@@ -53,4 +53,7 @@ public class AudioSourceComponent {
     public void play() {
         playing = true;
     }
+
+    @Override
+    public void removed(Actor a) {}
 }

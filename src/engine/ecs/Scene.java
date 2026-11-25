@@ -63,7 +63,7 @@ public class Scene extends Disposable {
                 case BeginAdd -> {
                     Deserializer deserializer = deserializers.getOrDefault((String) bytecode.operands()[0], null);
                     if (deserializer == null) throw new SkyRuntimeException("No ECS deserializer for " + bytecode.operands()[0]);
-                    Object data = deserializer.deserialize(iterator);
+                    Component data = deserializer.deserialize(iterator);
                     actor.addComponent(data);
                     break;
                 }

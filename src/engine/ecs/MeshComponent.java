@@ -5,8 +5,8 @@ import engine.util.MathUtil;
 
 import java.nio.ByteBuffer;
 
-@ComponentArray(mask = 1 << 0)
-public class MeshComponent {
+@ComponentArray(mask = 1 << 5)
+public class MeshComponent implements Component {
     public Buffer[] transformsBuffers;
     public ShaderProgram shaderProgram;
     public int maxVertexCount;
@@ -87,5 +87,19 @@ public class MeshComponent {
 
     public MeshData getMeshData() {
         return meshData;
+    }
+
+    @Override
+    public void removed(Actor a) {
+        indexBuffer.disposeAll();
+        vertexBuffer.disposeAll();
+
+        for (Buffer transformsBuffer : transformsBuffers) {
+            transformsBuffer.disposeAll();
+            a.removeDisposable(transformsBuffer);
+        }
+
+        a.removeDisposable(indexBuffer);
+        a.removeDisposable(vertexBuffer);
     }
 }

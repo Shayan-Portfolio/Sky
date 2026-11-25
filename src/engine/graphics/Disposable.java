@@ -1,5 +1,6 @@
 package engine.graphics;
 
+import engine.logging.Logger;
 import engine.util.Internal;
 import engine.logging.SkyRuntimeException;
 
@@ -48,6 +49,7 @@ public abstract class Disposable {
     }
 
     public void disposeRecursive(Disposable disposable){
+
 
         String string = (getDepthString(disposable)+ " " + disposable.getClass().getSimpleName());
         System.out.println(string);

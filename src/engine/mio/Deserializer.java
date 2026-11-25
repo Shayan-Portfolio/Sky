@@ -1,9 +1,10 @@
 package engine.mio;
 
+import engine.ecs.Component;
 import engine.graphics.SceneRenderer;
 
 import java.util.Iterator;
 
 public interface Deserializer {
-    Object deserialize(Iterator<Bytecode> iterator);
+    Component deserialize(Iterator<Bytecode> iterator);
 }

@@ -17,6 +17,12 @@ import java.nio.file.Path;
 
 public class ProjectLoader {
     private static ClassLoader classLoader;
+    private static Path project;
+    private static JsonArray classpathJSON;
+
+    public static Path getProjectPath() {
+        return project;
+    }
 
     public static ClassLoader getClassLoader() {
         return classLoader;
@@ -28,9 +34,25 @@ public class ProjectLoader {
         return jsonObject.getAsJsonArray("classpath");
     }
 
+    public static void updateClassLoader() {
+
+        URL[] urls = new URL[1 + classpathJSON.size()];
+        try {
+            urls[0] = project.toUri().toURL();
+
+            for(int i = 0; i < classpathJSON.size(); i++) {
+                urls[i + 1] = Path.of(classpathJSON.get(i).getAsString()).toUri().toURL();
+            }
+            classLoader = new URLClassLoader(urls);
+        } catch (MalformedURLException e) {
+            throw new SkyRuntimeException(e);
+        }
+    }
+
     public static Application instantiateApplication(String[] args) {
         boolean isRelease = args[0].endsWith("jar");
         Path gamepath = Path.of(args[0]);
+        project = gamepath;
         try {
             if(isRelease) {
                 Logger.info(ProjectLoader.class, "Opening JAR " + gamepath);
@@ -40,14 +62,9 @@ public class ProjectLoader {
             else {
                 Logger.info(ProjectLoader.class, "Opening project " + gamepath);
                 Path classpathData = Path.of(args[2]);
-                JsonArray classpathJSON = parseClasspathJSON(classpathData);
+                ProjectLoader.classpathJSON = parseClasspathJSON(classpathData);
 
-                URL[] urls = new URL[1 + classpathJSON.size()];
-                urls[0] = gamepath.toUri().toURL();
-                for(int i = 0; i < classpathJSON.size(); i++) {
-                    urls[i + 1] = Path.of(classpathJSON.get(i).getAsString()).toUri().toURL();
-                }
-                classLoader = new URLClassLoader(urls);
+                updateClassLoader();
             }
 
             Class clazz = classLoader.loadClass(args[1]);

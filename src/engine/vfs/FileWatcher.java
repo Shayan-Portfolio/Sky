@@ -15,7 +15,7 @@ public class FileWatcher {
     private WatchService watcher;
 
 
-    public FileWatcher(Path dir, int delay) {
+    public FileWatcher(int delay, Path... paths) {
 
         thread = new Thread(() -> {
 
@@ -24,14 +24,17 @@ public class FileWatcher {
             try {
                 watcher = FileSystems.getDefault().newWatchService();
 
-                Files.walkFileTree(dir, new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path subdir, BasicFileAttributes attrs) throws IOException {
-                        WatchKey key = subdir.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-                        map.put(key, subdir);
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
+                for(Path path : paths) {
+
+                    Files.walkFileTree(path, new SimpleFileVisitor<>() {
+                        @Override
+                        public FileVisitResult preVisitDirectory(Path subdir, BasicFileAttributes attrs) throws IOException {
+                            WatchKey key = subdir.register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY);
+                            map.put(key, subdir);
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                }
 
 
                 while (true) {

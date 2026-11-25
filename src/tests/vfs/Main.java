@@ -16,7 +16,7 @@ import java.util.Queue;
 public class Main {
     public static void main(String[] args) {
         Logger.setConsoleTarget(System.out);
-        FileWatcher fileWatcher = new FileWatcher(Path.of("."), 250);
+        FileWatcher fileWatcher = new FileWatcher(250, Path.of("."));
         fileWatcher.start();
 
         while(true) {

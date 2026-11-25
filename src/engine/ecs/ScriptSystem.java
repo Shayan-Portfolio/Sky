@@ -7,9 +7,9 @@ public class ScriptSystem extends ActorSystem {
         root.previsitAllActors(actor -> {
             if (actor.has(ScriptComponent.class)) {
                 ScriptComponent scriptComponent = actor.getComponent(ScriptComponent.class);
-                if (!scriptComponent.script().initialized) {
+                if (!scriptComponent.script().isActive()) {
                     scriptComponent.script().init(actor);
-                    scriptComponent.script().initialized = true;
+                    scriptComponent.script().setActive(true);
                 }
 
                 scriptComponent.script().update(actor, root);

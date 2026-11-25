@@ -6,8 +6,8 @@ import engine.graphics.Rect2D;
 
 import java.util.Optional;
 
-@ComponentArray(mask = 1 << 9)
-public class UIComponent {
+@ComponentArray(mask = 1 << 10)
+public class UIComponent implements Component {
     public Widget widget;
     public Loop loop;
     public boolean active;
@@ -18,4 +18,7 @@ public class UIComponent {
         this.widget = widget;
         this.rect2D = rect2D;
     }
+
+    @Override
+    public void removed(Actor a) {}
 }
