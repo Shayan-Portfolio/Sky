@@ -211,7 +211,7 @@ public class ForwardPipeline extends RenderPipeline {
             drawCall.shaderProgram.setSamplers(
                     sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("input_shadow_maps_sampler", sampler)
             );
-            //drawCall.shaderProgram.setBuffers(sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("tile_colors", tileDataBuffers[sceneRenderer.getFrameIndex()]));
+            drawCall.shaderProgram.setBuffers(sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("tile_colors", tileDataBuffers[sceneRenderer.getFrameIndex()]));
             drawCall.shaderProgram.setBuffers(
                     sceneRenderer.getFrameIndex(),
                     new DescriptorUpdate<>("scene_desc", sceneBuffers[sceneRenderer.getFrameIndex()]),
