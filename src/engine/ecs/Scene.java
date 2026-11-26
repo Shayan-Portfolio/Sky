@@ -1,12 +1,15 @@
 package engine.ecs;
 
 
+import engine.asset.Asset;
+import engine.asset.AssetListener;
+import engine.asset.AssetRegistry;
 import engine.ecs.std.StdDeserializers;
 import engine.graphics.*;
+import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
-import engine.mio.Deserializer;
-import engine.mio.BytecodeStream;
-import engine.mio.Bytecode;
+import engine.mio.*;
+import engine.util.ExceptionUtil;
 
 import java.util.*;
 
@@ -48,8 +51,55 @@ public class Scene extends Disposable {
     }
 
 
-    public void load(BytecodeStream bytecodeStream) {
+    public void load(Asset<String> src) {
 
+        Actor top = Actor.newActor(src.getFQN());
+        actor.addActor(top);
+        actor = top;
+
+        Context ctx = new Context(
+                src.getFQN(),
+                src.getObject(),
+                new DefaultLogStrategy()
+        );
+
+        try {
+            BytecodeStream bytecodeStream = Mio.compile(ctx);
+            load(bytecodeStream);
+        }
+        catch (CompilerException e) {
+            throw new SkyRuntimeException(e);
+        }
+
+        src.addListener("reload_source", () -> {
+            Context context = new Context(
+                    src.getFQN(),
+                    src.getObject(),
+                    new DefaultLogStrategy()
+            );
+
+
+            try {
+                BytecodeStream bytecodeStream = Mio.compile(context);
+
+                for(Actor c : top.getChildren()) {
+                    if(c == null) continue;
+                    top.removeActor(c);
+                }
+                actor = top;
+
+
+                load(bytecodeStream);
+            } catch (CompilerException e) {
+                Logger.error(Scene.class, "Compile failed");
+                Logger.error(Scene.class, ExceptionUtil.exceptionToString(e));
+            }
+
+        });
+
+    }
+
+    private void load(BytecodeStream bytecodeStream) {
         for (Iterator<Bytecode> iterator = bytecodeStream.getList().iterator(); iterator.hasNext(); ) {
             Bytecode bytecode = iterator.next();
             switch (bytecode.opcode()) {
@@ -74,8 +124,6 @@ public class Scene extends Disposable {
             }
 
         }
-
-
     }
 
     public Actor newRootActor(String name) {

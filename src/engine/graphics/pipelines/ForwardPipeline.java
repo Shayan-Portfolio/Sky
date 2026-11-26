@@ -429,7 +429,7 @@ public class ForwardPipeline extends RenderPipeline {
                 scenePass.setVertexBuffer(sceneRenderData.wireframeVertexBuffer());
 
                 //TODO(Shayan) This is incredibly slow on Intel Iris Xe (Windows)
-                scenePass.draw(sceneRenderData.wireframeVertexCount());
+                //scenePass.draw(sceneRenderData.wireframeVertexCount());
 
 
                 scenePass.setCullMode(CullMode.None);

@@ -51,8 +51,8 @@ public abstract class Disposable {
     public void disposeRecursive(Disposable disposable){
 
 
-        String string = (getDepthString(disposable)+ " " + disposable.getClass().getSimpleName());
-        System.out.println(string);
+        //String string = (getDepthString(disposable)+ " " + disposable.getClass().getSimpleName());
+        //System.out.println(string);
         for (Iterator<Disposable> iterator = disposable.childrenToDispose.iterator(); iterator.hasNext(); ) {
             Disposable child = iterator.next();
             disposeRecursive(child);

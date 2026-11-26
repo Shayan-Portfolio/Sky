@@ -3,13 +3,15 @@ package engine.asset;
 import engine.logging.SkyRuntimeException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Asset<T> {
     private T object;
     private AssetPackage assetPackage;
     private String path;
-    private transient List<AssetListener> listeners = new ArrayList<>();
+    private transient Map<String, AssetListener> listeners = new HashMap<>();
 
     public Asset() {}
 
@@ -19,12 +21,12 @@ public class Asset<T> {
         this.object = object;
     }
 
-    public void addListener(AssetListener listener) {
-        listeners.add(listener);
+    public void addListener(String id, AssetListener listener) {
+        listeners.put(id, listener);
     }
 
-    public void removeListener(AssetListener listener) {
-        listeners.remove(listener);
+    public void removeListener(String id) {
+        listeners.remove(id);
     }
 
     public T getObject() {
@@ -52,7 +54,7 @@ public class Asset<T> {
     }
 
     public void fireAssetListeners() {
-        for(AssetListener listener : listeners) {
+        for(AssetListener listener : listeners.values()) {
             listener.onAssetChanged();
         }
     }

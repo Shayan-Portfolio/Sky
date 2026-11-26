@@ -31,7 +31,7 @@ public class VulkanShaderProgram extends ShaderProgram {
     private List<List<Long>> descriptorSetLayoutHandles = new ArrayList<>();
     private List<List<Long>> descriptorSetHandles = new ArrayList<>();
     private List<Long> descriptorPoolHandles = new ArrayList<>();
-    private HashMap<ShaderType, byte[]> shaders = new HashMap<>();
+    private HashMap<ShaderType, Asset<byte[]>> shaders = new HashMap<>();
     private List<Long> shaderModuleHandles = new ArrayList<>();
     private VulkanPipeline pipeline;
     private long context;
@@ -374,10 +374,10 @@ public class VulkanShaderProgram extends ShaderProgram {
     }
     @Override
     public void add(Asset<byte[]> bytecode, ShaderType shaderType) {
-        shaders.put(shaderType, bytecode.getObject());
+        shaders.put(shaderType, bytecode);
         load(bytecode.getObject(), shaderType);
 
-        bytecode.addListener(() -> {
+        bytecode.addListener("reload_shader", () -> {
 
             vkDeviceWaitIdle(VulkanRuntime.getCurrentDevice());
 
@@ -417,9 +417,9 @@ public class VulkanShaderProgram extends ShaderProgram {
             pushConstantsSizeBytes = 0;
             stageCount = 0;
 
-            shaders.put(shaderType, bytecode.getObject());
+            shaders.put(shaderType, bytecode);
             for(ShaderType s : shaders.keySet()) {
-                byte[] shaderBytecode = shaders.get(s);
+                byte[] shaderBytecode = shaders.get(s).getObject();
                 load(shaderBytecode, s);
             }
 
@@ -714,7 +714,7 @@ public class VulkanShaderProgram extends ShaderProgram {
                 int stageIndex = 0;
 
                 for(ShaderType shaderType : shaders.keySet()) {
-                    byte[] bytecode = shaders.get(shaderType);
+                    byte[] bytecode = shaders.get(shaderType).getObject();
 
                     VkShaderModuleCreateInfo createInfo = VkShaderModuleCreateInfo.calloc(stack);
 
@@ -973,6 +973,9 @@ public class VulkanShaderProgram extends ShaderProgram {
 
         spvc_context_destroy(context);
         spvcErrorCallback.free();
+
+        for(Asset<byte[]> bytecode : shaders.values())
+            bytecode.removeListener("reload_shader");
     }
 
 }

@@ -13,6 +13,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -26,6 +27,7 @@ public class VulkanTexture extends Texture {
     private VkCommandBuffer commandBuffer;
     private VulkanFence fence;
     private VulkanCommandPool commandPool;
+    private List<Asset<TextureData>> textureData;
 
 
     public VulkanTexture(Disposable parent, int width, int height, long imageHandle, int currentLayout, int usage, int imageFormat, int aspectMask) {
@@ -43,6 +45,7 @@ public class VulkanTexture extends Texture {
 
     public VulkanTexture(Disposable parent, int width, int height, int arrayLayers, List<Asset<TextureData>> textureData, int imageFormat, int usage, int tiling, int aspectMask) {
         super(parent, width, height, textureData, toTextureFormatType(imageFormat));
+        this.textureData = textureData;
 
         image = new VulkanImage(
                 this,
@@ -70,7 +73,7 @@ public class VulkanTexture extends Texture {
 
         if(textureData != null) {
             for (Asset<TextureData> faceAsset : textureData) {
-                faceAsset.addListener(() -> {
+                faceAsset.addListener("reload_texture", () -> {
                     this.width = faceAsset.getObject().width;
                     this.height = faceAsset.getObject().height;
 
@@ -248,6 +251,10 @@ public class VulkanTexture extends Texture {
     }
 
     @Override
-    public void dispose() {}
+    public void dispose() {
+        if(textureData != null) {
+            for(Asset<TextureData> tex : textureData) tex.removeListener("reload_texture");
+        }
+    }
 
 }

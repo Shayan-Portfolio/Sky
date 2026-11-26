@@ -42,6 +42,19 @@ public class Actor extends Disposable {
         return this;
     }
 
+    public void removeActor(Actor actor) {
+        for (int i = 0; i < children.length; i++) {
+            if(children[i] == actor) {
+                children[i] = null;
+                removeDisposable(actor);
+                actor.disposeAll();
+            }
+        }
+    }
+
+    public Actor[] getChildren() {
+        return children;
+    }
 
     public void previsitAllActors(ActorPreVisitor visitor) {
         visitor.visit(this);

@@ -55,7 +55,7 @@ public class ReloadSystem extends ActorSystem {
                         asset.setObjectUnsafe(res);
                         asset.fireAssetListeners();
 
-                        Logger.info(ReloadSystem.class, "Reloaded asset " + key + "from disk");
+                        Logger.info(ReloadSystem.class, "Reloaded asset " + key + " from disk");
                         assetReloaded = true;
                     }
                 }

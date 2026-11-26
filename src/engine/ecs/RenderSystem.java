@@ -87,7 +87,7 @@ public class RenderSystem extends ActorSystem {
         this.sceneRenderer = sceneRenderer;
         this.renderPipeline = renderPipeline;
         uiTheme = ThemeLoader.loadTheme(uiThemeJSON.getObject());
-        uiThemeJSON.addListener(() -> uiTheme = ThemeLoader.loadTheme(uiThemeJSON.getObject()));
+        //uiThemeJSON.addListener(() -> uiTheme = ThemeLoader.loadTheme(uiThemeJSON.getObject()));
 
 
         uiCamera = Camera.newOrthoCamera(
