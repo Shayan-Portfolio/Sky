@@ -1,4 +1,4 @@
-package engine.mio;
+package engine.ecs.compiler;
 
 /*
 God help you if you're actually trying to understand this lexer

@@ -2,13 +2,11 @@ package engine.ecs;
 
 
 import engine.asset.Asset;
-import engine.asset.AssetListener;
-import engine.asset.AssetRegistry;
 import engine.ecs.std.StdDeserializers;
 import engine.graphics.*;
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
-import engine.mio.*;
+import engine.ecs.compiler.*;
 import engine.util.ExceptionUtil;
 
 import java.util.*;
@@ -50,6 +48,17 @@ public class Scene extends Disposable {
         return actor;
     }
 
+    private static BytecodeStream compile(Context source) throws CompilerException {
+        Analyzer tokenizer = new Analyzer(source);
+
+        RecursiveDescentParser parser = new RecursiveDescentParser(source);
+
+        ASTNode node = parser.parseAll(tokenizer);
+        Codegen codegen = new Codegen(source);
+        return codegen.flatten(node);
+
+
+    }
 
     public void load(Asset<String> src) {
 
@@ -64,7 +73,7 @@ public class Scene extends Disposable {
         );
 
         try {
-            BytecodeStream bytecodeStream = Mio.compile(ctx);
+            BytecodeStream bytecodeStream = compile(ctx);
             load(bytecodeStream);
         }
         catch (CompilerException e) {
@@ -80,7 +89,7 @@ public class Scene extends Disposable {
 
 
             try {
-                BytecodeStream bytecodeStream = Mio.compile(context);
+                BytecodeStream bytecodeStream = compile(context);
 
                 for(Actor c : top.getChildren()) {
                     if(c == null) continue;

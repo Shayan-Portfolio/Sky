@@ -1,8 +1,8 @@
-package tests.mio;
+package tests.scn;
 
-import engine.mio.Analyzer;
-import engine.mio.Context;
-import engine.mio.DefaultLogStrategy;
+import engine.ecs.compiler.Analyzer;
+import engine.ecs.compiler.Context;
+import engine.ecs.compiler.DefaultLogStrategy;
 
 class AnalyzerTest {
     public static void main(String[] args) {

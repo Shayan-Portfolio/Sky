@@ -6,7 +6,7 @@ import engine.ecs.*;
 import engine.graphics.*;
 import engine.logging.Logger;
 import engine.logging.SkyRuntimeException;
-import engine.mio.Bytecode;
+import engine.ecs.compiler.Bytecode;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 

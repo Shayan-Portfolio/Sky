@@ -1,4 +1,4 @@
-package engine.mio;
+package engine.ecs.compiler;
 
 public class CompilerException extends Exception {
     protected int line;

@@ -1,9 +1,9 @@
-package tests.mio;
+package tests.scn;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import engine.logging.SkyRuntimeException;
-import engine.mio.*;
+import engine.ecs.compiler.*;
 
 import java.io.IOException;
 import java.nio.file.Files;

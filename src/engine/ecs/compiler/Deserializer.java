@@ -1,7 +1,6 @@
-package engine.mio;
+package engine.ecs.compiler;
 
 import engine.ecs.Component;
-import engine.graphics.SceneRenderer;
 
 import java.util.Iterator;
 

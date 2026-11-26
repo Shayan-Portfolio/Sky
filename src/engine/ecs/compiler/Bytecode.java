@@ -1,4 +1,4 @@
-package engine.mio;
+package engine.ecs.compiler;
 
 import org.jetbrains.annotations.NotNull;
 

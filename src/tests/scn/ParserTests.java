@@ -1,6 +1,6 @@
-package tests.mio;
+package tests.scn;
 
-import engine.mio.*;
+import engine.ecs.compiler.*;
 
 class ParserTests {
     public static void main(String[] args) {

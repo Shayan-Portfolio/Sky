@@ -1,4 +1,4 @@
-package engine.mio;
+package engine.ecs.compiler;
 
 import java.util.Arrays;
 import java.util.Stack;
