@@ -51,7 +51,6 @@ public class RenderSystem extends ActorSystem {
         public int instanceCount;
         public int indexCount;
         public Buffer[] transformsBuffers;
-        public Camera camera;
         public Vector3f sphereCenter;
         public float radius;
         public Actor actor;
@@ -64,7 +63,6 @@ public class RenderSystem extends ActorSystem {
                           int instanceCount,
                           int indexCount,
                           Buffer[] transformsBuffers,
-                          Camera camera,
                           Vector3f sphereCenter,
                           float radius,
                           Actor actor) {
@@ -76,7 +74,6 @@ public class RenderSystem extends ActorSystem {
             this.instanceCount = instanceCount;
             this.indexCount = indexCount;
             this.transformsBuffers = transformsBuffers;
-            this.camera = camera;
             this.sphereCenter = sphereCenter;
             this.radius = radius;
             this.actor = actor;
@@ -455,7 +452,6 @@ public class RenderSystem extends ActorSystem {
         );
 
 
-
         root.previsitAllActors(actor -> {
             if(actor.has(CameraComponent.class)) {
                 CameraComponent cameraComponent = actor.getComponent(CameraComponent.class);
@@ -464,15 +460,21 @@ public class RenderSystem extends ActorSystem {
                     activeCamera = newCamera;
                 else
                     drawFrustum(newCamera.getInvView(), newCamera.getInvProj(), newCamera.getDebugColor());
-
             }
+        });
+
+        Vector3f cameraPosition = activeCamera.getPosition(new Vector3f());
+        Vector3f[] frustum = MathUtil.getFrustum(activeCamera.getInvView(), activeCamera.getInvProj(), 1);
+
+
+        root.previsitAllActors(actor -> {
             if(actor.has(MeshComponent.class) && actor.has(MaterialComponent.class) && actor.has(ShaderComponent.class) && actor.has(TransformComponent.class)) {
                 MeshComponent meshComponent = actor.getComponent(MeshComponent.class);
                 MaterialComponent materialComponent = actor.getComponent(MaterialComponent.class);
                 ShaderComponent shaderComponent = actor.getComponent(ShaderComponent.class);
                 TransformComponent transformComponent = actor.getComponent(TransformComponent.class);
 
-                Vector3f sphereCenter = null, sphereMaxPoint = null;
+                Vector3f sphereCenter, sphereMaxPoint;
 
                 if(meshComponent.instances > 1) {
                     sphereCenter = new Vector3f();
@@ -527,20 +529,22 @@ public class RenderSystem extends ActorSystem {
 
                 if(meshComponent.isVisible()) {
                     drawSphere(sphereCenter, sphereMaxPoint, Color.RED);
-                    items.add(new RenderItem(
-                            meshComponent.vertexBuffer,
-                            meshComponent.indexBuffer,
-                            materialComponent.material,
-                            shaderComponent.shaderProgram(),
-                            meshComponent.visible,
-                            meshComponent.instances,
-                            meshComponent.indexCount,
-                            meshComponent.transformsBuffers,
-                            activeCamera,
-                            sphereCenter,
-                            radius,
-                            actor
-                    ));
+
+                    if(MathUtil.isSphereInFrustum(sphereCenter, radius, cameraPosition, frustum)) {
+                        items.add(new RenderItem(
+                                meshComponent.vertexBuffer,
+                                meshComponent.indexBuffer,
+                                materialComponent.material,
+                                shaderComponent.shaderProgram(),
+                                meshComponent.visible,
+                                meshComponent.instances,
+                                meshComponent.indexCount,
+                                meshComponent.transformsBuffers,
+                                sphereCenter,
+                                radius,
+                                actor
+                        ));
+                    }
                 }
 
                 ByteBuffer transformsData = meshComponent.transformsBuffers[sceneRenderer.getFrameIndex()].get();

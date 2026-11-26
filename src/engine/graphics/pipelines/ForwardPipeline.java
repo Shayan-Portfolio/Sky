@@ -398,27 +398,22 @@ public class ForwardPipeline extends RenderPipeline {
             scenePass.startRendering(scenePassRT, 0, sceneRenderer.getWidth(), sceneRenderer.getHeight(), true, Color.BLACK);
             {
 
-                Vector3f cameraPosition = camera.getPosition(new Vector3f());
-                Vector3f[] frustum = MathUtil.getFrustum(camera.getInvView(), camera.getInvProj(), 1);
                 for(RenderSystem.RenderItem item : sceneRenderData.drawCalls()) {
 
-                    if(MathUtil.isSphereInFrustum(item.sphereCenter, item.radius, cameraPosition, frustum)) {
-
-                        scenePass.setCullMode(CullMode.Back);
-                        scenePass.setShaderProgram(item.shaderProgram);
-                        scenePass.setDrawBuffers(item.vertexBuffer, item.indexBuffer);
-                        try (MemoryStack stack = stackPush()) {
-                            ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
-                            pPushConstants.putInt(PbrMode);
-                            pPushConstants.putInt(-1);
-                            pPushConstants.putInt(lights.size());
-                            pPushConstants.putInt(tilesW);
-                            pPushConstants.putInt(tilesH);
-                            pPushConstants.putInt(TileSize);
-                            scenePass.setPushConstants(pPushConstants);
-                        }
-                        scenePass.drawIndexedInstanced(item.indexCount, item.instanceCount);
+                    scenePass.setCullMode(CullMode.Back);
+                    scenePass.setShaderProgram(item.shaderProgram);
+                    scenePass.setDrawBuffers(item.vertexBuffer, item.indexBuffer);
+                    try (MemoryStack stack = stackPush()) {
+                        ByteBuffer pPushConstants = stack.calloc(Integer.BYTES * 6);
+                        pPushConstants.putInt(PbrMode);
+                        pPushConstants.putInt(-1);
+                        pPushConstants.putInt(lights.size());
+                        pPushConstants.putInt(tilesW);
+                        pPushConstants.putInt(tilesH);
+                        pPushConstants.putInt(TileSize);
+                        scenePass.setPushConstants(pPushConstants);
                     }
+                    scenePass.drawIndexedInstanced(item.indexCount, item.instanceCount);
 
 
                 }
