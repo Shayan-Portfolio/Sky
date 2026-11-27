@@ -59,7 +59,7 @@ public class Node extends Panel {
     }
 
     @Override
-    public void update(UIPainter platform, int x, int y, int w, int h) {
+    public void update(Compositor platform, int x, int y, int w, int h) {
         int bx = button.getRequiredWidth(), by = button.getRequiredHeight();
         button.update(platform, x, y, bx, by);
         if(expanded) super.update(platform, x + indent, y + by, w, h);

@@ -8,7 +8,7 @@ import engine.graphics.text.TextEffect;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
-public abstract class UIPainter {
+public abstract class Compositor {
     public abstract void drawRoundRect(float x, float y, float w, float h, float radius, Color c0, Color c1, Color c2, Color c3);
 
     public abstract void drawRect(float x, float y, float w, float h, Color color);

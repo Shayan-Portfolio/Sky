@@ -96,7 +96,7 @@ public class TextField extends Widget {
     }
 
     @Override
-    public void update(UIPainter platform, int x, int y, int w, int h) {
+    public void update(Compositor platform, int x, int y, int w, int h) {
         String visibleString = getVisibleString();
         Vector2f mousePos = Application.get().getSurface().getMousePos();
         if(Application.get().getSurface().getMousePressed(Input.MOUSE_BUTTON_1)) {

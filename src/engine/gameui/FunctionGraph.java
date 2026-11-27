@@ -26,7 +26,7 @@ public class FunctionGraph extends Widget {
 
     private float phase = 0;
     @Override
-    public void update(UIPainter platform, int x, int y, int w, int h) {
+    public void update(Compositor platform, int x, int y, int w, int h) {
         platform.drawRect(x, y, w, h, platform.getTheme().containerBackgroundColor);
 
         int steps = 30;

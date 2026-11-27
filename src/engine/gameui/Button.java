@@ -28,7 +28,7 @@ public class Button extends Widget {
     }
 
     @Override
-    public void update(UIPainter platform, int x, int y, int w, int h) {
+    public void update(Compositor platform, int x, int y, int w, int h) {
         Vector2f mousePos = Application.get().getSurface().getMousePos();
 
         if(Rect2D.contains(mousePos.x, mousePos.y, x + padding, y + padding, w - padding * 2, h - padding * 2)){
