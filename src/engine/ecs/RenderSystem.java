@@ -171,7 +171,7 @@ public class RenderSystem extends ActorSystem {
             }
             if(actor.has(UIComponent.class)) {
                 UIComponent uiComponent = actor.getComponent(UIComponent.class);
-                uiComponent.loop.setCompositor(renderPipeline.getCompositor());
+                uiComponent.loop.setPaint(renderPipeline.getCompositor());
                 Rect2D area = uiComponent.area;
                 uiComponent.loop.update(
                         (int) area.x,

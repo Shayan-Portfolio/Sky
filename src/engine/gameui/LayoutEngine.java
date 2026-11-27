@@ -14,5 +14,5 @@ public abstract class LayoutEngine {
     public abstract int getComputedWidth();
     public abstract int getComputedHeight();
 
-    public abstract void updateChildren(Compositor platform, int x, int y, int w, int h);
+    public abstract void updateChildren(Paint paint, int x, int y, int w, int h);
 }

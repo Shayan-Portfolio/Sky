@@ -26,7 +26,7 @@ public abstract class Widget {
         }
 
         @Override
-        public void updateChildren(Compositor platform, int x, int y, int w, int h) {
+        public void updateChildren(Paint paint, int x, int y, int w, int h) {
 
         }
     };
@@ -87,9 +87,9 @@ public abstract class Widget {
     public abstract int getRequiredWidth();
     public abstract int getRequiredHeight();
 
-    public abstract void update(Compositor platform, int x, int y, int w, int h);
-    public void updateChildren(Compositor platform, int x, int y, int w, int h) {
-        layoutEngine.updateChildren(platform, x, y, w, h);
+    public abstract void update(Paint paint, int x, int y, int w, int h);
+    public void updateChildren(Paint paint, int x, int y, int w, int h) {
+        layoutEngine.updateChildren(paint, x, y, w, h);
     }
     public Widget setLayoutEngine(LayoutEngine layoutEngine) {
         this.layoutEngine = layoutEngine;

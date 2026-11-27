@@ -48,12 +48,12 @@ public class LineLayoutEngine extends LayoutEngine {
     }
 
     @Override
-    public void updateChildren(Compositor platform, int x, int y, int w, int h) {
+    public void updateChildren(Paint paint, int x, int y, int w, int h) {
         if(line == Line.Horizontal) {
             int dx = x, dy = y;
             for(Widget child : widget.getWidgets()) {
                 int width = child.getRequiredWidth();
-                child.update(platform, dx, dy, width, child.getRequiredHeight());
+                child.update(paint, dx, dy, width, child.getRequiredHeight());
                 dx += width;
             }
         }
@@ -61,7 +61,7 @@ public class LineLayoutEngine extends LayoutEngine {
             int dx = x, dy = y;
             for(Widget child : widget.getWidgets()) {
                 int height = child.getRequiredHeight();
-                child.update(platform, dx, dy, child.getRequiredWidth(), height);
+                child.update(paint, dx, dy, child.getRequiredWidth(), height);
                 dy += height;
             }
         }

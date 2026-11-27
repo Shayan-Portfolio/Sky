@@ -96,7 +96,7 @@ public class TextField extends Widget {
     }
 
     @Override
-    public void update(Compositor platform, int x, int y, int w, int h) {
+    public void update(Paint paint, int x, int y, int w, int h) {
         String visibleString = getVisibleString();
         Vector2f mousePos = Application.get().getSurface().getMousePos();
         if(Application.get().getSurface().getMousePressed(Input.MOUSE_BUTTON_1)) {
@@ -120,16 +120,16 @@ public class TextField extends Widget {
 
         }
 
-        platform.drawString(
+        paint.drawString(
                 x + padding,
                 y + padding,
                 visibleString,
                 font,
                 null,
-                platform.getTheme().textColor
+                paint.getTheme().textColor
         );
 
-        Color color = focused ? platform.getTheme().buttonHoverColor : platform.getTheme().containerBackgroundColor;
+        Color color = focused ? paint.getTheme().buttonHoverColor : paint.getTheme().containerBackgroundColor;
 
         time += Time.deltaTime();
         if(time >= cursorBlinkTime) {
@@ -143,12 +143,12 @@ public class TextField extends Widget {
                 if(!visibleString.isEmpty()) end = cursor % visibleString.length();
 
                 float cx = font.getStringWidth(visibleString.substring(0, end));
-                platform.drawRect(x + padding + cx, y + padding * 2, 1, h - padding * 4, platform.getTheme().textColor);
+                paint.drawRect(x + padding + cx, y + padding * 2, 1, h - padding * 4, paint.getTheme().textColor);
             }
         }
 
 
-        platform.drawRectLines(x + padding, y + padding, w - padding * 2, h - padding * 2, 2, color);
-        updateChildren(platform, x + padding, y + padding, w - padding * 2, h - padding * 2);
+        paint.drawRectLines(x + padding, y + padding, w - padding * 2, h - padding * 2, 2, color);
+        updateChildren(paint, x + padding, y + padding, w - padding * 2, h - padding * 2);
     }
 }

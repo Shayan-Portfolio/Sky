@@ -19,10 +19,10 @@ public class Panel extends Widget {
     }
 
     @Override
-    public void update(Compositor platform, int x, int y, int w, int h) {
+    public void update(Paint paint, int x, int y, int w, int h) {
         if(!ignore)
-            platform.drawRect(x, y, w, h, platform.getTheme().containerBackgroundColor);
-        updateChildren(platform, x + padding, y + padding, w - padding, h - padding);
+            paint.drawRect(x, y, w, h, paint.getTheme().containerBackgroundColor);
+        updateChildren(paint, x + padding, y + padding, w - padding, h - padding);
     }
 
 

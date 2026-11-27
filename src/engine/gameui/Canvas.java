@@ -25,11 +25,11 @@ public abstract class Canvas extends Widget {
     }
 
     @Override
-    public void update(Compositor platform, int x, int y, int w, int h) {
+    public void update(Paint paint, int x, int y, int w, int h) {
         if(!ignore)
-            platform.drawRect(x, y, w, h, platform.getTheme().containerBackgroundColor);
-        drawCustom(platform, x, y, w, h);
+            paint.drawRect(x, y, w, h, paint.getTheme().containerBackgroundColor);
+        drawCustom(paint, x, y, w, h);
     }
 
-    public abstract void drawCustom(Compositor platform, int x, int y, int w, int h);
+    public abstract void drawCustom(Paint paint, int x, int y, int w, int h);
 }

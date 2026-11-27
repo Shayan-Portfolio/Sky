@@ -28,19 +28,19 @@ public class Button extends Widget {
     }
 
     @Override
-    public void update(Compositor platform, int x, int y, int w, int h) {
+    public void update(Paint paint, int x, int y, int w, int h) {
         Vector2f mousePos = Application.get().getSurface().getMousePos();
 
         if(Rect2D.contains(mousePos.x, mousePos.y, x + padding, y + padding, w - padding * 2, h - padding * 2)){
 
             boolean inputPressed = Application.get().getSurface().getMousePressed(Input.MOUSE_BUTTON_1);
             if(pressed) {
-                platform.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, platform.getTheme().buttonClickColor, Color.BLACK, Color.BLACK, platform.getTheme().buttonClickColor);
+                paint.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, paint.getTheme().buttonClickColor, Color.BLACK, Color.BLACK, paint.getTheme().buttonClickColor);
 
 
             }
             else {
-                platform.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, platform.getTheme().buttonHoverColor, Color.BLACK, Color.BLACK, platform.getTheme().buttonHoverColor);
+                paint.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, paint.getTheme().buttonHoverColor, Color.BLACK, Color.BLACK, paint.getTheme().buttonHoverColor);
 
             }
 
@@ -55,10 +55,10 @@ public class Button extends Widget {
 
         }
         else
-            platform.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, platform.getTheme().buttonBackgroundColor, Color.BLACK, Color.BLACK, platform.getTheme().buttonBackgroundColor);
+            paint.drawRoundRect(x + padding, y + padding, w - padding * 2, h - padding * 2, 5, paint.getTheme().buttonBackgroundColor, Color.BLACK, Color.BLACK, paint.getTheme().buttonBackgroundColor);
 
 
-        platform.drawString(x + (2 * padding), y + (2 * padding), value.string.toString(), font, null, platform.getTheme().textColor);
-        updateChildren(platform, x + padding, y + padding, w - padding * 2, h - padding * 2);
+        paint.drawString(x + (2 * padding), y + (2 * padding), value.string.toString(), font, null, paint.getTheme().textColor);
+        updateChildren(paint, x + padding, y + padding, w - padding * 2, h - padding * 2);
     }
 }

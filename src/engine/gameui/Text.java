@@ -28,10 +28,10 @@ public class Text extends Widget {
     }
 
     @Override
-    public void update(Compositor platform, int x, int y, int w, int h) {
+    public void update(Paint paint, int x, int y, int w, int h) {
 
 
-        platform.drawString(x + (2 * padding), y + (2 * padding), value.string.toString(), font, null, platform.getTheme().textColor);
-        updateChildren(platform, x + padding, y + padding, w - padding * 2, h - padding * 2);
+        paint.drawString(x + (2 * padding), y + (2 * padding), value.string.toString(), font, null, paint.getTheme().textColor);
+        updateChildren(paint, x + padding, y + padding, w - padding * 2, h - padding * 2);
     }
 }

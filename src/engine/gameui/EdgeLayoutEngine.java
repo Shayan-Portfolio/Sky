@@ -50,7 +50,7 @@ public class EdgeLayoutEngine extends LayoutEngine {
     }
 
     @Override
-    public void updateChildren(Compositor platform, int x, int y, int w, int h) {
+    public void updateChildren(Paint paint, int x, int y, int w, int h) {
 
         int dx = x, dy = y;
         Widget myWidget = getWidget();
@@ -63,28 +63,28 @@ public class EdgeLayoutEngine extends LayoutEngine {
             int childHeight = child.getRequiredHeight();
 
             if(child.hasHint(Top)) {
-                child.update(platform, dx, dy, widgetWidth, childHeight);
+                child.update(paint, dx, dy, widgetWidth, childHeight);
                 topOffset = childHeight;
             }
             else if(child.hasHint(Bottom)) {
-                child.update(platform, dx, dy + (widgetHeight - childHeight), widgetWidth, childHeight);
+                child.update(paint, dx, dy + (widgetHeight - childHeight), widgetWidth, childHeight);
                 bottomOffset = childHeight;
             }
             else if(child.hasHint(Right)) {
-                 child.update(platform, dx + (widgetWidth - childWidth), dy + topOffset, childWidth, widgetHeight - topOffset - bottomOffset);
+                 child.update(paint, dx + (widgetWidth - childWidth), dy + topOffset, childWidth, widgetHeight - topOffset - bottomOffset);
             }
             else if(child.hasHint(Left)) {
-                child.update(platform, dx, dy + topOffset, child.getRequiredWidth(), widgetHeight - topOffset - bottomOffset);
+                child.update(paint, dx, dy + topOffset, child.getRequiredWidth(), widgetHeight - topOffset - bottomOffset);
             }
             else if(child.hasHint(Center)) {
 
                 float hw = childWidth / 2f;
                 float hh = childHeight / 2f;
 
-                child.update(platform, (int) (dx + (widgetWidth / 2f - hw)), (int) (dy + (widgetHeight / 2f - hh)), childWidth, childHeight);
+                child.update(paint, (int) (dx + (widgetWidth / 2f - hw)), (int) (dy + (widgetHeight / 2f - hh)), childWidth, childHeight);
             }
             else {
-                child.update(platform, dx, dy, childWidth, childHeight);
+                child.update(paint, dx, dy, childWidth, childHeight);
             }
 
 

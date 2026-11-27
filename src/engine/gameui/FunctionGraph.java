@@ -26,8 +26,8 @@ public class FunctionGraph extends Widget {
 
     private float phase = 0;
     @Override
-    public void update(Compositor platform, int x, int y, int w, int h) {
-        platform.drawRect(x, y, w, h, platform.getTheme().containerBackgroundColor);
+    public void update(Paint paint, int x, int y, int w, int h) {
+        paint.drawRect(x, y, w, h, paint.getTheme().containerBackgroundColor);
 
         int steps = 30;
 
@@ -42,8 +42,8 @@ public class FunctionGraph extends Widget {
 
         for(int i = 0; i < steps; i++) {
             if(i % 4 == 0) {
-                platform.drawRect(x + (i * ws), y, 1, h, platform.getTheme().containerBackgroundColor);
-                platform.drawRect(x, y + (i * hs), w, 1, platform.getTheme().containerBackgroundColor);
+                paint.drawRect(x + (i * ws), y, 1, h, paint.getTheme().containerBackgroundColor);
+                paint.drawRect(x, y + (i * hs), w, 1, paint.getTheme().containerBackgroundColor);
             }
         }
 
@@ -53,7 +53,7 @@ public class FunctionGraph extends Widget {
 
 
 
-            platform.drawLine(x + lx, y + ly, x + nx, y + fofx + hs * (steps / 2f), platform.getTheme().buttonHoverColor);
+            paint.drawLine(x + lx, y + ly, x + nx, y + fofx + hs * (steps / 2f), paint.getTheme().buttonHoverColor);
 
 
             lx = nx;
