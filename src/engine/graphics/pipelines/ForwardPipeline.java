@@ -226,21 +226,22 @@ public class ForwardPipeline extends RenderPipeline {
 
                     @Override
                     public void drawLine(float x1, float y1, float x2, float y2, Color color) {
+                        Matrix4f transform = getTransform();
                         float dx = x2 - x1;
                         float dy = y2 - y1;
 
                         float angle = (float) Math.atan2(dy, dx);
 
-                        setOrigin(x1, y1);
-                        setTransform(uiTransform.rotateZ(angle));
+                        getOrigin().set(x1, y1, 0, 1);
+                        transform.rotateZ(angle);
 
                         float hypotenuse = (float) Math.sqrt((dx * dx) + (dy * dy));
 
                         drawRect(x1, y1 - 2, hypotenuse, 4, color);
 
-                        setTransform(uiTransform.rotateZ(-angle));
+                        transform.rotateZ(-angle);
 
-                        setOrigin(0, 0);
+                        getOrigin().set(0, 0, 0, 1);
                     }
 
 
@@ -296,20 +297,9 @@ public class ForwardPipeline extends RenderPipeline {
                         );
                     }
 
-                    @Override
-                    public void setOrigin(float x, float y) {
-                        ForwardPipeline.this.setOrigin(x, y);
-                    }
 
-                    @Override
-                    public Vector4f getOrigin() {
-                        return origin;
-                    }
 
-                    @Override
-                    public void setTransform(Matrix4f transform) {
-                        uiTransform.set(transform);
-                    }
+
 
                     @Override
                     public void drawTexture(float x, float y, float w, float h, Color color, Texture texture, Sampler sampler) {
@@ -630,11 +620,13 @@ public class ForwardPipeline extends RenderPipeline {
 
         ByteBuffer vertexBufferData = uiVertexBuffers[sceneRenderer.getFrameIndex()].get();
         ByteBuffer indexBufferData = uiIndexBuffers[sceneRenderer.getFrameIndex()].get();
+        Vector4f origin = compositor.getOrigin();
+        Matrix4f transform = compositor.getTransform();
 
-                Vector4f topLeft = new Vector4f(x, y, 0, 1).sub(origin).mul(uiTransform).add(origin),
-                bottomLeft = new Vector4f(x, y + h, 0, 1).sub(origin).mul(uiTransform).add(origin),
-                bottomRight = new Vector4f(x + w, y + h, 0, 1).sub(origin).mul(uiTransform).add(origin),
-                topRight = new Vector4f(x + w, y, 0, 1).sub(origin).mul(uiTransform).add(origin);
+                Vector4f topLeft = new Vector4f(x, y, 0, 1).sub(origin).mul(transform).add(origin),
+                bottomLeft = new Vector4f(x, y + h, 0, 1).sub(origin).mul(transform).add(origin),
+                bottomRight = new Vector4f(x + w, y + h, 0, 1).sub(origin).mul(transform).add(origin),
+                topRight = new Vector4f(x + w, y, 0, 1).sub(origin).mul(transform).add(origin);
 
         vertexBufferData.putFloat(topLeft.x);
         vertexBufferData.putFloat(topLeft.y);
@@ -696,23 +688,14 @@ public class ForwardPipeline extends RenderPipeline {
         indexBufferData.putInt(0 + (4 * uiQuadCount));
         uiQuadCount++;
     }
-    private void setOrigin(float x, float y) {
-        origin.set(x, y, 0, 1);
-    }
-
-
-
-
-
 
 
 
     @Override
     public List<Pass> buildFrame(SceneRenderData sceneRenderData) {
         wireframeVertexCount = 0;
-
-        uiTransform.identity();
-        setOrigin(0, 0);
+        compositor.getTransform().identity();
+        compositor.getOrigin().set(0, 0, 0, 1);
 
         //Update UI shaders
         uiShaderProgram.setTextures(sceneRenderer.getFrameIndex(), new DescriptorUpdate<>("input_textures", nSceneColorTextures[sceneRenderer.getFrameIndex()]).arrayIndex(0));

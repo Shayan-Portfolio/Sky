@@ -9,6 +9,18 @@ import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
 public abstract class Compositor {
+
+    private Matrix4f transform = new Matrix4f();
+    private Vector4f origin = new Vector4f();
+
+    public Matrix4f getTransform() {
+        return transform;
+    }
+
+    public Vector4f getOrigin() {
+        return origin;
+    }
+
     public abstract void drawRoundRect(float x, float y, float w, float h, float radius, Color c0, Color c1, Color c2, Color c3);
 
     public abstract void drawRect(float x, float y, float w, float h, Color color);
@@ -36,9 +48,6 @@ public abstract class Compositor {
                              Color color,
                              Texture texture,
                              Sampler sampler, boolean msdf);
-    public abstract void setOrigin(float x, float y);
-    public abstract Vector4f getOrigin();
-    public abstract void setTransform(Matrix4f transform);
     public abstract void drawTexture(float x, float y, float  w, float h, Color color, Texture texture, Sampler sampler);
     public abstract void drawString(float x, float y, String text, MsdfFont font, TextEffect textEffect, Color color);
     public abstract Theme getTheme();

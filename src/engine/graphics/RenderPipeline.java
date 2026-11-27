@@ -18,8 +18,6 @@ public abstract class RenderPipeline {
     protected Camera uiCamera;
     protected TextureBindings textureBindings;
     protected Theme uiTheme;
-    protected Matrix4f uiTransform = new Matrix4f();
-    protected Vector4f origin = new Vector4f();
     protected Compositor compositor;
     public abstract void init(SceneRenderer sceneRenderer);
     public abstract List<Pass> buildFrame(SceneRenderData sceneRenderData);
