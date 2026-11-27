@@ -4,10 +4,6 @@ public class Loop {
     private Compositor compositor;
     private Widget widget;
 
-    public Compositor getGfxPlatform() {
-        return compositor;
-    }
-
     public void setCompositor(Compositor compositor) {
         this.compositor = compositor;
     }

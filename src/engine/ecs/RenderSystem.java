@@ -167,35 +167,19 @@ public class RenderSystem extends ActorSystem {
             }
             if(actor.has(LightComponent.class)) {
                 LightData lightData = actor.getComponent(LightComponent.class).data;
-
                 lights.add(lightData);
-
-
             }
             if(actor.has(UIComponent.class)) {
                 UIComponent uiComponent = actor.getComponent(UIComponent.class);
-                if (!uiComponent.active) {
+                uiComponent.loop.setCompositor(renderPipeline.getCompositor());
+                Rect2D area = uiComponent.area;
+                uiComponent.loop.update(
+                        (int) area.x,
+                        (int) area.y,
+                        (int) area.w,
+                        (int) area.h
+                );
 
-                    uiComponent.loop = new Loop();
-                    uiComponent.loop.setWidget(uiComponent.widget);
-                    uiComponent.loop.setCompositor(renderPipeline.getCompositor());
-
-                    uiComponent.active = true;
-                }
-
-                if (uiComponent.rect2D.isPresent()) {
-                    Rect2D rect2D = uiComponent.rect2D.get();
-                    uiComponent.loop.update(
-                            (int) rect2D.x,
-                            (int) rect2D.y,
-                            (int) rect2D.w,
-                            (int) rect2D.h
-                    );
-                } else {
-                    uiComponent.loop.update(
-                            0, 0
-                    );
-                }
             }
         });
 
